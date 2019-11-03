@@ -1,6 +1,7 @@
 import { Observable } from "rxjs";
 import { appendChild, overrideRemove, FunctionalChild, Fragment } from "../core";
 import ReactiveArray from '../structures/array';
+import { delay } from "rxjs/operators";
 
 export function xFor(array: ReactiveArray, render: (item: Observable<any>) => HTMLElement | FunctionalChild): FunctionalChild {
   const fragment = new Fragment("xFor");
@@ -8,7 +9,7 @@ export function xFor(array: ReactiveArray, render: (item: Observable<any>) => HT
   return (parent: ChildNode) => {
     parent.appendChild(fragment.getRoot());
 
-    const sub1 = array.subscribe(list => {
+    const sub1 = array.pipe(delay(0)).subscribe(list => {
       fragment.clear();
       list.forEach(v => {
         const el = appendChild(render(v), parent, fragment.getEdge());
