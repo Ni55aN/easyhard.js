@@ -36,8 +36,8 @@ export function h<T extends (...args: any) => any, Props extends Parameters<T>[0
   return element;
 }
 
-function insertAfter(newNode: Node | Fragment, parentNode: Node, referenceNode: DomElement) {
-  parentNode.insertBefore(newNode instanceof Fragment ? newNode.getRoot() : newNode, referenceNode && referenceNode.nextSibling);
+function insertAfter(newNode: Node, parentNode: Node, referenceNode: DomElement) {
+  parentNode.insertBefore(newNode, referenceNode && referenceNode.nextSibling);
 }
 
 export class Fragment {
@@ -102,7 +102,7 @@ export function appendChild(child: DomElement | Fragment | FunctionalChild | str
     const el = resolveChild(child);
     if (el) {
       if (after) {
-        insertAfter(el, parent, after instanceof Fragment ? after.getEdge() : after);
+        insertAfter(el instanceof Fragment ? el.getRoot() : el, parent, after instanceof Fragment ? after.getEdge() : after);
       } else {
         parent.appendChild(el instanceof Fragment ? el.getRoot() : el);
       }
