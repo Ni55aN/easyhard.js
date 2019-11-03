@@ -63,7 +63,7 @@ export class Fragment {
     return this.elements[i];
   }
 
-  insertChild(item: DomElement | Fragment, i: number = this.elements.length - 1) {
+  insertChild(item: DomElement | Fragment, i: number = this.elements.length) {
     this.elements.splice(i, 0, item);
   }
 
