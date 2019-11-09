@@ -1,13 +1,13 @@
 import { BehaviorSubject, Subject, merge, Observable } from "rxjs";
 import { mergeMap } from "rxjs/operators";
-import R from './value';
+import $ from './value';
 
-export default class extends R<R<any>[]> {
+export default class extends $<$<any>[]> {
     insert$ = new Subject<{ item: any, i: number }>();
     remove$ = new Subject<{ i: number }>();
   
     get(i: number) {
-      var s = new BehaviorSubject(null);
+      const s = new BehaviorSubject(null);
   
       return merge(s, this.insert$, this.remove$).pipe(
         mergeMap(_ => {

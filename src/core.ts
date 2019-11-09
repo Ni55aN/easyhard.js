@@ -1,10 +1,12 @@
 import { Observable } from "rxjs";
+import { DomElement, FunctionalChild, Attrs } from "./types";
+import { Fragment } from "./fragment";
+import { insertAfter } from "./utils";
 
-type Attrs = {[key: string]: any};
 
-export function h<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props, ...children: any[]): HTMLElement;
-export function h(tag: string, attrs: Attrs, ...children: any[]): HTMLElement
-export function h<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props | Attrs, ...children: any[]): HTMLElement {
+export function createElement<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props, ...children: any[]): HTMLElement;
+export function createElement(tag: string, attrs: Attrs, ...children: any[]): HTMLElement
+export function createElement<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props | Attrs, ...children: any[]): HTMLElement {
   if (typeof tag === "function") {
     return tag(attrs);
   }
@@ -35,57 +37,6 @@ export function h<T extends (...args: any) => any, Props extends Parameters<T>[0
 
   return element;
 }
-
-function insertAfter(newNode: Node, parentNode: Node, referenceNode: DomElement) {
-  parentNode.insertBefore(newNode, referenceNode && referenceNode.nextSibling);
-}
-
-export class Fragment {
-  // tail: DomElement | null = null;
-  private elements: (DomElement | Fragment)[] = [];
-  private anchor: Comment;
-
-  constructor(id: string) {
-    this.anchor = document.createComment(id);
-  }
-
-  getRoot() {
-    return this.anchor;
-  }
-
-  getEdge(i = this.elements.length): DomElement {
-    const el = this.elements[i - 1];
-
-    return (el instanceof Fragment ? el.getEdge() : el) || this.anchor;
-  }
-
-  get(i: number) {
-    return this.elements[i];
-  }
-
-  insertChild(item: DomElement | Fragment, i: number = this.elements.length) {
-    this.elements.splice(i, 0, item);
-  }
-
-  clear() {
-    this.elements.forEach(el => removeChild(el));
-    this.elements.splice(0, this.elements.length);
-  }
-
-  removeChild(i: number) {
-    removeChild(this.get(i));
-    this.elements.splice(i, 1);
-  }
-
-  remove() {
-    this.clear();
-    this.anchor.remove();
-  }
-}
-
-
-export type FunctionalChild = (parent: ChildNode) => DomElement | Fragment;
-export type DomElement = Comment | HTMLElement | Text | null;
 
 export function removeChild(element: DomElement | Fragment) {
   if (!element) return;

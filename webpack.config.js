@@ -1,28 +1,41 @@
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin')
 
+function multipleLibraryTargets(config) {
+  const formats = ['var', 'commonjs2', 'amd', 'umd'];
 
-module.exports = {
+  return formats.map(format => ({
+    ...config,
+    output: {
+      ...config.output,
+      filename: config.output.filename.replace('[target]', format),
+      libraryTarget: format
+    }
+  }));
+}
+
+module.exports = multipleLibraryTargets({
   entry: './src/index.ts',
-  mode: 'development',
+  mode: 'production',
   devtool: 'source-map',
+  output: {
+    filename: 'easyhard.[target].js',
+    path: path.resolve(__dirname, 'dist'),
+    library: 'Easyhard'
+  },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        use: 'ts-loader',
+        loader: 'ts-loader',
         exclude: /node_modules/,
+        options: {
+          transpileOnly: false
+        }
       },
     ],
   },
   resolve: {
     extensions: ['.ts', '.js'],
   },
-  output: {
-    filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
-  },
-  plugins: [
-    new HtmlWebpackPlugin()
-  ]
-};
+  externals: ['rxjs', /^rxjs\/.+$/]
+});
