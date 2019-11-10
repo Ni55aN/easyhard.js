@@ -1,5 +1,5 @@
 import { Observable } from "rxjs";
-import { DomElement, FunctionalChild, Attrs } from "./types";
+import { DomElement, Attrs, Child } from "./types";
 import { Fragment } from "./fragment";
 import { insertAfter } from "./utils";
 
@@ -46,7 +46,7 @@ export function removeChild(element: DomElement | Fragment) {
   }
 }
 
-export function appendChild(child: DomElement | Fragment | FunctionalChild | string, parent: ChildNode, after: Fragment | DomElement = null): DomElement | Fragment {
+export function appendChild(child: Child, parent: ChildNode, after: Fragment | DomElement = null): DomElement | Fragment {
   if (child instanceof Function) {
     return appendChild(child(parent), parent, after);
   } else {

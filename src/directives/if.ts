@@ -1,10 +1,10 @@
 import { Observable } from "rxjs";
 import { distinctUntilChanged, delay } from "rxjs/operators";
 import { appendChild, overrideRemove } from "../core";
-import { FunctionalChild, DomElement } from "../types";
+import { FunctionalChild, Child } from "../types";
 import { Fragment } from "../fragment";
 
-export function $if(state: Observable<any>, render: () => DomElement | FunctionalChild): FunctionalChild {
+export function $if(state: Observable<any>, render: () => Child): FunctionalChild {
   const fragment = new Fragment('$if');
 
   return (parent: ChildNode) => {

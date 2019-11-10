@@ -2,10 +2,10 @@ import { Observable } from "rxjs";
 import { appendChild, overrideRemove } from "../core";
 import $ from '../structures/array';
 import { delay } from "rxjs/operators";
-import { FunctionalChild } from "../types";
+import { FunctionalChild, Child } from "../types";
 import { Fragment } from "../fragment";
 
-export function $for(array: $, render: (item: Observable<any>) => HTMLElement | FunctionalChild): FunctionalChild {
+export function $for(array: $, render: (item: Observable<any>) => Child): FunctionalChild {
   const fragment = new Fragment("$for");
 
   return (parent: ChildNode) => {
