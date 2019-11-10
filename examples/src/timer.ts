@@ -1,15 +1,9 @@
 import { h, $ } from 'easyhard';
+import { timer } from 'rxjs';
+import { map, take } from 'rxjs/operators';
 
 export default function(container: HTMLElement) {
-  const count = new $(30);
-
-  const interval = setInterval(() => {
-    const next = count.value - 1;
-
-    if (next < 0) return clearInterval(interval);
-
-    count.next(next);
-  }, 1000);
+  const count = timer(0, 1000).pipe(take(31), map(v => 30 - v));
 
   container.appendChild(
     h('div', {}, count)
