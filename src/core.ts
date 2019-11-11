@@ -21,7 +21,10 @@ export function createElement<T extends (...args: any) => any, Props extends Par
       if (value === true) {
         element.setAttribute(name, name);
       } else if (value instanceof Observable) {
-        const sub = value.subscribe(v => element.setAttribute(name, v.toString()));
+        const sub = value.subscribe(v => {
+          element.setAttribute(name, v.toString());
+          (element as any)[name] = v.toString();
+        });
         overrideRemove(element, () => sub.unsubscribe());
       } else if (typeof value === "function") {
         element.addEventListener(name, value);
