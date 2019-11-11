@@ -27,6 +27,12 @@ export default class<T = any> extends $<$<T>[]> {
       this.value.splice(i, 0, item);
       this.insert$.next({ item, i });
     }
+
+    remove(item: $<T>) {
+      const index = this.value.indexOf(item);
+
+      this.removeAt(index);
+    }
   
     removeAt(i: number) {
       this.value.splice(i, 1);
