@@ -2,7 +2,7 @@ import { BehaviorSubject, Subject, merge, Observable } from "rxjs";
 import { mergeMap } from "rxjs/operators";
 import $ from './value';
 
-export default class extends $<$<any>[]> {
+export default class<T = any> extends $<$<T>[]> {
     insert$ = new Subject<{ item: any, i: number }>();
     remove$ = new Subject<{ i: number }>();
   
@@ -16,12 +16,12 @@ export default class extends $<$<any>[]> {
       );
     }
   
-    set(i: number, v: any) {
+    set(i: number, v: $<T>) {
       this.removeAt(i);
       this.insert(v, i);
     }
   
-    insert(item: BehaviorSubject<any>, i = this.value.length) {
+    insert(item: $<T>, i = this.value.length) {
       if (!(item instanceof Observable)) throw new Error("not_observable");
   
       this.value.splice(i, 0, item);

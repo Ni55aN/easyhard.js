@@ -1,11 +1,11 @@
-import { Observable } from "rxjs";
 import { appendChild, overrideRemove } from "../core";
-import $ from '../structures/array';
+import $ from '../structures/value';
+import $$ from '../structures/array';
 import { delay } from "rxjs/operators";
 import { FunctionalChild, Child } from "../types";
 import { Fragment } from "../fragment";
 
-export function $for(array: $, render: (item: Observable<any>) => Child): FunctionalChild {
+export function $for<T extends any>(array: $$<T>, render: (item: $<T>) => Child): FunctionalChild {
   const fragment = new Fragment("$for");
 
   return (parent: ChildNode) => {
@@ -20,7 +20,7 @@ export function $for(array: $, render: (item: Observable<any>) => Child): Functi
       });
     });
 
-    const sub2 = array.insert$.subscribe(({ item, i }: { item: Observable<any>; i: number }) => {
+    const sub2 = array.insert$.subscribe(({ item, i }: { item: $<T>; i: number }) => {
       const el = appendChild(render(item), parent, fragment.getEdge(i));
 
       fragment.insertChild(el, i);
