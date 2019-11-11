@@ -2,7 +2,7 @@ import { h, $, $$, $for } from 'easyhard';
 import { timer } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-export default function(container: HTMLElement) {
+export default function() {
   const arr = new Array(10).fill(0).map((_, i) => i);
   const list = new $$(arr.map(v => new $(v)));
   const randomList = timer(0, 500).pipe(
@@ -14,10 +14,8 @@ export default function(container: HTMLElement) {
     })
   );
 
-  container.appendChild(
-    h('div', {}, 
-      randomList,
-      $for(list, (v) => h('div', {}, v))
-    )
+  return h('div', {},
+    randomList,
+    $for(list, (v) => h('div', {}, v))
   );
 }

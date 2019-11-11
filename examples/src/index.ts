@@ -9,4 +9,6 @@ const App = ({
   '': Sum
 } as {[key: string]: typeof Sum})[location.hash];
 
-App(document.body);
+const app = App();
+
+document.body.appendChild(app);
