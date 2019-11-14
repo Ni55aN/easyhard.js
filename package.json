@@ -7,8 +7,10 @@
   "module": "src/easyhard.commonjs2.js",
   "types": "types",
   "scripts": {
-    "build": "webpack & tsc --noEmit",
-    "build:dev": "webpack --watch"
+    "build": "webpack & npm run types",
+    "build:dev": "webpack --watch",
+    "types": "tsc --noEmit",
+    "types:dev": "tsc --noEmit --watch"
   },
   "peerDependencies": {
     "rxjs": "6.5.3",
