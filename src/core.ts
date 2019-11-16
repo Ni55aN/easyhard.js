@@ -3,14 +3,7 @@ import { DomElement, Attrs, Child } from "./types";
 import { Fragment } from "./fragment";
 import { insertAfter } from "./utils";
 
-
-export function createElement<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props, ...children: Child[]): HTMLElement;
-export function createElement(tag: string, attrs: Attrs, ...children: Child[]): HTMLElement
-export function createElement<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props | Attrs, ...children: Child[]): HTMLElement {
-  if (typeof tag === "function") {
-    return tag(attrs);
-  }
-
+export function createElement(tag: string, attrs: Attrs, ...children: Child[]): HTMLElement {
   const element = document.createElement(tag);
   attrs = attrs as Attrs;
 
