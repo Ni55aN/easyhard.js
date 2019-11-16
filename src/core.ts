@@ -4,9 +4,9 @@ import { Fragment } from "./fragment";
 import { insertAfter } from "./utils";
 
 
-export function createElement<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props, ...children: any[]): HTMLElement;
-export function createElement(tag: string, attrs: Attrs, ...children: any[]): HTMLElement
-export function createElement<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props | Attrs, ...children: any[]): HTMLElement {
+export function createElement<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props, ...children: Child[]): HTMLElement;
+export function createElement(tag: string, attrs: Attrs, ...children: Child[]): HTMLElement
+export function createElement<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props | Attrs, ...children: Child[]): HTMLElement {
   if (typeof tag === "function") {
     return tag(attrs);
   }
@@ -75,7 +75,7 @@ export function overrideRemove(el: ChildNode | Fragment, cb: any) {
   };
 }
 
-function resolveChild(child: Observable<any> | DomElement | Fragment | string): DomElement | Fragment {
+function resolveChild(child: Child): DomElement | Fragment {
   if (child instanceof Observable) {
     const text = document.createTextNode('');
     const sub = child.subscribe(v => {
