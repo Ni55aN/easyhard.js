@@ -1,4 +1,5 @@
 export * from './core';
+export * from './types';
 export { createElement as h } from './core';
 export { createElementX as hx } from './jsx';
 export { Fragment } from './fragment';

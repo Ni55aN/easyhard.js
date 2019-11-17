@@ -5,7 +5,6 @@ import { insertAfter } from "./utils";
 
 export function createElement(tag: string, attrs: Attrs, ...children: Child[]): HTMLElement {
   const element = document.createElement(tag);
-  attrs = attrs as Attrs;
 
   for (let name in attrs) {
     if (name && attrs.hasOwnProperty(name)) {
@@ -15,8 +14,10 @@ export function createElement(tag: string, attrs: Attrs, ...children: Child[]): 
         element.setAttribute(name, name);
       } else if (value instanceof Observable) {
         const sub = value.subscribe(v => {
-          element.setAttribute(name, v.toString());
-          (element as any)[name] = v.toString();
+          const value = v && v.toString && v.toString();
+
+          element.setAttribute(name, value);
+          (element as any)[name] = value;
         });
         overrideRemove(element, () => sub.unsubscribe());
       } else if (typeof value === "function") {
@@ -86,6 +87,10 @@ function resolveChild(child: Child): DomElement | Fragment {
   
   if (typeof child !== "object") {
     return document.createTextNode(child.toString());
+  }
+
+  if (child && 'render' in child) {
+    return child.render();
   }
 
   return child;
