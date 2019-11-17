@@ -2,10 +2,10 @@ import { appendChild, overrideRemove } from "../core";
 import $ from '../structures/value';
 import $$ from '../structures/array';
 import { delay } from "rxjs/operators";
-import { FunctionalChild, Child } from "../types";
+import { Directive, Child } from "../types";
 import { Fragment } from "../fragment";
 
-export function $for<T extends any>(array: $$<T>, render: (item: $<T>) => Child): FunctionalChild {
+export function $for<T extends any>(array: $$<T>, render: (item: $<T>) => Child): Directive {
   const fragment = new Fragment("$for");
 
   return (parent: ChildNode) => {
