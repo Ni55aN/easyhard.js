@@ -8,3 +8,4 @@ export { default as $$ } from './structures/array';
 export { $for } from './directives/for';
 export { $if } from './directives/if';
 export { $show } from './directives/show';
+export * from './directives/di';
