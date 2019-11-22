@@ -1,4 +1,4 @@
-import { h, $, $provide, $inject, Child, Directive, $$, $for, Fragment } from 'easyhard';
+import { h, hc, $, $provide, $inject, Child, Directive, $$, $for, Fragment } from 'easyhard';
 import { Observable, interval, of, combineLatest } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
@@ -75,9 +75,9 @@ const dictionary: Dictionary = {
 function Child() {
   const { t, injectTranslation, setLocale } = useTranslation();
 
-  return h('u', { click() { setLocale('ua'); } },
+  return hc(
     injectTranslation,
-    t('dictionary')
+    h('u', { click() { setLocale('ua'); } }, t('dictionary'))
   )
 }
 

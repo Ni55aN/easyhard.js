@@ -1,4 +1,4 @@
-import { h, $, $provide, $inject } from 'easyhard';
+import { h, hc, $, $provide, $inject } from 'easyhard';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -20,7 +20,10 @@ function Button(text: string, click: Function) {
     const theme = new $<Theme | null>(null);
     const style = theme.pipe(map(th => th ? `background: ${th.bg}; color: ${th.font}` : ''));
 
-    return h('button', { style, click }, text, $inject(useTheme, theme));
+    return hc(
+        $inject(useTheme, theme),
+        h('button', { style, click }, text)
+    )
 }
 
 function Form(onSubmit: Function) {
@@ -30,5 +33,8 @@ function Form(onSubmit: Function) {
 export default function() {
     const [theme, switchMode] = useTheme();
 
-    return h('b', {}, $provide(useTheme, theme), Form(switchMode))
+    return hc(
+        $provide(useTheme, theme),
+        Form(switchMode)
+    )
 }

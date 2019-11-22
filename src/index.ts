@@ -1,6 +1,7 @@
 export * from './core';
 export * from './types';
 export { createElement as h } from './core';
+export { createContainer as hc, createContainer } from './container';
 export { createElementX as hx } from './jsx';
 export { Fragment } from './fragment';
 export { default as $ } from './structures/value';
