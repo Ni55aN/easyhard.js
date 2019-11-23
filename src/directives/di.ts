@@ -5,15 +5,18 @@ import { overrideRemove } from "../core";
 
 
 type DiKey<T> = { new(): T } | Object;
-type DiValue<T> = T | Observable<T> | null;
+type DiValue<T> = $<T>;
+type DiInjection<T> = null | { value: DiValue<T> };
 
 const injections = new WeakMap<ChildNode, Map<DiKey<any>, any>>();
 
-function getInjection<T>(id: DiKey<T>, parent: ChildNode | null): DiValue<T> {
+function getInjection<T>(id: DiKey<T>, parent: ChildNode | null): DiInjection<T> {
     if (!parent) return null;
-    const inj = injections.get(parent);
 
-    return inj && inj.get(id) || getInjection(id, parent.parentElement);
+    const inj = injections.get(parent);
+    if (inj && inj.get(id)) return { value: inj.get(id) };
+
+    return getInjection(id, parent.parentElement);
 }
 
 export function $provide<T extends any>(type: DiKey<T>, value: DiValue<T>): Directive {
@@ -28,18 +31,17 @@ export function $provide<T extends any>(type: DiKey<T>, value: DiValue<T>): Dire
     }
 }
 
-export function $inject<T extends any>(id: DiKey<T>, act: $<T> | ((arg: T) => void)): Directive {
+export function $inject<T extends any>(id: DiKey<T>, act: DiValue<T>): Directive {
     return (parent) => {
         requestAnimationFrame(() => { // access parent element after it added to DOM
-            const val: any = getInjection<T>(id, parent);
+            const injection: DiInjection<T> = getInjection<T>(id, parent);
             
-            if (val instanceof Observable) {
-                const sub = val.subscribe(value => {
-                    act instanceof $ ? act.next(value)  : act(value);
-                })
+            if (!injection) return;
+            if (injection.value instanceof Observable) {
+                const sub = injection.value.subscribe(value => act.next(value));
                 overrideRemove(parent, () => sub.unsubscribe());
             } else {
-                act instanceof $ ? act.next(val) : act(val);
+                act.next(injection.value);
             }
         });
         return null;

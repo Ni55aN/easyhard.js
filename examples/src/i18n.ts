@@ -40,12 +40,7 @@ function useTranslation(): Translator {
     getLocale: () => parent.value.locale.value,
     setDictionary: (d: Dictionary) => parent.value.dictionary.next(d),
     setLocale: (val: string) => parent.value.locale.next(val),
-    injectTranslation: $inject(useTranslation, (v: TranslatorData | null) => {
-      if (v)
-        parent.next(v)
-      else
-        console.warn('`provideTranslation` required')
-    }),
+    injectTranslation: $inject(useTranslation, parent),
     provideTranslation: $provide(useTranslation, parent)
   }
 
