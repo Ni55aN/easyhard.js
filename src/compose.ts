@@ -21,7 +21,8 @@ export function compose(...args: (D | H)[]): H | D {
   }
 
   return (parent: ChildNode) => {
-    [...directives, target].forEach(directive => directive(parent));
-    return null;
+    const results = [...directives, target].map(directive => directive(parent));
+
+    return results[0] || null;
   };
 }
