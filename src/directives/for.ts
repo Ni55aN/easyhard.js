@@ -30,7 +30,7 @@ export function $for<T extends any>(array: $$<T>, render: (item: $<T>) => Child)
       fragment.removeChild(i);
     });
 
-    overrideRemove(fragment, () => {
+    overrideRemove(fragment.getRoot(), () => {
       [sub1, sub2, sub3].forEach(sub => sub.unsubscribe());
     });
 

@@ -35,10 +35,14 @@ export function createElement(tag: string, attrs: Attrs, ...children: Child[]): 
   return element;
 }
 
-export function removeChild(element: DomElement | Fragment) {
+// TODO
+export function removeChild(element: DomElement | ChildNode | Fragment) {
   if (!element) return;
 
   if ('remove' in element) {
+    if (element instanceof HTMLElement) {
+      Array.from(element.childNodes).map(removeChild);
+    }
     element.remove();
   }
 }

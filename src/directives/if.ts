@@ -20,7 +20,7 @@ export function $if(state: Observable<any>, render: () => Child): Directive {
       }
     });
 
-    overrideRemove(fragment, () => {
+    overrideRemove(fragment.getRoot(), () => {
       sub.unsubscribe();
     });
 
