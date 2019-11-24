@@ -76,7 +76,7 @@ function Child() {
   )
 }
 
-export default function() {
+function App() {
   const text = interval(1000).pipe(map(step => step % 2 === 0 ? 'first' : 'second'));
   const list = new $$(new Array(100).fill(null).map((_, i) => new $(i)));
   const { t, getLocale, setDictionary, setLocale, provideTranslation } = useTranslation();
@@ -90,3 +90,5 @@ export default function() {
     $for(list, i => h('div', {}, combineLatest(t(text), i).pipe(map(([a, b]) => a + b))))
   );
 }
+
+document.body.appendChild(App());

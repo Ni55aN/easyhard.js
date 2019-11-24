@@ -60,7 +60,7 @@ function Form(onSubmit: Function) {
     return Button('Click', onSubmit);
 }
 
-export default function() {
+function App() {
     const { setTheme, setMode, getMode, themeProvider } = useModeTheme<Mode, Theme>();
 
     setTheme(Mode.DAY, { font: 'grey', bg: 'white' });
@@ -72,3 +72,5 @@ export default function() {
         Form(() => setMode(getMode() === Mode.DAY ? Mode.NIGHT : Mode.DAY))
     )
 }
+
+document.body.appendChild(App());

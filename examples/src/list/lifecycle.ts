@@ -2,7 +2,7 @@ import { h, $if } from 'easyhard';
 import { Observable, interval, Observer } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-export default function() {
+function App() {
   const mount = interval(1000).pipe(map(time => time % 2));
   const lifecycle = Observable.create((observer: Observer<any>) =>{
     console.log('mount');
@@ -15,3 +15,4 @@ export default function() {
   );
 }
 
+document.body.appendChild(App());

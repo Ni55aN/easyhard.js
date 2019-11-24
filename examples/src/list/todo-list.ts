@@ -1,6 +1,6 @@
 import { h, $, $$, $for, $if } from 'easyhard';
 import { map } from 'rxjs/operators';
-import { Input } from './components/input';
+import { Input } from '../components/input';
 
 type Reactive<T> = {[key in keyof T]: $<T[key]>};
 type Task = Reactive<{ text: string, done: boolean }>;
@@ -36,7 +36,7 @@ function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => 
   );
 }
 
-export default function() {
+function App() {
   const list = new $$<Task>([])
   const target = new $('');
 
@@ -49,3 +49,5 @@ export default function() {
     $for(list, item => TodoItem({ item, remove }))
   );
 }
+
+document.body.appendChild(App());
