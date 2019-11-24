@@ -34,7 +34,7 @@ export function $provide<T extends any>(type: DiKey<T>, value: DiValue<T>): Dire
 export function $inject<T extends any>(id: DiKey<T>, act: DiValue<T>): Directive {
     return (parent) => {
         requestAnimationFrame(() => { // access parent element after it added to DOM
-            const injection: DiInjection<T> = getInjection<T>(id, parent);
+            const injection: DiInjection<T> = getInjection<T>(id, parent && parent.parentElement);
             
             if (!injection) return;
             if (injection.value instanceof Observable) {
