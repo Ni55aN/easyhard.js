@@ -1,7 +1,7 @@
 import { Observable } from "rxjs";
 import { default as $ } from '../structures/value';
 import { Directive } from "../types";
-import { overrideRemove } from "../core";
+import { untilExist } from "../operators";
 
 
 type DiKey<T> = { new(): T } | Object;
@@ -38,8 +38,7 @@ export function $inject<T extends any>(id: DiKey<T>, act: DiValue<T>): Directive
             
             if (!injection) return;
             if (injection.value instanceof Observable) {
-                const sub = injection.value.subscribe(value => act.next(value));
-                overrideRemove(parent, () => sub.unsubscribe());
+                const sub = injection.value.pipe(untilExist(parent)).subscribe(value => act.next(value));
             } else {
                 act.next(injection.value);
             }

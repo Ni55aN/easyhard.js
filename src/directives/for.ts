@@ -1,9 +1,9 @@
-import { appendChild, overrideRemove } from "../core";
+import { appendChild } from "../core";
 import $ from '../structures/value';
 import $$ from '../structures/array';
-import { delay } from "rxjs/operators";
 import { Directive, Child } from "../types";
 import { Fragment } from "../fragment";
+import { untilExist } from "../operators";
 
 export function $for<T extends any>(array: $$<T>, render: (item: $<T>) => Child): Directive {
   const fragment = new Fragment("$for");
@@ -11,7 +11,7 @@ export function $for<T extends any>(array: $$<T>, render: (item: $<T>) => Child)
   return (parent: ChildNode) => {
     parent.appendChild(fragment.getRoot());
 
-    const sub1 = array.pipe(delay(0)).subscribe(list => {
+    array.pipe(untilExist(fragment.getRoot())).subscribe(list => {
       fragment.clear();
       list.forEach(v => {
         const el = appendChild(render(v), parent, fragment.getEdge());
@@ -20,18 +20,14 @@ export function $for<T extends any>(array: $$<T>, render: (item: $<T>) => Child)
       });
     });
 
-    const sub2 = array.insert$.subscribe(({ item, i }: { item: $<T>; i: number }) => {
+    array.insert$.pipe(untilExist(fragment.getRoot())).subscribe(({ item, i }: { item: $<T>; i: number }) => {
       const el = appendChild(render(item), parent, fragment.getEdge(i));
 
       fragment.insertChild(el, i);
     });
 
-    const sub3 = array.remove$.subscribe(({ i }) => {
+    array.remove$.pipe(untilExist(fragment.getRoot())).subscribe(({ i }) => {
       fragment.removeChild(i);
-    });
-
-    overrideRemove(fragment.getRoot(), () => {
-      [sub1, sub2, sub3].forEach(sub => sub.unsubscribe());
     });
 
     return fragment;

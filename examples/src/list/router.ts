@@ -1,6 +1,6 @@
-import { h, $, Fragment, overrideRemove, appendChild, compose, $provide, $inject } from 'easyhard';
+import { h, $, Fragment, appendChild, compose, untilExist, $provide, $inject } from 'easyhard';
 import { Observable, Observer } from 'rxjs';
-import { distinctUntilChanged, delay, map } from 'rxjs/operators';
+import { distinctUntilChanged, map } from 'rxjs/operators';
 
 type Route = {
   path: string;
@@ -56,8 +56,8 @@ function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (
   return (parent: ChildNode) => {
     parent.appendChild(fragment.getRoot());
 
-    const sub = route$.pipe(
-      delay(0),
+    route$.pipe(
+      untilExist(fragment.getRoot()),
       map(path => {
         const prefix = getFullPath(parentRoute.value);
 
@@ -72,8 +72,6 @@ function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (
         fragment.insertChild(el, 0);
       }
     });
-
-    overrideRemove(fragment.getRoot(), () =>sub.unsubscribe());
     
     return fragment;
   }

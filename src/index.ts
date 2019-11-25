@@ -1,5 +1,6 @@
 export * from './core';
 export * from './types';
+export * from './operators';
 export { createElement as h } from './core';
 export { compose } from './compose';
 export { createElementX as hx } from './jsx';

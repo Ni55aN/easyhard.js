@@ -2,6 +2,7 @@ import { Observable } from "rxjs";
 import { DomElement, Attrs, Child } from "./types";
 import { Fragment } from "./fragment";
 import { insertAfter } from "./utils";
+import { untilExist } from "./operators";
 
 export function createElement(tag: string, attrs: Attrs, ...children: Child[]): HTMLElement {
   const element = document.createElement(tag);
@@ -13,13 +14,12 @@ export function createElement(tag: string, attrs: Attrs, ...children: Child[]): 
       if (value === true) {
         element.setAttribute(name, name);
       } else if (value instanceof Observable) {
-        const sub = value.subscribe(v => {
+        value.pipe(untilExist(element)).subscribe(v => {
           const value = v && v.toString && v.toString();
 
           element.setAttribute(name, value);
           (element as any)[name] = value;
         });
-        overrideRemove(element, () => sub.unsubscribe());
       } else if (typeof value === "function") {
         element.addEventListener(name, value);
       } else if (value !== false && value != null) {
@@ -41,7 +41,10 @@ export function removeChild(element: DomElement | ChildNode | Fragment) {
 
   if ('remove' in element) {
     if (element instanceof HTMLElement) {
-      Array.from(element.childNodes).map(removeChild);
+      let child = null;
+      while (child = element.lastElementChild) { 
+        removeChild(child);
+      }
     }
     element.remove();
   }
@@ -58,30 +61,19 @@ export function appendChild(child: Child, parent: ChildNode, after: Fragment | D
       } else {
         parent.appendChild(el instanceof Fragment ? el.getRoot() : el);
       }
-      overrideRemove(parent, () => el.remove());
     }
     return el;
   }
 }
 
-export function overrideRemove(el: ChildNode | Fragment, cb: any) {
-  const remove = el.remove;
-
-  el.remove = function() {
-    cb();
-    remove.apply(this, arguments as any);
-  };
-}
-
 function resolveChild(child: Child): DomElement | Fragment {
   if (child instanceof Observable) {
     const text = document.createTextNode('');
-    const sub = child.subscribe(v => {
-      if (text) {
-        text.textContent = v;
-      }
+    
+    child.pipe(untilExist(text)).subscribe(v => {
+      text.textContent = v;
     });
-    overrideRemove(text, () => sub.unsubscribe());
+
     return text;
   }
 
