@@ -25,6 +25,12 @@ module.exports = multipleLibraryTargets({
   module: {
     rules: [
       {
+        enforce: 'pre',
+        test: /\.(j|t)sx?$/,
+        exclude: /node_modules/,
+        loader: 'eslint-loader'
+      },
+      {
         test: /\.tsx?$/,
         loader: 'ts-loader',
         exclude: /node_modules/,
