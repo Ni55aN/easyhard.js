@@ -4,23 +4,23 @@ import { Directive } from "../types";
 import { untilExist } from "../operators";
 
 
-type DiKey<T> = { new(): T } | Object;
+type DiKey<T> = { new(): T } | {};
 type DiValue<T> = $<T>;
 type DiInjection<T> = null | { value: DiValue<T> };
 
-const injections = new WeakMap<ChildNode, Map<DiKey<any>, any>>();
+const injections = new WeakMap<ChildNode, Map<DiKey<unknown>, unknown>>();
 
 function getInjection<T>(id: DiKey<T>, parent: ChildNode | null): DiInjection<T> {
     if (!parent) return null;
 
     const inj = injections.get(parent);
-    if (inj && inj.get(id)) return { value: inj.get(id) };
+    if (inj && inj.get(id)) return { value: inj.get(id) as DiValue<T> };
 
     return getInjection(id, parent.parentElement);
 }
 
-export function $provide<T extends any>(type: DiKey<T>, value: DiValue<T>): Directive {
-    return (parent) => {
+export function $provide<T extends unknown>(type: DiKey<T>, value: DiValue<T>): Directive {
+    return (parent: ChildNode): null => {
         let map = injections.get(parent);
         if (!map) {
             map = new Map();
@@ -31,14 +31,14 @@ export function $provide<T extends any>(type: DiKey<T>, value: DiValue<T>): Dire
     }
 }
 
-export function $inject<T extends any>(id: DiKey<T>, act: DiValue<T>): Directive {
-    return (parent) => {
+export function $inject<T extends unknown>(id: DiKey<T>, act: DiValue<T>): Directive {
+    return (parent: ChildNode): null => {
         requestAnimationFrame(() => { // access parent element after it added to DOM
             const injection: DiInjection<T> = getInjection<T>(id, parent && parent.parentElement);
             
             if (!injection) return;
             if (injection.value instanceof Observable) {
-                const sub = injection.value.pipe(untilExist(parent)).subscribe(value => act.next(value));
+                injection.value.pipe(untilExist(parent)).subscribe(value => act.next(value));
             } else {
                 act.next(injection.value);
             }

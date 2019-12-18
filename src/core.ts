@@ -1,53 +1,39 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { Observable } from "rxjs";
-import { DomElement, Attrs, Child } from "./types";
+import { DomElement, Attrs, Child, PropAttrs, TagName } from "./types";
 import { Fragment } from "./fragment";
 import { insertAfter } from "./utils";
 import { untilExist } from "./operators";
 
-export function createElement(tag: string, attrs: Attrs, ...children: Child[]): HTMLElement {
+export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: Child[]): HTMLElement {
   const element = document.createElement(tag);
 
-  for (let name in attrs) {
+  for (const name in attrs) {
     if (name && attrs.hasOwnProperty(name)) {
-      let value = attrs[name];
+      const attr = attrs[name as keyof Attrs<K>];
 
-      if (value === true) {
+      if (attr === true) {
         element.setAttribute(name, name);
-      } else if (value instanceof Observable) {
-        value.pipe(untilExist(element)).subscribe(v => {
+      } else if (attr instanceof Observable) {
+        attr.pipe(untilExist(element)).subscribe(v => {
           const value = v && v.toString && v.toString();
 
           element.setAttribute(name, value);
-          (element as any)[name] = value;
+          element[name as keyof PropAttrs<K>] = value;
         });
-      } else if (typeof value === "function") {
-        element.addEventListener(name, value);
-      } else if (value !== false && value != null) {
-        element.setAttribute(name, value.toString());
+      } else if (typeof attr === "function") {
+        element.addEventListener(name, attr as EventListenerObject);
+      } else if (attr !== false && attr != null) {
+        element.setAttribute(name, String(attr));
       }
     }
   }
 
-  for(let child of children) {
+  for (const child of children) {
     appendChild(child, element);
   }
 
   return element;
-}
-
-// TODO
-export function removeChild(element: DomElement | ChildNode | Fragment) {
-  if (!element) return;
-
-  if ('remove' in element) {
-    if (element instanceof HTMLElement) {
-      let child = null;
-      while (child = element.lastElementChild) { 
-        removeChild(child);
-      }
-    }
-    element.remove();
-  }
 }
 
 export function appendChild(child: Child, parent: ChildNode, after: Fragment | DomElement = null): DomElement | Fragment {
@@ -71,7 +57,7 @@ function resolveChild(child: Child): DomElement | Fragment {
     const text = document.createTextNode('');
     
     child.pipe(untilExist(text)).subscribe(v => {
-      text.textContent = v;
+      text.textContent = v as string;
     });
 
     return text;
@@ -82,7 +68,7 @@ function resolveChild(child: Child): DomElement | Fragment {
   }
   
   if (typeof child !== "object") {
-    return document.createTextNode(child.toString());
+    return document.createTextNode(String(child));
   }
 
   if (child && 'render' in child) {

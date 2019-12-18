@@ -81,11 +81,11 @@ function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (
 const child2Routes: Route[] = [
   {
     path: 'f',
-    component: () => h('f', {}, 'C/D/F')
+    component: () => h('f' as any, {}, 'C/D/F')
   },
   {
     path: 'g',
-    component: () => h('g', {}, 'C/D/G')
+    component: () => h('g' as any, {}, 'C/D/G')
   },
   {
     path: '*',
@@ -102,7 +102,7 @@ const childRoutes: Route[] = [
     component: () => {
       const { routerOutlet, navigate } = useRouter();
 
-      return h('c', {},
+      return h('c' as any, {},
         routerOutlet(child2Routes),
         h('button', { click() { navigate('f') }}, 'C/D/F'),
         h('button', { click() { navigate('g') }}, 'C/D/G'),
@@ -111,11 +111,11 @@ const childRoutes: Route[] = [
   },
   {
     path: 'e',
-    component: () => h('e', {}, 'C/E')
+    component: () => h('e' as any, {}, 'C/E')
   },
   {
     path: '*',
-    component: () => h('f', {}, 'C/F')
+    component: () => h('f' as any, {}, 'C/F')
   }
 ]
 
@@ -133,7 +133,7 @@ const routes: Route[] = [
     component: () => {
       const { routerOutlet, navigate } = useRouter();
 
-      return h('c', {},
+      return h('c' as any, {},
         routerOutlet(childRoutes),
         h('button', { click() { navigate('d') }}, 'C/D'),
         h('button', { click() { navigate('e') }}, 'C/E'),

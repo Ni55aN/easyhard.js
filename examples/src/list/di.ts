@@ -46,7 +46,7 @@ enum Mode {
     NIGHT
 }
 
-function Button(text: string, click: Function) {
+function Button(text: string, click: EventListener) {
     const { theme, themeInjection, mode } = useModeTheme<Mode, Theme>();
     const style = theme.pipe(map(th => th ? `background: ${th.bg}; color: ${th.font}` : ''));
 
@@ -56,7 +56,7 @@ function Button(text: string, click: Function) {
     )
 }
 
-function Form(onSubmit: Function) {
+function Form(onSubmit: EventListener) {
     return Button('Click', onSubmit);
 }
 

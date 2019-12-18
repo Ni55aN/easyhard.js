@@ -5,10 +5,10 @@ import { Directive, Child } from "../types";
 import { Fragment } from "../fragment";
 import { untilExist } from "../operators";
 
-export function $for<T extends any>(array: $$<T>, render: (item: $<T>) => Child): Directive {
+export function $for<T extends unknown>(array: $$<T>, render: (item: $<T>) => Child): Directive {
   const fragment = new Fragment("$for");
 
-  return (parent: ChildNode) => {
+  return (parent: ChildNode): Fragment => {
     parent.appendChild(fragment.getRoot());
 
     array.pipe(untilExist(fragment.getRoot())).subscribe(list => {

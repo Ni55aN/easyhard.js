@@ -1,12 +1,12 @@
 import { createElement } from "./core";
-import { Child, Attrs } from "./types";
+import { Child, Attrs, TagName } from "./types";
 
-export function createElementX<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props, ...children: Child[]): HTMLElement;
-export function createElementX(tag: string, attrs: Attrs, ...children: Child[]): HTMLElement
-export function createElementX<T extends (...args: any) => any, Props extends Parameters<T>[0]>(tag: T | string, attrs: Props | Attrs, ...children: Child[]): HTMLElement {
+export function createElementX<T extends (...args: unknown[]) => HTMLElement, Props extends Parameters<T>[0]>(tag: T, attrs: Props, ...children: Child[]): HTMLElement;
+export function createElementX<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: Child[]): HTMLElement
+export function createElementX<K extends TagName, T extends (...args: unknown[]) => HTMLElement, Props extends Parameters<T>[0]>(tag: K | T, attrs: Props | Attrs<K>, ...children: Child[]): HTMLElement {
   if (typeof tag === "function") {
     return tag(attrs);
   }
 
-  return createElement(tag, attrs, ...children);
+  return createElement(tag, attrs as Attrs<K>, ...children);
 }

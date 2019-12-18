@@ -1,5 +1,4 @@
 import { DomElement } from "./types";
-import { removeChild } from "./core";
 
 export class Fragment {
     private elements: (DomElement | Fragment)[] = [];
@@ -9,7 +8,7 @@ export class Fragment {
       this.anchor = document.createComment(id);
     }
   
-    getRoot() {
+    getRoot(): Comment {
       return this.anchor;
     }
   
@@ -19,25 +18,27 @@ export class Fragment {
       return (el instanceof Fragment ? el.getEdge() : el) || this.anchor;
     }
   
-    get(i: number) {
+    get(i: number): DomElement | Fragment {
       return this.elements[i];
     }
   
-    insertChild(item: DomElement | Fragment, i: number = this.elements.length) {
+    insertChild(item: DomElement | Fragment, i: number = this.elements.length): void {
       this.elements.splice(i, 0, item);
     }
   
-    clear() {
-      this.elements.forEach(el => removeChild(el));
+    clear(): void {
+      this.elements.forEach(el => el && el.remove());
       this.elements.splice(0, this.elements.length);
     }
   
-    removeChild(i: number) {
-      removeChild(this.get(i));
+    removeChild(i: number): void {
+      const child = this.get(i);
+    
+      child && child.remove();
       this.elements.splice(i, 1);
     }
   
-    remove() {
+    remove(): void {
       this.clear();
       this.anchor.remove();
     }
