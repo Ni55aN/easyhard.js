@@ -11,20 +11,18 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
   for (const name in attrs) {
     if (name && attrs.hasOwnProperty(name)) {
       const attr = attrs[name as keyof Attrs<K>];
+      const attrName = name as keyof PropAttrs<K>;
 
       if (attr === true) {
-        element.setAttribute(name, name);
+        element[attrName] = true as any;
       } else if (attr instanceof Observable) {
-        attr.pipe(untilExist(element)).subscribe(v => {
-          const value = v && v.toString && v.toString();
-
-          element.setAttribute(name, value);
-          element[name as keyof PropAttrs<K>] = value;
+        attr.pipe(untilExist(element)).subscribe(value => {
+          element[attrName] = value;
         });
       } else if (typeof attr === "function") {
         element.addEventListener(name, attr as EventListenerObject);
       } else if (attr !== false && attr != null) {
-        element.setAttribute(name, String(attr));
+        element[attrName] = attr as any;
       }
     }
   }
