@@ -4,7 +4,7 @@
   "description": "",
   "keywords": [],
   "main": "dist/easyhard.umd.js",
-  "module": "src/easyhard.commonjs2.js",
+  "module": "dist/easyhard.commonjs2.js",
   "types": "types",
   "scripts": {
     "build": "webpack & npm run types",
