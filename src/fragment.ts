@@ -1,4 +1,5 @@
-import { DomElement } from "./types";
+import { DomElement, Child } from "./types";
+import { appendChild } from "./core";
 
 export class Fragment {
     private elements: (DomElement | Fragment)[] = [];
@@ -22,8 +23,10 @@ export class Fragment {
       return this.elements[i];
     }
   
-    insertChild(item: DomElement | Fragment, i: number = this.elements.length): void {
-      this.elements.splice(i, 0, item);
+    insertChild(item: Child, i: number = this.elements.length): void {
+      const el = appendChild(item, this.getRoot().parentElement as ChildNode, this.getEdge(i));
+
+      this.elements.splice(i, 0, el);
     }
   
     clear(): void {

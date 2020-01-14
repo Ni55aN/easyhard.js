@@ -1,4 +1,3 @@
-import { appendChild } from "../core";
 import $ from '../structures/value';
 import $$ from '../structures/array';
 import { Directive, Child } from "../types";
@@ -14,16 +13,12 @@ export function $for<T extends unknown>(array: $$<T>, render: (item: $<T>) => Ch
     array.pipe(untilExist(fragment.getRoot())).subscribe(list => {
       fragment.clear();
       list.forEach(v => {
-        const el = appendChild(render(v), parent, fragment.getEdge());
-
-        fragment.insertChild(el);
+        fragment.insertChild(render(v));
       });
     });
 
     array.insert$.pipe(untilExist(fragment.getRoot())).subscribe(({ item, i }: { item: $<T>; i: number }) => {
-      const el = appendChild(render(item), parent, fragment.getEdge(i));
-
-      fragment.insertChild(el, i);
+      fragment.insertChild(render(item), i);
     });
 
     array.remove$.pipe(untilExist(fragment.getRoot())).subscribe(({ i }) => {

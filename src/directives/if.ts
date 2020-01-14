@@ -1,6 +1,5 @@
 import { Observable } from "rxjs";
 import { distinctUntilChanged } from "rxjs/operators";
-import { appendChild } from "../core";
 import { Directive, Child } from "../types";
 import { Fragment } from "../fragment";
 import { untilExist } from "../operators";
@@ -13,9 +12,7 @@ export function $if(state: Observable<boolean>, render: () => Child): Directive 
     
     state.pipe(untilExist(fragment.getRoot()), distinctUntilChanged()).subscribe(visible => {
       if (visible) {
-        const el = appendChild(render(), parent, fragment);
-
-        fragment.insertChild(el, 0);
+        fragment.insertChild(render(), 0);
       } else {
         fragment.removeChild(0);
       }
