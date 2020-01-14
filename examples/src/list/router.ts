@@ -50,7 +50,7 @@ function useRouter() {
 }
 
 function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (route: Route) => void ) {
-  const fragment = new Fragment('$router');
+  const fragment = new Fragment();
   const route$ = new RouteObservable();
 
   return (parent: ChildNode) => {

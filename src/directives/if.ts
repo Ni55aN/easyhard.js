@@ -6,7 +6,7 @@ import { Fragment } from "../fragment";
 import { untilExist } from "../operators";
 
 export function $if(state: Observable<boolean>, render: () => Child): Directive {
-  const fragment = new Fragment('$if');
+  const fragment = new Fragment();
 
   return (parent: ChildNode): Fragment => {
     parent.appendChild(fragment.getRoot());

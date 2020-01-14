@@ -6,7 +6,7 @@ import { Fragment } from "../fragment";
 import { untilExist } from "../operators";
 
 export function $for<T extends unknown>(array: $$<T>, render: (item: $<T>) => Child): Directive {
-  const fragment = new Fragment("$for");
+  const fragment = new Fragment();
 
   return (parent: ChildNode): Fragment => {
     parent.appendChild(fragment.getRoot());

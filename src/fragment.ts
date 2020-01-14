@@ -2,13 +2,13 @@ import { DomElement } from "./types";
 
 export class Fragment {
     private elements: (DomElement | Fragment)[] = [];
-    private anchor: Comment;
+    private anchor: Text;
   
-    constructor(id: string) {
-      this.anchor = document.createComment(id);
+    constructor() {
+      this.anchor = document.createTextNode('');
     }
   
-    getRoot(): Comment {
+    getRoot(): Text {
       return this.anchor;
     }
   
