@@ -53,9 +53,18 @@ export function appendChild(child: Child, parent: ChildNode, after: Fragment | D
 function resolveChild(child: Child): DomElement | Fragment {
   if (child instanceof Observable) {
     const text = document.createTextNode('');
-    
+    let element: HTMLElement;
+
     child.pipe(untilExist(text)).subscribe(v => {
-      text.textContent = v as string;
+      element && element.remove();
+      text.textContent = '';
+
+      if (v instanceof HTMLElement) {
+        element = v;
+        insertAfter(element, text.parentNode as Node, text);
+      } else {
+        text.textContent = v as string;
+      }
     });
 
     return text;
