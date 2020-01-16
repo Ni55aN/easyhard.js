@@ -2,6 +2,7 @@ import { Observable } from "rxjs";
 import { default as $ } from '../structures/value';
 import { Directive } from "../types";
 import { untilExist } from "../operators";
+import { first } from "rxjs/operators";
 
 
 type DiKey<T> = { new(): T } | {};
@@ -33,9 +34,9 @@ export function $provide<T extends unknown>(type: DiKey<T>, value: DiValue<T>): 
 
 export function $inject<T extends unknown>(id: DiKey<T>, act: DiValue<T>): Directive {
     return (parent: ChildNode): null => {
-        requestAnimationFrame(() => { // access parent element after it added to DOM
+        new $(null).pipe(untilExist(parent), first()).subscribe(() => {
             const injection: DiInjection<T> = getInjection<T>(id, parent && parent.parentElement);
-            
+
             if (!injection) return;
             if (injection.value instanceof Observable) {
                 injection.value.pipe(untilExist(parent)).subscribe(value => act.next(value));
