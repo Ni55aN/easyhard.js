@@ -57,7 +57,9 @@ function Button(text: string, click: EventListener) {
 }
 
 function Form(onSubmit: EventListener) {
-    return Button('Click', onSubmit);
+    return h('form', {}, 
+        Button('Click', onSubmit)
+    );
 }
 
 function App() {
