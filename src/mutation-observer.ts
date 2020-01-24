@@ -1,7 +1,7 @@
 import { getNested } from "./utils";
 import { Subscriber } from "rxjs";
 
-const observers = new WeakMap<Node, { observer: Subscriber<unknown>; value: unknown }>();
+const observers = new WeakMap<Node, { observer: Subscriber<unknown>; value: unknown }[]>();
 const status = { connected: false };
 
 const observer = new MutationObserver((mutationsList: MutationRecord[]) => {
@@ -10,31 +10,38 @@ const observer = new MutationObserver((mutationsList: MutationRecord[]) => {
       const subscription = observers.get(addedNode);
 
       if (subscription) {
-        subscription.observer.next(subscription.value);
+        subscription.forEach(s => s.observer.next(s.value));
       }
     }
     for (const removedNode of getNested(record.removedNodes)) {
       const subscription = observers.get(removedNode);
 
       if (subscription) {
-        subscription.observer.complete();
+        subscription.forEach(s => s.observer.complete());
         observers.delete(removedNode);
       }
     }
   }
 });
 
-export function connectObserver(container = document.body) {
-    observer.observe(container, { childList: true, subtree: true });
-    status.connected = true;
+export function disconnectObserver(): void {
+  observer.disconnect();
+  status.connected = false;
 }
 
-export function disconnectObserver() {
-    observer.disconnect();
-    status.connected = false;
+export function connectObserver(container = document.body): void {
+  disconnectObserver();
+  observer.observe(container, { childList: true, subtree: true });
+  status.connected = true;
 }
+export function observeElement(el: Node, observer: Subscriber<unknown>, value: unknown): void {
+  if (!status.connected) { connectObserver(); }
 
-export function observeElement(el: Node, observer: Subscriber<unknown>, value: unknown) {
-    if (!status.connected) { connectObserver(); }
-    observers.set(el, { observer, value });
+  const list = observers.get(el);
+
+  if (list) {
+    list.push({ observer, value });
+  } else {
+    observers.set(el, [{ observer, value }])
+  }
 }
