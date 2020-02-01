@@ -1,4 +1,4 @@
-import { h, $, Fragment, appendChild, compose, untilExist, $provide, $inject } from 'easyhard';
+import { h, $, appendChild, compose, untilExist, $provide, $inject, createFragment } from 'easyhard';
 import { Observable, Observer } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 
@@ -50,14 +50,14 @@ function useRouter() {
 }
 
 function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (route: Route) => void ) {
-  const fragment = new Fragment();
+  const fragment = createFragment();
   const route$ = new RouteObservable();
 
   return (parent: ChildNode) => {
-    parent.appendChild(fragment.getRoot());
+    parent.appendChild(fragment.anchor);
 
     route$.pipe(
-      untilExist(fragment.getRoot()),
+      untilExist(fragment.anchor),
       map(path => {
         const prefix = getFullPath(parentRoute.value);
 
@@ -65,15 +65,15 @@ function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (
       }),
       distinctUntilChanged()
     ).subscribe(route => {
-      fragment.clear();
+      fragment.remove(0);
       if (route) {
-        const el = appendChild(route.component(), parent, fragment);
+        const el = appendChild(route.component(), parent, fragment.edge);
         mounted(route);
-        fragment.insertChild(el, 0);
+        fragment.insert(el, 0);
       }
     });
     
-    return fragment;
+    return fragment.anchor;
   }
 }
 
