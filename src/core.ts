@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { Observable } from "rxjs";
+import { distinctUntilChanged } from "rxjs/operators";
 import { DomElement, Attrs, Child, PropAttrs, TagName } from "./types";
 import { Fragment } from "./fragment";
 import { insertAfter } from "./utils";
@@ -55,7 +56,7 @@ function resolveChild(child: Child): DomElement | Fragment {
     const text = document.createTextNode('');
     let element: HTMLElement;
 
-    child.pipe(untilExist(text)).subscribe(v => {
+    child.pipe(untilExist(text), distinctUntilChanged()).subscribe(v => {
       element && element.remove();
       text.textContent = '';
 
