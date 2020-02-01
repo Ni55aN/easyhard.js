@@ -2,7 +2,6 @@
 import { Observable } from "rxjs";
 import { distinctUntilChanged } from "rxjs/operators";
 import { DomElement, Attrs, Child, PropAttrs, TagName } from "./types";
-import { Fragment } from "./fragment";
 import { insertAfter } from "./utils";
 import { untilExist } from "./operators";
 
@@ -35,23 +34,23 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
   return element;
 }
 
-export function appendChild(child: Child, parent: ChildNode, after: Fragment | DomElement = null): DomElement | Fragment {
+export function appendChild(child: Child, parent: ChildNode, after: DomElement = null): DomElement {
   if (child instanceof Function) {
     return appendChild(child(parent), parent, after);
   } else {
     const el = resolveChild(child);
     if (el) {
       if (after) {
-        insertAfter(el instanceof Fragment ? el.getRoot() : el, parent, after instanceof Fragment ? after.getEdge() : after);
+        insertAfter(el, parent, after);
       } else {
-        parent.appendChild(el instanceof Fragment ? el.getRoot() : el);
+        parent.appendChild(el);
       }
     }
     return el;
   }
 }
 
-function resolveChild(child: Child): DomElement | Fragment {
+function resolveChild(child: Child): DomElement {
   if (child instanceof Observable) {
     const text = document.createTextNode('');
     let element: HTMLElement;
@@ -71,16 +70,8 @@ function resolveChild(child: Child): DomElement | Fragment {
     return text;
   }
 
-  if (child instanceof Fragment) {
-    return child;
-  }
-  
   if (typeof child !== "object") {
     return document.createTextNode(String(child));
-  }
-
-  if (child && 'render' in child) {
-    return child.render();
   }
 
   return child;

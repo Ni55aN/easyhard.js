@@ -1,5 +1,4 @@
-import { Directive, DomElement } from "./types";
-import { Fragment } from "./fragment";
+import { Directive, Child } from "./types";
 
 type D = Directive;
 type H = HTMLElement;
@@ -21,7 +20,7 @@ export function compose(...args: (D | H)[]): H | D {
     return target;
   }
 
-  return (parent: ChildNode): DomElement | Fragment | null => {
+  return (parent: ChildNode): Child => {
     const results = [...directives, target].map(directive => directive(parent));
 
     return results[0] || null;
