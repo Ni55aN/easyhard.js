@@ -1,5 +1,5 @@
-import { BehaviorSubject, Subject, merge, Observable } from "rxjs";
-import { mergeMap } from "rxjs/operators";
+import { Subject, merge, Observable } from "rxjs";
+import { mergeMap, startWith, map } from "rxjs/operators";
 import $ from './value';
 
 export default class<T = unknown> extends $<$<T>[]> {
@@ -7,12 +7,9 @@ export default class<T = unknown> extends $<$<T>[]> {
     remove$ = new Subject<{ i: number }>();
   
     get(i: number): Observable<T> {
-      const s = new BehaviorSubject(null);
-  
-      return merge(s, this.insert$, this.remove$).pipe(
-        mergeMap(() => {
-          return this.value[i];
-        })
+      return merge(this.insert$, this.remove$).pipe(
+        startWith(null),
+        mergeMap(() => this.value[i])
       );
     }
   
