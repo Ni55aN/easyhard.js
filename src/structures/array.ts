@@ -46,7 +46,10 @@ export default class<T = unknown> extends $<$<T>[]> {
       }
     }
 
-    get length(): number {
-      return this.value.length;
+    get length(): Observable<number> {
+      return merge(this.insert$, this.remove$).pipe(
+        startWith(null),
+        map(() => this.value.length)
+      );
     }
 }
