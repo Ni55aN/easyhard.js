@@ -1,30 +1,26 @@
 import $ from '../structures/value';
 import $$ from '../structures/array';
-import { Directive, Child } from "../types";
-import { Fragment } from "../fragment";
-import { untilExist } from "../operators";
+import { Child, DomElement } from "../types";
+import { merge } from 'rxjs';
+import { startWith } from 'rxjs/operators';
+import { untilExist } from '../operators';
+import { createFragment } from '../utils';
 
-export function $for<T extends unknown>(array: $$<T>, render: (item: $<T>) => Child): Directive {
-  const fragment = new Fragment();
+export function $for<T extends unknown>(array: $$<T>, render: (item: $<T>) => Child): DomElement {
+  const fragment = createFragment();
 
-  return (parent: ChildNode): Fragment => {
-    parent.appendChild(fragment.getRoot());
+  merge(array.insert$, array.remove$).pipe(
+    startWith(null),
+    untilExist(fragment.anchor)
+  ).subscribe(args => {
+    if (args === null) {
+      array.value.forEach(item => fragment.insert(render(item)));
+    } else if ('item' in args) {
+      fragment.insert(render(args.item), args.i)
+    } else {
+      fragment.remove(args.i);
+    }
+  });
 
-    array.pipe(untilExist(fragment.getRoot())).subscribe(list => {
-      fragment.clear();
-      list.forEach(v => {
-        fragment.insertChild(render(v));
-      });
-    });
-
-    array.insert$.pipe(untilExist(fragment.getRoot())).subscribe(({ item, i }: { item: $<T>; i: number }) => {
-      fragment.insertChild(render(item), i);
-    });
-
-    array.remove$.pipe(untilExist(fragment.getRoot())).subscribe(({ i }) => {
-      fragment.removeChild(i);
-    });
-
-    return fragment;
-  };
+  return fragment.anchor;
 }
