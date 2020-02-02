@@ -9,10 +9,10 @@ function Editable(el: (toggle: Function) => HTMLElement, input: (toggle: Functio
   const edited = new $(false);
   const toggle = () => edited.next(!edited.value);
 
-  return [
-    $if(edited.pipe(map(v => !v)), () => el(toggle)),
-    $if(edited, () => input(toggle))
-  ];
+  return $if(edited,
+    () => input(toggle),
+    () => el(toggle)
+  );
 }
 
 function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => void }) {
@@ -20,7 +20,7 @@ function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => 
     const text = item.value.text;
 
     return h('div', {},
-      ...Editable(
+      Editable(
         (toggle) => h('b', {
           style: done.pipe(map(done => done ? 'text-decoration: line-through;' : '' )),
           click() { done.next(!done.value) },
