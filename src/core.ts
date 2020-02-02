@@ -65,7 +65,7 @@ function resolveChild(child: Child): DomElement {
       } else {
         text.textContent = v as string;
       }
-    });
+    }, null, () => element && element.remove());
 
     return text;
   }
