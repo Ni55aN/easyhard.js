@@ -1,6 +1,6 @@
 import { h, $, $$, $for } from 'easyhard';
-import { timer } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { timer, pipe, interval } from 'rxjs';
+import { map, switchMap, debounce, debounceTime, delay, delayWhen, mergeMap, concatMap, tap } from 'rxjs/operators';
 
 function App() {
   const arr = new Array(10).fill(0).map((_, i) => i);
@@ -15,9 +15,11 @@ function App() {
     })
   );
 
+  setTimeout(() => list.value[5].next(567), 3000)
+
   return h('div', {},
     randomList,
-    $for(list, v => h('div', {}, v))
+    $for(list, map(v => h('div', {}, v)))
   );
 }
 

@@ -25,8 +25,8 @@ export default class<T = unknown> extends $<$<T>[]> {
       this.insert$.next({ item, i });
     }
 
-    remove(item: $<T>): void {
-      const index = this.value.indexOf(item);
+    remove(item: T): void {
+      const index = this.value.findIndex(v => v.value === item);
 
       this.removeAt(index);
     }

@@ -11,7 +11,7 @@ function App() {
   });
 
   return h('div', {},
-    $if(mount, () => lifecycle)
+    $if(mount, map(() => h('div', {}, '--')))
   );
 }
 

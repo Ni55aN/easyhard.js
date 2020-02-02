@@ -1,12 +1,15 @@
-import { Observable, of, UnaryFunction } from "rxjs";
-import { map, switchMap } from "rxjs/operators";
-import { SimpleType, DomElement } from "../types";
+import { Observable, of, UnaryFunction, OperatorFunction } from "rxjs";
+import { map, switchMap, tap } from "rxjs/operators";
+import { SimpleType, DomElement, Child, Directive } from "../types";
 
-type Pipe<T> = UnaryFunction<void, T | Observable<T>>;
+type Pipe = OperatorFunction<boolean, SimpleType | DomElement>;
 
-export function $if<T = SimpleType | DomElement>(state: Observable<boolean>, pipe: Pipe<T>, elsePipe?: Pipe<T>): Observable<T | null> {
+export function $if(state: Observable<boolean>, pipe: Pipe, elsePipe?: Pipe): Observable<SimpleType | DomElement> {
   return state.pipe(
-    map(v => v ? pipe() : elsePipe ? elsePipe() : null),
-    switchMap(ch => ch instanceof Observable ? ch : of(ch))
+    switchMap(v => {
+      if (v) return of(v).pipe(pipe);
+      if (elsePipe) return of(v).pipe(elsePipe);
+      return of(null);
+    })
   );
 }

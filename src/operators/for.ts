@@ -1,12 +1,11 @@
-import $ from '../structures/value';
 import $$ from '../structures/array';
-import { Child, DomElement } from "../types";
-import { merge, UnaryFunction } from 'rxjs';
+import { DomElement, Child } from "../types";
+import { merge, OperatorFunction, UnaryFunction, Observable } from 'rxjs';
 import { startWith } from 'rxjs/operators';
 import { untilExist } from '../operators';
 import { createFragment } from '../utils';
 
-export function $for<T extends any>(array: $$<T>, pipe?: UnaryFunction<$<T>, Child>): DomElement {
+export function $for<T extends any>(array: $$<T>, pipe?: UnaryFunction<Observable<T>, Child>): DomElement {
   const fragment = createFragment();
 
   merge(array.insert$, array.remove$).pipe(
