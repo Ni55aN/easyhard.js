@@ -1,4 +1,4 @@
-import { h, $, appendChild, compose, untilExist, $provide, $inject, createFragment } from 'easyhard';
+import { h, $, appendChild, compose, untilExist, $provide, $inject, createFragment, Directive } from 'easyhard';
 import { Observable, Observer } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 
@@ -49,7 +49,7 @@ function useRouter() {
   }
 }
 
-function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (route: Route) => void ) {
+function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (route: Route) => void ): Directive {
   const fragment = createFragment();
   const route$ = new RouteObservable();
 
