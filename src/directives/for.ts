@@ -1,12 +1,12 @@
 import $ from '../structures/value';
 import $$ from '../structures/array';
 import { Child, DomElement } from "../types";
-import { merge } from 'rxjs';
+import { merge, UnaryFunction } from 'rxjs';
 import { startWith } from 'rxjs/operators';
 import { untilExist } from '../operators';
 import { createFragment } from '../utils';
 
-export function $for<T extends unknown>(array: $$<T>, render: (item: $<T>) => Child): DomElement {
+export function $for<T extends any>(array: $$<T>, pipe?: UnaryFunction<$<T>, Child>): DomElement {
   const fragment = createFragment();
 
   merge(array.insert$, array.remove$).pipe(
@@ -14,9 +14,9 @@ export function $for<T extends unknown>(array: $$<T>, render: (item: $<T>) => Ch
     untilExist(fragment.anchor)
   ).subscribe(args => {
     if (args === null) {
-      array.value.forEach(item => fragment.insert(render(item)));
+      array.value.forEach(item => fragment.insert(pipe ? pipe(item) : item));
     } else if ('item' in args) {
-      fragment.insert(render(args.item), args.i)
+      fragment.insert(pipe ? pipe(args.item) : args.item, args.i)
     } else {
       fragment.remove(args.i);
     }
