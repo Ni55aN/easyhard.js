@@ -1,5 +1,5 @@
 import { Observable, MonoTypeOperatorFunction } from "rxjs";
-import { observeElement } from "./mutation-observer";
+import { observeElement } from "../mutation-observer";
 
 export function untilExist<T>(el: ChildNode | null, container: Node = document.body): MonoTypeOperatorFunction<T> {
   return <T>(source: Observable<T>): Observable<T> => new Observable(observer => {
