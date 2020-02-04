@@ -7,7 +7,7 @@ function App() {
 
   return h('div', {},
     h('button', { click: increment }, 'inc'),
-    $for(list, v => v.pipe(map(t => h('div', {}, t))))
+    $for(list, map(v => h('div', {}, v)))
   );
 }
 

@@ -15,9 +15,9 @@ function Editable(el: (toggle: Function) => HTMLElement, input: (toggle: Functio
   );
 }
 
-function TodoItem({ item, remove }: { item: Task, remove: (task: Task) => void }) {
-    const done = item.done;
-    const text = item.text;
+function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => void }) {
+    const done = item.value.done;
+    const text = item.value.text;
 
     return h('div', {},
       Editable(
@@ -41,7 +41,7 @@ function App() {
   const target = new $('');
 
   const add = (text: string) => list.insert(new $({ text: new $(text), done: new $(false) }))
-  const remove = (task: Task) => list.remove(task);
+  const remove = (task: $<Task>) => list.remove(task);
 
   return h('div', {},
     Input({ model: target }),
