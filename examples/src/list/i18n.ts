@@ -87,7 +87,7 @@ function App() {
     provideTranslation,
     h('button', { click: () => setLocale(getLocale() === 'ua' ? 'ru' : 'ua') }, 'switch'),
     Child(),
-    $for(list, map(i => h('div', {}, t(text).pipe(map(a => a + i)))))
+    $for(list, map(i => h('div', {}, t(text), i)))
   );
 }
 
