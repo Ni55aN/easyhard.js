@@ -1,6 +1,6 @@
-import { Observable, of, UnaryFunction, OperatorFunction } from "rxjs";
-import { map, switchMap, tap } from "rxjs/operators";
-import { SimpleType, DomElement, Child, Directive } from "../types";
+import { Observable, of, OperatorFunction } from "rxjs";
+import { switchMap } from "rxjs/operators";
+import { SimpleType, DomElement } from "../types";
 
 type Pipe = OperatorFunction<boolean, SimpleType | DomElement>;
 

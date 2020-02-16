@@ -1,7 +1,7 @@
 import $ from '../structures/value';
 import $$ from '../structures/array';
 import { DomElement, SimpleType } from "../types";
-import { merge, OperatorFunction, of } from 'rxjs';
+import { merge, OperatorFunction } from 'rxjs';
 import { startWith } from 'rxjs/operators';
 import { untilExist } from '../operators';
 import { createFragment } from '../utils';

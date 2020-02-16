@@ -5,13 +5,15 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es2015"
+      "es2015",
+      "es2019"
     ],
     "jsx": "preserve",
     "target": "es5",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "esnext",
