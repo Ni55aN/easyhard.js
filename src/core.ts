@@ -5,7 +5,9 @@ import { DomElement, Attrs, Child, PropAttrs, TagName } from "./types";
 import { insertAfter } from "./utils";
 import { untilExist } from "./operators";
 
-export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: Child[]): HTMLElement {
+type NestedChild = Child | NestedChild[];
+
+export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: NestedChild[]): HTMLElement {
   const element = document.createElement(tag);
 
   for (const name in attrs) {
@@ -27,7 +29,7 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
     }
   }
 
-  for (const child of children) {
+  for (const child of children.flat(Infinity) as Child[]) {
     appendChild(child, element);
   }
 
