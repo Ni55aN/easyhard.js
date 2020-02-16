@@ -8,5 +8,4 @@ export { createElementX as hx } from './jsx';
 export { default as $ } from './structures/value';
 export { default as $$ } from './structures/array';
 export * from './operators';
-export * from './directives';
 export * from './utils';

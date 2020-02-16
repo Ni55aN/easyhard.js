@@ -1,10 +1,10 @@
-import { h, $, appendChild, compose, untilExist, $provide, $inject, createFragment, Directive } from 'easyhard';
-import { Observable, Observer } from 'rxjs';
-import { distinctUntilChanged, map } from 'rxjs/operators';
+import { h, $, $provide, $inject } from 'easyhard';
+import { Observable, Observer, combineLatest, OperatorFunction, of } from 'rxjs';
+import { distinctUntilChanged, map, tap, filter, switchMap } from 'rxjs/operators';
 
 type Route = {
   path: string;
-  component: () => HTMLElement;
+  component: OperatorFunction<null, HTMLElement>
 }
 type ParentRoute = {
   current: $<Route | null>;
@@ -20,78 +20,58 @@ const getFullPath = (route: ParentRoute | null): string => {
   return (parent ? getFullPath(parent.value) : '') + (current && current.value ? current.value.path + '/' : '');
 }
 
-class RouteObservable extends Observable<string> {
-  constructor() {
-    super((observer: Observer<string>) => {
-      const handle = () => observer.next(parse(location.hash));
-      window.addEventListener('hashchange', handle, false);
-      handle();
-      return () => window.removeEventListener('hashchange', handle);
-    })
-  }
+function fromRoute() {
+  return new Observable<string>((observer: Observer<string>) => {
+    const handle = () => observer.next(parse(location.hash));
+    window.addEventListener('hashchange', handle, false);
+    handle();
+    return () => window.removeEventListener('hashchange', handle);
+  })
 }
 
 function useRouter() {
   const currentRoute = new $<Route | null>(null);
   const parentRoute = new $<null | ParentRoute>(null);
-
+  
   return {
     navigate(path: string) {
       location.hash = stringify(getFullPath(parentRoute.value) + path);
     },
     routerOutlet(routes: Route[]) {
-      return compose(
+      const route$ = fromRoute();
+
+      return h('span', {},
         $inject(useRouter, parentRoute),
         $provide(useRouter, new $<ParentRoute>({ current: currentRoute, parent: parentRoute })),
-        $router(routes, parentRoute, r => currentRoute.next(r))
+        combineLatest(route$, parentRoute).pipe(
+          map(([path, parent]) => {
+            const prefix = getFullPath(parent);
+            
+            return routes.find(r => Boolean(r.path === '*' || path.match(prefix + r.path)));
+          }),
+          distinctUntilChanged(),
+          tap(route => route && currentRoute.next(route)),
+          switchMap(route => route ? of(null).pipe(route.component) : of(null))
+        )
       );
     }
   }
 }
 
-function $router(routes: Route[], parentRoute: $<ParentRoute | null>, mounted: (route: Route) => void ): Directive {
-  const fragment = createFragment();
-  const route$ = new RouteObservable();
-
-  return (parent: ChildNode) => {
-    parent.appendChild(fragment.anchor);
-
-    route$.pipe(
-      untilExist(fragment.anchor),
-      map(path => {
-        const prefix = getFullPath(parentRoute.value);
-
-        return routes.find(r => Boolean(r.path === '*' || path.match(prefix + r.path)));
-      }),
-      distinctUntilChanged()
-    ).subscribe(route => {
-      fragment.remove(0);
-      if (route) {
-        const el = appendChild(route.component(), parent, fragment.edge);
-        mounted(route);
-        fragment.insert(el, 0);
-      }
-    });
-    
-    return fragment.anchor;
-  }
-}
-
-
 const child2Routes: Route[] = [
   {
     path: 'f',
-    component: () => h('f' as any, {}, 'C/D/F')
+    component: map(() => h('f' as any, {}, 'C/D/F'))
   },
   {
     path: 'g',
-    component: () => h('g' as any, {}, 'C/D/G')
+    component: map(() => h('g' as any, {}, 'C/D/G'))
   },
   {
     path: '*',
-    component: () => {
+    component: map(() => {
       return h('span', {}, '-');
-    }
+    })
   }
 ]
 
@@ -99,7 +79,7 @@ const child2Routes: Route[] = [
 const childRoutes: Route[] = [
   {
     path: 'd',
-    component: () => {
+    component: map(() => {
       const { routerOutlet, navigate } = useRouter();
 
       return h('c' as any, {},
@@ -107,30 +87,30 @@ const childRoutes: Route[] = [
         h('button', { click() { navigate('f') }}, 'C/D/F'),
         h('button', { click() { navigate('g') }}, 'C/D/G'),
       );
-    }
+    })
   },
   {
     path: 'e',
-    component: () => h('e' as any, {}, 'C/E')
+    component: map(() => h('e' as any, {}, 'C/E'))
   },
   {
     path: '*',
-    component: () => h('f' as any, {}, 'C/F')
+    component: map(() => h('f' as any, {}, 'C/F'))
   }
 ]
 
 const routes: Route[] = [
   {
     path: 'a',
-    component: () => h('a', {}, 'A')
+    component: map(() => h('a', {}, 'A'))
   },
   {
     path: 'b',
-    component: () => h('b', {}, 'B')
+    component: map(() => h('b', {}, 'B'))
   },
   {
     path: 'c',
-    component: () => {
+    component: map(() => {
       const { routerOutlet, navigate } = useRouter();
 
       return h('c' as any, {},
@@ -138,14 +118,14 @@ const routes: Route[] = [
         h('button', { click() { navigate('d') }}, 'C/D'),
         h('button', { click() { navigate('e') }}, 'C/E'),
       );
-    }
+    })
   }
 ]
 
 function App() {
   const { routerOutlet, navigate } = useRouter();
 
-  return h('div', {},
+  return h('span', {},
     routerOutlet(routes),
     h('button', { click() { navigate('a')}}, 'A'),
     h('button', { click() { navigate('b')}}, 'B'),
