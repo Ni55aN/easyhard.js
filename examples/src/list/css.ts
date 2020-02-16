@@ -1,6 +1,6 @@
-import { h, untilExist, Directive } from 'easyhard';
+import { h, untilExist, Child, $ } from 'easyhard';
 import { Observable, timer, combineLatest, pipe } from 'rxjs'
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
 type CssSimpleValue = string | number;
 type CssValue = CssSimpleValue | Observable<string | number>;
@@ -119,16 +119,19 @@ function css(object: RootStyleDeclaration, parent: ChildNode | null = null) {
     return { className, style };
 }
 
-function injectStyles(...styles: (RootStyleDeclaration | Style)[]): Directive {
-    return (parent: ChildNode): null => {
-        (parent as HTMLElement).className = styles.map((obj): string => {
+function injectStyles(...styles: (RootStyleDeclaration | Style)[]): Child {
+    const anchor = document.createTextNode('');
+
+    new $(null).pipe(untilExist(anchor)).subscribe(() => {
+        (anchor.parentNode as HTMLElement).className = styles.map((obj): string => {
             if ('className' in obj) return obj.className;
 
-            const { className } = css(obj, parent);
+            const { className } = css(obj, anchor);
             return className;
         }).join(' ');
         return null;
-    }
+    });
+    return anchor;
 }
 
 const colorTransitionStyle = (props: { color: Observable<string> }): StyleDeclaration => ({

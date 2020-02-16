@@ -1,4 +1,4 @@
-import { h, compose, $, $provide, $inject } from 'easyhard';
+import { h, $, $provide, $inject } from 'easyhard';
 import { map } from 'rxjs/operators';
 
 function useTheme<T>() {
@@ -6,23 +6,23 @@ function useTheme<T>() {
 
     return {
         theme,
-        themeInjection: $inject(useTheme, theme),
-        themeProvider: $provide(useTheme, theme)
+        get themeInjection() { return $inject(useTheme, theme); },
+        get themeProvider() { return $provide(useTheme, theme); }
     };
 }
 
 function useModeTheme<M, T>() {
-    const { theme, themeInjection, themeProvider } = useTheme<T>();
+    const basic = useTheme<T>();
     const themes = new Map<M, T>();
     const mode = new $<M | null>(null);
 
     return {
-        theme,
+        theme: basic.theme,
         setTheme(id: M, t: T) {
             themes.set(id, t);
         },
-        themeInjection: compose(themeInjection, $inject(useModeTheme, mode)),
-        themeProvider: compose(themeProvider, $provide(useModeTheme, mode)),
+        get themeInjection() { return [basic.themeInjection, $inject(useModeTheme, mode)] },
+        get themeProvider() { return [basic.themeProvider, $provide(useModeTheme, mode)] },
         mode: mode.asObservable(),
         getMode() { return mode.value; },
         setMode(id: M) {
@@ -30,7 +30,7 @@ function useModeTheme<M, T>() {
 
             if (th) {
                 mode.next(id);
-                theme.next(th);
+                basic.theme.next(th);
             }
         }
     }
@@ -50,14 +50,14 @@ function Button(text: string, click: EventListener) {
     const { theme, themeInjection, mode } = useModeTheme<Mode, Theme>();
     const style = theme.pipe(map(th => th ? `background: ${th.bg}; color: ${th.font}` : ''));
 
-    return compose(
+    return h('button', { style, click },
         themeInjection,
-        h('button', { style, click }, text, ' ', mode.pipe(map(m => m === Mode.DAY ? '[day]' : '[night]')))
+        text, ' ', mode.pipe(map(m => m === Mode.DAY ? '[day]' : '[night]'))
     )
 }
 
 function Form(onSubmit: EventListener) {
-    return h('form', {}, 
+    return h('div', {}, 
         Button('Click', onSubmit)
     );
 }
@@ -69,7 +69,7 @@ function App() {
     setTheme(Mode.NIGHT, { font: 'black', bg: 'grey' });
     setMode(Mode.NIGHT);
 
-    return compose(
+    return h('div', {},
         themeProvider,
         Form(() => setMode(getMode() === Mode.DAY ? Mode.NIGHT : Mode.DAY))
     )

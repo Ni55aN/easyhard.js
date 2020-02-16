@@ -37,19 +37,15 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
 }
 
 export function appendChild(child: Child, parent: ChildNode, after: DomElement = null): DomElement {
-  if (child instanceof Function) {
-    return appendChild(child(parent), parent, after);
-  } else {
-    const el = resolveChild(child);
-    if (el) {
-      if (after) {
-        insertAfter(el, parent, after);
-      } else {
-        parent.appendChild(el);
-      }
+  const el = resolveChild(child);
+  if (el) {
+    if (after) {
+      insertAfter(el, parent, after);
+    } else {
+      parent.appendChild(el);
     }
-    return el;
   }
+  return el;
 }
 
 function resolveChild(child: Child): DomElement {

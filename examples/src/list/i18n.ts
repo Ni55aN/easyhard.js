@@ -1,4 +1,4 @@
-import { h, compose, $, $provide, $inject, Child, Directive, $$, $for } from 'easyhard';
+import { h, $, $provide, $inject, Child, $$, $for } from 'easyhard';
 import { Observable, interval, of, combineLatest } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
@@ -23,8 +23,8 @@ interface Translator {
   getLocale: () => string;
   setDictionary: (d: Dictionary) => void;
   setLocale: (locale: string) => void;
-  injectTranslation: Directive;
-  provideTranslation: Directive;
+  injectTranslation: Child;
+  provideTranslation: Child;
 }
 
 function useTranslation(): Translator {
@@ -70,7 +70,7 @@ const dictionary: Dictionary = {
 function Child() {
   const { t, injectTranslation, setLocale } = useTranslation();
 
-  return compose(
+  return h('div', {},
     injectTranslation,
     h('u', { click() { setLocale('ua'); } }, t('dictionary'))
   )
