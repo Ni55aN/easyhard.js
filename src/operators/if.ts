@@ -1,10 +1,9 @@
 import { Observable, of, OperatorFunction } from "rxjs";
 import { switchMap } from "rxjs/operators";
-import { SimpleType, DomElement } from "../types";
 
-type Pipe = OperatorFunction<boolean, SimpleType | DomElement>;
+type Pipe<T> = OperatorFunction<boolean, T>;
 
-export function $if(state: Observable<boolean>, pipe: Pipe, elsePipe?: Pipe): Observable<SimpleType | DomElement> {
+export function $if<T>(state: Observable<boolean>, pipe: Pipe<T>, elsePipe?: Pipe<T>): Observable<T | null> {
   return state.pipe(
     switchMap(v => {
       if (v) return of(v).pipe(pipe);
