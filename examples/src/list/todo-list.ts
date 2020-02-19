@@ -37,7 +37,7 @@ function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => 
 }
 
 function App() {
-  const list = new $$<Task>([])
+  const list = new $$<$<Task>>([])
   const target = new $('');
 
   const add = (text: string) => list.insert(new $({ text: new $(text), done: new $(false) }))

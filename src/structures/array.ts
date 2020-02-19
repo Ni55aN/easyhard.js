@@ -1,31 +1,34 @@
-import { Subject, merge, Observable } from "rxjs";
+import { Subject, merge, Observable, of } from "rxjs";
 import { mergeMap, startWith, map } from "rxjs/operators";
 import $ from './value';
 
-export default class<T = unknown> extends $<$<T>[]> {
-    insert$ = new Subject<{ item: $<T>; i: number }>();
+export default class<T = unknown> extends $<T[]> {
+    insert$ = new Subject<{ item: T; i: number }>();
     remove$ = new Subject<{ i: number }>();
   
     get(i: number): Observable<T> {
       return merge(this.insert$, this.remove$).pipe(
         startWith(null),
-        mergeMap(() => this.value[i])
+        mergeMap(() => {
+          const value = this.value[i];
+          return value instanceof Observable ? value : of(value)
+        })
       );
     }
   
-    set(i: number, v: $<T>): void {
+    set(i: number, v: T): void {
       this.removeAt(i);
       this.insert(v, i);
     }
   
-    insert(item: $<T>, i = this.value.length): void {
+    insert(item: T, i = this.value.length): void {
       if (!(item instanceof Observable)) throw new Error("not_observable");
   
       this.value.splice(i, 0, item);
       this.insert$.next({ item, i });
     }
 
-    remove(item: $<T>): void {
+    remove(item: T): void {
       const index = this.value.indexOf(item);
 
       this.removeAt(index);

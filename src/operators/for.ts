@@ -6,7 +6,7 @@ import { startWith } from 'rxjs/operators';
 import { untilExist } from '../operators';
 import { createFragment } from '../utils';
 
-export function $for<T extends any>(array: $$<T>, pipe?: OperatorFunction<$<T>, DomElement | SimpleType>): DomElement {
+export function $for<T extends any>(array: $$<T>, pipe?: OperatorFunction<T, DomElement | SimpleType>): DomElement {
   const fragment = createFragment();
 
   merge(array.insert$, array.remove$).pipe(
