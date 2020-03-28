@@ -11,7 +11,7 @@ type FieldInput<T> = (v: $<T>, params: InputParams<T>) => HTMLElement;
 type FormatterGroup<I> = { output: Formatter<I, string>, input: Formatter<string, I>};
 
 function useFormatter<T>(value: FormValue<T>, props: FormatterGroup<T>) {
-  const v = new $<string>(String(value.value));
+  const v = $<string>(String(value.value));
 
   return {
     next(value: string) { v.next(value); },
@@ -125,7 +125,7 @@ type Control<T> = FormValue<T> | FormValue<T>[] | Group;
 
 function useValidation(form: Group) {
   const validatorsMap = new WeakMap<FormValue<unknown>, Validator<unknown>[]>();
-  const validators$ = new $(null);
+  const validators$ = $(null);
 
   function setValidators<T>(value: FormValue<T>, validators: Validator<T>[]) {
     validatorsMap.set(value as FormValue<unknown>, validators as Validator<unknown>[]);
@@ -161,29 +161,29 @@ function useForm<T extends Group>(form: T) {
 
 function App() {
   const { form } = useForm({
-    text: new $('1'),
-    text2: new $('1'),
-    checkbox: new $(false),
-    number: new $(3),
-    select: new $('first'),
+    text: $('1'),
+    text2: $('1'),
+    checkbox: $(false),
+    number: $(3),
+    select: $('first'),
     items: [
-      new $(''),
-      new $('67')
+      $(''),
+      $('67')
     ],
     group: {
-      test: new $(''),
+      test: $(''),
       fg: {
-        test: new $('')
+        test: $('')
       }
     }
   });
   const { isValid, setValidators } = useValidation(form);
   const { validations: textValidations } = setValidators(form.text, [required(), minLength(3), maxLength(8)]);
 
-  const selectOptions = new $$<SelectOption>([
-    new $({ key: 'first', label: new $('First')}),
-    new $({ key: 'second', label: new $('Second')}),
-    $if(form.checkbox, map(() => ({ key: 'third', label: new $('Third') })))
+  const selectOptions = $$<SelectOption>([
+    $({ key: 'first', label: $('First')}),
+    $({ key: 'second', label: $('Second')}),
+    $if(form.checkbox, map(() => ({ key: 'third', label: $('Third') })))
   ]);
 
   const disabled = form.checkbox.pipe(map(act => !act));

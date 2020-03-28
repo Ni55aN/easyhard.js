@@ -15,7 +15,7 @@ const Modal: ModalComponent = (title: Observable<string>, content?: Observable<s
 }
 
 function useModal(component: ModalComponent = Modal) {
-  const modal: $<Modal> = new $<Modal>({ opened: new $<boolean>(false), title: new $(''), content: new $('') });
+  const modal: $<Modal> = $<Modal>({ opened: $<boolean>(false), title: $(''), content: $('') });
   const opened = modal.pipe(mergeMap(m => m.opened));
 
   return {
@@ -69,9 +69,9 @@ function Section() {
   return h('div', { style: 'margin: 3em 3em 3em 20em; height: 80vh; background: #888; border: 2px solid green; position: relative' },
     inject,
     outlet(),
-    h('button', { click() { open(new $('Title!'), new $('Content!')) }, disabled: opened }, 'Open modal'),
+    h('button', { click() { open($('Title!'), $('Content!')) }, disabled: opened }, 'Open modal'),
     h('button', { click() { close() }, disabled: Ob.not(opened) }, 'Close modal'),
-    h('button', { click() { openNested(new $('Title nested'), new $('Content nested')) }, disabled: openedNested }, 'Open nested modal'),
+    h('button', { click() { openNested($('Title nested'), $('Content nested')) }, disabled: openedNested }, 'Open nested modal'),
     h('button', { click() { closeNested() }, disabled: Ob.not(openedNested) }, 'Close nested modal')
   )
 }
@@ -82,7 +82,7 @@ function App() {
 
   return h('div', {},
     outlet(),
-    h('button', { click() { open(modalTitle, new $('Content')) }, disabled: opened }, 'Open modal'),
+    h('button', { click() { open(modalTitle, $('Content')) }, disabled: opened }, 'Open modal'),
     h('button', { click: close, disabled: Ob.not(opened) }, 'Close modal'),
     Section()
   );

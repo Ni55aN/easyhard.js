@@ -2,7 +2,7 @@ import { h, $, $provide, $inject } from 'easyhard';
 import { map } from 'rxjs/operators';
 
 function useTheme<T>() {
-    const theme = new $<T | null>(null);
+    const theme = $<T | null>(null);
 
     return {
         theme,
@@ -14,7 +14,7 @@ function useTheme<T>() {
 function useModeTheme<M, T>() {
     const basic = useTheme<T>();
     const themes = new Map<M, T>();
-    const mode = new $<M | null>(null);
+    const mode = $<M | null>(null);
 
     return {
         theme: basic.theme,

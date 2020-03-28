@@ -4,7 +4,7 @@ import { map, switchMap, debounce, debounceTime, delay, delayWhen, mergeMap, con
 
 function App() {
   const arr = new Array(10).fill(0).map((_, i) => i);
-  const list = new $$(arr.map(v => new $(v)));
+  const list = $$(arr.map(v => $(v)));
   const randomList = timer(0, 500).pipe(
     switchMap(() => list.length),
     map(length => {

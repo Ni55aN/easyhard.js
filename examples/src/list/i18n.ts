@@ -28,9 +28,9 @@ interface Translator {
 }
 
 function useTranslation(): Translator {
-  const parent: $<TranslatorData> = new $({
-    locale: new $('en'),
-    dictionary: new $<Dictionary>({})
+  const parent: $<TranslatorData> = $({
+    locale: $('en'),
+    dictionary: $<Dictionary>({})
   });
   const locale$ = parent.pipe(switchMap(m => m.locale));
   const dictionary$ = parent.pipe(switchMap(m => m.dictionary));
@@ -78,7 +78,7 @@ function Child() {
 
 function App() {
   const text = interval(1000).pipe(map(step => step % 2 === 0 ? 'first' : 'second'));
-  const list = new $$(new Array(100).fill(null).map((_, i) => new $(i)));
+  const list = $$(new Array(100).fill(null).map((_, i) => $(i)));
   const { t, getLocale, setDictionary, setLocale, provideTranslation } = useTranslation();
 
   setDictionary(dictionary);

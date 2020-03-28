@@ -6,7 +6,7 @@ type Reactive<T> = {[key in keyof T]: $<T[key]>};
 type Task = Reactive<{ text: string, done: boolean }>;
 
 function Editable(el: (toggle: Function) => HTMLElement, input: (toggle: Function) => HTMLElement) {
-  const edited = new $(false);
+  const edited = $(false);
   const toggle = () => edited.next(!edited.value);
 
   return $if(edited,
@@ -37,10 +37,10 @@ function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => 
 }
 
 function App() {
-  const list = new $$<$<Task>>([])
-  const target = new $('');
+  const list = $$<$<Task>>([])
+  const target = $('');
 
-  const add = (text: string) => list.insert(new $({ text: new $(text), done: new $(false) }))
+  const add = (text: string) => list.insert($({ text: $(text), done: $(false) }))
   const remove = (task: $<Task>) => list.remove(task);
 
   return h('div', {},

@@ -1,4 +1,4 @@
-import { default as $ } from '../structures/value';
+import { $ } from '../structures/value';
 import { untilExist } from './until-exist';
 import { Child } from '../types';
 import { Observable } from 'rxjs';
@@ -10,7 +10,7 @@ type DiInjection<T> = WeakMap<Node, T>;
 
 class Injections {
     map = new WeakMap<DiKey<unknown>, DiInjection<any>>();
-    list$ = new $<Node | null>(null);
+    list$ = $<Node | null>(null);
 
     observe<T>(id: DiKey<T>): Observable<DiInjection<T>> {
         return this.list$.pipe(

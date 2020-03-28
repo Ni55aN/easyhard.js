@@ -4,8 +4,8 @@ import { map } from 'rxjs/operators';
 import { Input } from '../components/input';
 
 function App() {
-  const a = new $(0);
-  const b = new $(0);
+  const a = $(0);
+  const b = $(0);
   const sum = combineLatest(a, b).pipe(map(([a, b]) => a + b));
 
   return h('div', {},

@@ -122,7 +122,7 @@ function css(object: RootStyleDeclaration, parent: ChildNode | null = null) {
 function injectStyles(...styles: (RootStyleDeclaration | Style)[]): Child {
     const anchor = document.createTextNode('');
 
-    new $(null).pipe(untilExist(anchor)).subscribe(() => {
+    $(null).pipe(untilExist(anchor)).subscribe(() => {
         (anchor.parentNode as HTMLElement).className = styles.map((obj): string => {
             if ('className' in obj) return obj.className;
 

@@ -30,8 +30,8 @@ function fromRoute() {
 }
 
 function useRouter() {
-  const currentRoute = new $<Route | null>(null);
-  const parentRoute = new $<null | ParentRoute>(null);
+  const currentRoute = $<Route | null>(null);
+  const parentRoute = $<null | ParentRoute>(null);
   
   return {
     navigate(path: string) {
@@ -42,7 +42,7 @@ function useRouter() {
 
       return h('span', {},
         $inject(useRouter, parentRoute),
-        $provide(useRouter, new $<ParentRoute>({ current: currentRoute, parent: parentRoute })),
+        $provide(useRouter, $<ParentRoute>({ current: currentRoute, parent: parentRoute })),
         combineLatest(route$, parentRoute).pipe(
           map(([path, parent]) => {
             const prefix = getFullPath(parent);

@@ -1,5 +1,5 @@
-import $ from '../structures/value';
-import $$ from '../structures/array';
+import { $ } from '../structures/value';
+import { $$ } from '../structures/array';
 import { DomElement, SimpleType } from "../types";
 import { merge, OperatorFunction } from 'rxjs';
 import { startWith } from 'rxjs/operators';
@@ -14,9 +14,9 @@ export function $for<T extends any>(array: $$<T>, pipe?: OperatorFunction<T, Dom
     untilExist(fragment.anchor)
   ).subscribe(args => {
     if (args === null) {
-      array.value.forEach(item => fragment.insert(pipe ? new $(item).pipe(pipe) : item));
+      array.value.forEach(item => fragment.insert(pipe ? $(item).pipe(pipe) : item));
     } else if ('item' in args) {
-      fragment.insert(pipe ? new $(args.item).pipe(pipe) : args.item, args.i)
+      fragment.insert(pipe ? $(args.item).pipe(pipe) : args.item, args.i)
     } else {
       fragment.remove(args.i);
     }
