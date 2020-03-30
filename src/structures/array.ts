@@ -3,7 +3,7 @@ import { mergeMap, startWith, map } from "rxjs/operators";
 import { $ } from './value';
 
 export type $$<T> = {
-  insert$: Subject<{ item: T; i: number }>;
+  insert$: Subject<{ item: any; i: number }>;
   remove$: Subject<{ i: number }>;
   value: T[];
   get(i: number): Observable<T>;
@@ -16,7 +16,7 @@ export type $$<T> = {
 }
 
 export const $$ = <T>(array: T[]): $$<T> => {
-  const insert$ = new Subject<{ item: T; i: number }>();
+  const insert$ = new Subject<{ item: unknown; i: number }>();
   const remove$ = new Subject<{ i: number }>();
   const self = $(array);
 
