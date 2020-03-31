@@ -9,7 +9,7 @@ export function getNested(nodes: NodeList): Node[] {
   return Array.from(nodes).reduce((acc, node) => ([...acc, node, ...getNested(node.childNodes)]), [] as Node[]);
 }
 
-export function createFragment(): { anchor: Text; edge: DomElement; insert: (item: Child, i?: number) => void; remove: (i: number) => void } {
+export function createFragment(): { anchor: Text; edge: DomElement; insert: (item: Child, i?: number) => void; remove: (i: number) => void; clear: () => void } {
   const anchor = document.createTextNode('');
   const elements: DomElement[] = [];
 
@@ -29,6 +29,12 @@ export function createFragment(): { anchor: Text; edge: DomElement; insert: (ite
       
       if (exist && 'remove' in exist) exist.remove();
       elements.splice(i, 1);
+    },
+    clear(): void {
+      elements.forEach(el => {
+        if (el && 'remove' in el) el.remove();
+      });
+      elements.splice(0, elements.length);
     }
   }
 }
