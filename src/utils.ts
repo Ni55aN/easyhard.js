@@ -19,6 +19,7 @@ export function createFragment(): { anchor: Text; edge: DomElement; insert: (ite
       return elements[elements.length - 1] || anchor;
     },
     insert(item: Child, i = elements.length): void {
+      if (!anchor.parentElement) { console.warn('Attempt to add Child, but the anchor has been removed'); return; }
       const el = appendChild(item, anchor.parentElement as ChildNode, elements[i - 1] || anchor);
       
       elements.splice(i, 0, el);
