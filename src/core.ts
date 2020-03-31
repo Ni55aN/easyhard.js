@@ -51,13 +51,13 @@ export function appendChild(child: Child, parent: ChildNode, after: DomElement =
 function resolveChild(child: Child): DomElement {
   if (child instanceof Observable) {
     const text = document.createTextNode('');
-    let element: HTMLElement;
+    let element: Comment | HTMLElement | Text;
 
     child.pipe(untilExist(text), distinctUntilChanged()).subscribe(v => {
       element && element.remove();
       text.textContent = '';
 
-      if (v instanceof HTMLElement) {
+      if (v instanceof Comment || v instanceof HTMLElement || v instanceof Text) {
         element = v;
         insertAfter(element, text.parentNode as Node, text);
       } else {
