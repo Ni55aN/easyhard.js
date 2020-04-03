@@ -1,6 +1,6 @@
 import { h, $, $$, $for } from 'easyhard';
-import { map, tap } from 'rxjs/operators';
-import { Observable} from 'rxjs';
+import { map, tap, mergeMap } from 'rxjs/operators';
+import { OperatorFunction, pipe } from 'rxjs';
 
 interface User {
   id: number;
@@ -9,19 +9,10 @@ interface User {
   last_name: string;
 }
 
-function fromFetch<T>(url: Observable<string>) {
-  return new Observable<T>((observer) => {
-    return url.subscribe({
-      async next(url) {
-        const resp = await fetch(url);
-        const data = await resp.json();
-  
-        observer.next(data);
-      },
-      complete() {}
-    });
-  });
-}
+const load = <T>(init?: RequestInit): OperatorFunction<RequestInfo, T> => pipe(
+  mergeMap(url => fetch(url, init)),
+  mergeMap(resp => resp.json())
+);
 
 function UsersList(users: User[]) {
   return $for($$(users), map(item => h('div', {}, item.email)));
@@ -30,7 +21,7 @@ function UsersList(users: User[]) {
 function App() {
   const page = $(1);
   const url = page.pipe(map(p => 'https://reqres.in/api/users?page='+p));
-  const response = fromFetch<{ data: User[] }>(url).pipe(map(data => data.data));
+  const response = url.pipe(load<{ data: User[] }>(), map(data => data.data));
 
   return h('div', {},
     h('button', { click() { page.next(page.value + 1)}}, 'Next page'),
