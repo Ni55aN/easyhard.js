@@ -21,8 +21,6 @@ export const $$ = <T>(array: T[]): $$<T> => {
   const self = $(array);
 
   function insert(item: T, i = self.value.length): void {
-    if (!(item instanceof Observable)) throw new Error("not_observable");
-
     self.value.splice(i, 0, item);
     insert$.next({ item, i });
   }
