@@ -2,7 +2,7 @@
 import { Observable } from "rxjs";
 import { distinctUntilChanged } from "rxjs/operators";
 import { DomElement, Attrs, Child, PropAttrs, TagName } from "./types";
-import { insertAfter } from "./utils";
+import { insertNode } from "./utils";
 import { untilExist } from "./operators";
 
 type NestedChild = Child | NestedChild[];
@@ -39,12 +39,8 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
 export function appendChild(child: Child, parent: ChildNode, after: DomElement = null): DomElement {
   const el = resolveChild(child);
   if (el) {
-    if (after) {
-      insertAfter(el, parent, after);
-    } else {
-      parent.appendChild(el);
+    insertNode(el, parent, after);
     }
-  }
   return el;
 }
 

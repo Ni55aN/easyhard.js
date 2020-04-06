@@ -1,8 +1,8 @@
 import { DomElement, Child } from "./types";
 import { appendChild } from "./core";
 
-export function insertAfter(newNode: Node, parentNode: Node, referenceNode: DomElement): void {
-    parentNode.insertBefore(newNode, referenceNode && referenceNode.nextSibling);
+export function insertNode(newNode: Node, parentNode: Node, after: DomElement = null): void {
+  parentNode.insertBefore(newNode, after && after.nextSibling);
 }
 
 export function getNested(nodes: NodeList): Node[] {
