@@ -2,7 +2,7 @@
 import { Observable } from "rxjs";
 import { distinctUntilChanged } from "rxjs/operators";
 import { DomElement, Attrs, Child, PropAttrs, TagName } from "./types";
-import { insertNode } from "./utils";
+import { insertNode, createAnchor } from "./utils";
 import { untilExist } from "./operators";
 
 type NestedChild = Child | NestedChild[];
@@ -40,28 +40,27 @@ export function appendChild(child: Child, parent: ChildNode, after: DomElement =
   const el = resolveChild(child);
   if (el) {
     insertNode(el, parent, after);
-    }
+  }
   return el;
 }
 
 function resolveChild(child: Child): DomElement {
   if (child instanceof Observable) {
-    const text = document.createTextNode('');
-    let element: Comment | HTMLElement | Text;
+    const anchor = createAnchor();
 
-    child.pipe(untilExist(text), distinctUntilChanged()).subscribe(v => {
-      element && element.remove();
-      text.textContent = '';
+    child.pipe(untilExist(anchor), distinctUntilChanged()).subscribe(v => {
+      anchor.edge && anchor.edge.remove();
+      anchor.textContent = '';
 
       if (v instanceof Comment || v instanceof HTMLElement || v instanceof Text) {
-        element = v;
-        insertAfter(element, text.parentNode as Node, text);
+        anchor.edge = v;
+        insertNode(anchor.edge, anchor.parentNode as Node, anchor);
       } else {
-        text.textContent = v as string;
+        anchor.textContent = v as string;
       }
-    }, null, () => element && element.remove());
+    }, null, () => anchor.edge && anchor.edge.remove());
 
-    return text;
+    return anchor;
   }
 
   if (typeof child !== "object") {
