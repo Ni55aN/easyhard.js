@@ -20,6 +20,10 @@ module.exports = {
     rules: [
       {
         test: /\.tsx?$/,
+        loader: path.resolve('./loader/index.js')
+      },
+      {
+        test: /\.tsx?$/,
         loader: 'ts-loader',
         options:{
           transpileOnly: true
