@@ -1,31 +1,16 @@
-import { h, appendChild } from 'easyhard';
-import { HMR } from '../components/hmr';
+import { h } from 'easyhard';
+import { HMR, HMR2 } from '../components/hmr';
 import { interval } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 
 function App() {
-  const val = interval(500);
+  const val = interval(500).pipe(shareReplay(1));
 
   return h('div', {},
     h('p', {}, '--------'),
-    HMR(val)
+    HMR(val),
+    HMR2(val)
   );
 }
-
-declare var module: any;
-
-if (module.hot) {
-  module.hot.accept('../components/hmr.ts', function() {
-    const meta = (window as any).hmrMeta;
-    const { el: oldEl, args } = meta['/src/components/hmr.ts'][0];
-    const parentNode = oldEl.parentElement;
-    appendChild((HMR as any)(...args), parentNode, oldEl);
-    parentNode.removeChild(oldEl);
-    meta['/src/components/hmr.ts'].splice(0, 1);
-    
-    console.log(`Accepting the updated hmr.ts module!`);
-  })
-}
-
-
 
 document.body.appendChild(App());
