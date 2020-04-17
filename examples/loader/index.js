@@ -11,7 +11,7 @@ module.exports = function(source) {
   const exportFuncBlocks = ast.program.body.filter(item => item.type === 'ExportNamedDeclaration');
   const hmrFunctions = exportFuncBlocks.filter(item => item.comments && item.comments.some(comment => comment.type === 'Line' && comment.value.match('@hmr')))
   const hmrFunctionNames = hmrFunctions.map(item => item.declaration.id.name);
-  console.log(source);
+
   if (hmrFunctions.length === 0) return source;
 
   const importApi = b.importDeclaration([
@@ -51,6 +51,5 @@ module.exports = function(source) {
     ${RENDERER}({ ${hmrFunctionNames.join(', ')} }, ${ID});
   }`).program.body[0])
 
-  console.log(print(ast).code)
   return print(ast).code;
 }
