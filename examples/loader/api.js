@@ -1,28 +1,47 @@
 import { appendChild } from 'easyhard';
 
+const storage = {};
+
+function trackComponent(id, name, data) {
+  if (!storage[id]) storage[id] = {}; 
+  if (!storage[id][name]) storage[id][name] = [];
+
+  storage[id][name].push(data);
+}
+
+function getTrackedComponents(id) {
+  if (!storage || !storage[id]) return [];
+  
+  return Object.entries(storage[id]).reduce((acc, [name, items]) => {
+    return [...acc, ...items.map(item => [name, item])]
+  }, [])
+}
+
+function removeTrackedComponent(id, name, item) {
+  const items = storage[id][name];
+
+  items.splice(items.indexOf(item), 1);
+}
+
 export function hot(name, id, component) {
   function wrapper(...args) {
-    const el = component(...args);
-    if (!global.hmrMeta) global.hmrMeta = {};
-    if (!global.hmrMeta[id]) global.hmrMeta[id] = {}; 
-    if (!global.hmrMeta[id][name]) global.hmrMeta[id][name] = [];  
-    global.hmrMeta[id][name].push({ el, args });
-    return el;
+    const element = component(...args);
+    trackComponent(id, name, { element, args });
+    return element;
   }
   return wrapper;
 }
 
 export function rerender(components, id) {
-  if (global.hmrMeta && global.hmrMeta[id])
-  Object.entries(global.hmrMeta[id]).forEach(([name, items]) => {
-    items.slice().forEach(item => {
-      const { el: oldEl, args } = item;
-      const parentNode = oldEl.parentElement;
-      if (!parentNode) return;
-      const el = components[name](...args);
-      appendChild(el, parentNode, oldEl);
-      parentNode.removeChild(oldEl);
-      items.splice(items.indexOf(item), 1);
-    });
+  const entries = getTrackedComponents(id);
+  const existEntries = entries.filter(([_, item]) => item.element.parentElement);
+
+  existEntries.forEach(([name, item]) => {
+    const parentNode = item.element.parentElement;
+    const newElement = components[name](...item.args);
+
+    appendChild(newElement, parentNode, item.element);
+    parentNode.removeChild(item.element);
+    removeTrackedComponent(id, name, item);
   });
 }
