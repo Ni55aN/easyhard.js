@@ -1,5 +1,6 @@
 import { h } from 'easyhard';
-import { HMR, HMR2 } from '../components/hmr';
+import { HMR } from '../components/hmr';
+import { HMR2 } from '../components/hmr2';
 import { interval } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
 
