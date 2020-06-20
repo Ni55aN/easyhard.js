@@ -37,6 +37,8 @@ export default packages.map(({ folder, pkg }) => {
           compilerOptions: {
             declaration: true,
             declarationDir: path.resolve(`build/${folder}/types`),
+            baseUrl: '.',
+            paths: Object.fromEntries(packages.map(({ folder, pkg }) => [pkg.name, [`../../build/${folder}`]]))
           }
          }
       }),
