@@ -15,7 +15,7 @@ export function $for<T extends any>(array: $$<T>, pipe?: OperatorFunction<T, Dom
   ).subscribe({
     next(args) {
       if (args === null) {
-        array.value.forEach(item => fragment.insert(pipe ? $(item).pipe(pipe) : item));
+        array.value.forEach((item: any) => fragment.insert(pipe ? $(item).pipe(pipe) : item));
       } else if ('item' in args) {
         fragment.insert(pipe ? $(args.item).pipe(pipe) : args.item, args.i)
       } else {

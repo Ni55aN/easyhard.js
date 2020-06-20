@@ -1,37 +1,29 @@
 {
-  "name": "easyhard",
-  "version": "0.4.2",
-  "description": "",
-  "keywords": [],
-  "source": "src/index.ts",
-  "main": "dist/easyhard.umd.js",
-  "module": "dist/easyhard.commonjs2.js",
-  "types": "types",
   "scripts": {
-    "build": "webpack",
-    "build:dev": "webpack --watch",
-    "lint": "./node_modules/.bin/eslint src/**"
+    "build": "rollup -c",
+    "build:dev": "rollup -cw",
+    "lint": "./node_modules/.bin/eslint packages/*/src/**/*"
+  },
   },
   "peerDependencies": {
     "rxjs": "6.5.3",
     "rxjs-compat": "6.5.3"
   },
   "devDependencies": {
+    "@rollup/plugin-alias": "^3.1.1",
+    "@rollup/plugin-typescript": "^4.1.2",
     "@typescript-eslint/eslint-plugin": "^2.12.0",
     "@typescript-eslint/parser": "^2.12.0",
     "eslint": "^6.7.2",
     "eslint-loader": "^3.0.3",
-    "rxjs": "6.5.3",
-    "rxjs-compat": "6.5.3",
+    "fs-extra": "^9.0.1",
+    "rollup": "^2.17.1",
+    "rollup-plugin-copy": "^3.3.0",
+    "rollup-plugin-eslint": "^7.0.0",
+    "rollup-plugin-typescript2": "^0.27.1",
     "ts-loader": "^6.2.1",
-    "typescript": "^3.7.3",
+    "typescript": "^3.9.5",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"
-  },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ]
+  }
 }

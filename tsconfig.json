@@ -1,7 +1,4 @@
 {
-  "include": [
-    "./src/*"
-  ],
   "compilerOptions": {
     "lib": [
       "dom",
@@ -19,8 +16,6 @@
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "strictNullChecks": true,
-    "declarationDir": "types/",
-    "declaration": true
+    "strictNullChecks": true
   }
 }

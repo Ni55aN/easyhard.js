@@ -22,7 +22,7 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
           element[attrName] = value;
         });
       } else if (typeof attr === "function") {
-        element.addEventListener(name, attr as EventListenerObject);
+        element.addEventListener(name, attr as unknown as EventListenerObject);
       } else if (attr !== false && attr != null) {
         element[attrName] = attr as any;
       }

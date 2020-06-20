@@ -16,12 +16,14 @@
       "modules": true
     }
   },
+  "ignorePatterns": "*.js",
   "env": {
     "browser": true,
     "es6": true,
     "es2017": true
   },
   "rules": {
-    "no-prototype-builtins": "off"
+    "no-prototype-builtins": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
   }
 }
