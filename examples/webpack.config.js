@@ -18,6 +18,12 @@ module.exports = {
   },
   module: {
     rules: [
+      // {
+      //   enforce: 'pre',
+      //   test: /\.(j|t)sx?$/,
+      //   exclude: /node_modules/,
+      //   loader: 'eslint-loader'
+      // },
       {
         test: /\.tsx?$/,
         loader: path.resolve('./loader/index.js')
@@ -25,9 +31,6 @@ module.exports = {
       {
         test: /\.tsx?$/,
         loader: 'ts-loader',
-        options:{
-          transpileOnly: true
-        },
         exclude: /node_modules/,
       },
     ],
