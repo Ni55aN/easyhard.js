@@ -4,11 +4,16 @@
     "build:dev": "rollup -cw",
     "lint": "./node_modules/.bin/eslint packages/*/src/**/*"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ni55aN/easyhard.js.git"
   },
-  "peerDependencies": {
-    "rxjs": "6.5.3",
-    "rxjs-compat": "6.5.3"
+  "author": "Vitaliy Stoliarov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Ni55aN/easyhard.js/issues"
   },
+  "homepage": "https://github.com/Ni55aN/easyhard.js#readme",
   "devDependencies": {
     "@rollup/plugin-alias": "^3.1.1",
     "@rollup/plugin-typescript": "^4.1.2",
