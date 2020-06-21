@@ -21,6 +21,7 @@ type CssMedia = StyleDeclaration & {
 type MediaKeys = keyof CssMedia['query'];
 export type StyleDeclaration = StyleBasicDeclaration & {
     '@media'?: CssMedia;
+    '@import'?: string;
     ':hover'?: StyleDeclaration;
     ':focus'?: StyleDeclaration;
     ':link'?: StyleDeclaration;
@@ -87,12 +88,14 @@ function injectCssProperties(selector: string, media: CssMediaItem[], style: HTM
     for (const key in props) {
         const val = props[key];
 
-        if (key.startsWith('@')) {
+        if (key === '@media') {
             const nestedProps = props[key] as unknown as CssMedia;
             const  { query, ...localProps } = nestedProps;
             const localMedia = [...Object.entries(query), ...media] as CssMediaItem[];
 
             injectCssProperties(selector, localMedia, style, localProps as StyleDeclaration, head, parent);
+        } else if (key === '@import') {
+            sheet.insertRule(`@import ${val}`)
         } else if (key.startsWith(':')) {
             const localProps = props[key] as unknown as StyleDeclaration;
 

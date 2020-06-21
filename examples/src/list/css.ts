@@ -5,7 +5,8 @@ import { map } from 'rxjs/operators';
 
 const colorTransitionStyle = (props: { color: Observable<string> }): StyleDeclaration => ({
     color: props.color,
-    transition: 'color 1s'
+    transition: 'color 1s',
+    '@import': 'url("https://fonts.googleapis.com/css?family=Ubuntu:500,400,300")'
 });
 
 const staticCss = css({
