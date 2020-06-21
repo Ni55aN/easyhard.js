@@ -1,6 +1,6 @@
 {
   "name": "easyhard-styles",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "peerDependencies": {
     "easyhard": "^0.4.3",
     "rxjs": "^6.5.3"
