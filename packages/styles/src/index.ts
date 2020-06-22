@@ -1,12 +1,12 @@
 import { untilExist, Child, $ } from 'easyhard'
 import { Observable, combineLatest, pipe, MonoTypeOperatorFunction } from 'rxjs'
 
-type CssSimpleValue = string | number;
-type CssValue = CssSimpleValue | Observable<string | number>;
-type StyleBasicDeclaration = {[key in keyof CSSStyleDeclaration]?: CssValue };
-type CssMediaValue = string | boolean;
-type CssMediaItem = [MediaKeys, CssMediaValue | Observable<CssMediaValue>];
-type CssMedia = StyleDeclaration & {
+export type CssSimpleValue = string | number;
+export type CssValue = CssSimpleValue | Observable<string | number>;
+export type StyleBasicDeclaration = {[key in keyof CSSStyleDeclaration]?: CssValue };
+export type CssMediaValue = string | boolean;
+export type CssMediaItem = [MediaKeys, CssMediaValue | Observable<CssMediaValue>];
+export type CssMedia = StyleDeclaration & {
     query: {
         screen?: boolean | Observable<boolean>;
         hover?: boolean | Observable<boolean>;
@@ -18,7 +18,7 @@ type CssMedia = StyleDeclaration & {
         orientation?: 'landscape' | 'portrait' | Observable<'landscape' | 'portrait'>;
     };
 };
-type MediaKeys = keyof CssMedia['query'];
+export type MediaKeys = keyof CssMedia['query'];
 export type StyleDeclaration = StyleBasicDeclaration & {
     '@media'?: CssMedia;
     '@import'?: string;
@@ -32,10 +32,10 @@ export type StyleDeclaration = StyleBasicDeclaration & {
     ':checked'?: StyleDeclaration;
     ':active'?: StyleDeclaration;
 };
-type RootStyleDeclaration = StyleDeclaration & {
+export type RootStyleDeclaration = StyleDeclaration & {
     $name?: string;
 }
-type Style = { className: string; style: HTMLStyleElement };
+export type Style = { className: string; style: HTMLStyleElement };
 
 function getUID(): string {
     return (Date.now()+Math.random()).toString(36).replace('.', '');
