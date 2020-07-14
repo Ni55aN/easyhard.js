@@ -33,7 +33,7 @@ function App(): HTMLElement {
     const color = timer(0, 1000).pipe(map(v => v % 2 === 0 ? 'red' : 'yellow'));
 
     return h('div', {}, 
-        h('button', {}, injectStyles(colorTransitionStyle({ color }), staticCss), 'Dynamic'),
+        h('button', {}, injectStyles(colorTransitionStyle({ color })), injectStyles(staticCss), 'Dynamic'),
         h('button', { className: staticCss.className }, 'Static')
     );
 }

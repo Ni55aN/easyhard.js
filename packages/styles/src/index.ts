@@ -125,12 +125,15 @@ export function injectStyles(...styles: (RootStyleDeclaration | Style)[]): Child
     const anchor = document.createTextNode('');
 
     $(null).pipe(untilExist(anchor)).subscribe(() => {
-        (anchor.parentNode as HTMLElement).className = styles.map((obj): string => {
+        const element =  anchor.parentNode as HTMLElement
+        const classNames = styles.map((obj): string => {
             if ('className' in obj) return obj.className;
 
             const { className } = css(obj, anchor);
             return className;
-        }).join(' ');
+        })
+
+        element.classList.add(...classNames)
         return null;
     });
     return anchor;
