@@ -1,30 +1,30 @@
 import { appendChild } from 'easyhard';
 
-const storage = {};
+const storage: any = {};
 
-function trackComponent(id, name, data) {
+function trackComponent(id: string, name: string, data: any) {
   if (!storage[id]) storage[id] = {}; 
   if (!storage[id][name]) storage[id][name] = [];
 
   storage[id][name].push(data);
 }
 
-function getTrackedComponents(id) {
+function getTrackedComponents(id: string) {
   if (!storage || !storage[id]) return [];
   
-  return Object.entries(storage[id]).reduce((acc, [name, items]) => {
-    return [...acc, ...items.map(item => [name, item])]
+  return Object.entries(storage[id]).reduce((acc: any, [name, items]: any) => {
+    return [...acc, ...items.map((item: any) => [name, item])]
   }, [])
 }
 
-function removeTrackedComponent(id, name, item) {
+function removeTrackedComponent(id: string, name: string, item: any) {
   const items = storage[id][name];
 
   items.splice(items.indexOf(item), 1);
 }
 
-export function hot(name, id, component) {
-  function wrapper(...args) {
+export function hot(name: string, id: string, component: any) {
+  function wrapper(...args: any[]) {
     const element = component(...args);
     trackComponent(id, name, { element, args });
     return element;
@@ -32,7 +32,7 @@ export function hot(name, id, component) {
   return wrapper;
 }
 
-export function rerender(components, id) {
+export function rerender(components: any[], id: string): void {
   const entries = getTrackedComponents(id);
   const existEntries = entries.filter(([_, item]) => item.element.parentElement);
 

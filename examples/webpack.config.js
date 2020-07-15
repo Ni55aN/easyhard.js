@@ -26,7 +26,7 @@ module.exports = {
       // },
       {
         test: /\.tsx?$/,
-        loader: path.resolve('./loader/index.js')
+        loader: 'easyhard-loader'
       },
       {
         test: /\.tsx?$/,

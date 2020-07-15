@@ -7,6 +7,8 @@
     "dependencies": {
         "@types/lodash-es": "^4.17.3",
         "easyhard": "file:../build/core",
+        "easyhard-api": "file:../build/api",
+        "easyhard-loader": "file:../build/loader",
         "easyhard-styles": "file:../build/styles",
         "jss": "^10.0.0",
         "jss-preset-default": "^10.0.0",

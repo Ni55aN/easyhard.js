@@ -5,7 +5,7 @@ import fs from 'fs-extra'
 import path from 'path'
 
 const mainPkg = require('./package.json')
-const packages = fs.readdirSync('packages').map(folder => ({
+const packages = ['core', 'styles', 'loader', 'api'].map(folder => ({
   folder,
   pkg: require(`./packages/${folder}/package.json`)
 }))
