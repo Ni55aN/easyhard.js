@@ -2,7 +2,8 @@
   "scripts": {
     "build": "rollup -c",
     "build:dev": "rollup -cw",
-    "lint": "./node_modules/.bin/eslint packages/*/src/**/*"
+    "lint": "./node_modules/.bin/eslint packages/*/src/**/*",
+    "commit": "git-cz"
   },
   "repository": {
     "type": "git",
@@ -19,9 +20,12 @@
     "@rollup/plugin-typescript": "^4.1.2",
     "@typescript-eslint/eslint-plugin": "^2.12.0",
     "@typescript-eslint/parser": "^2.12.0",
+    "commitizen": "^4.1.2",
+    "cz-conventional-changelog": "^3.2.0",
     "eslint": "^6.7.2",
     "eslint-loader": "^3.0.3",
     "fs-extra": "^9.0.1",
+    "husky": "^4.2.5",
     "rollup": "^2.17.1",
     "rollup-plugin-copy": "^3.3.0",
     "rollup-plugin-eslint": "^7.0.0",
@@ -30,5 +34,15 @@
     "typescript": "^3.9.5",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"
+  },
+  "husky": {
+    "hooks": {
+      "prepare-commit-msg": "exec < /dev/tty && git cz --hook || true"
+    }
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
