@@ -1,0 +1,10 @@
+name: Test
+
+on:
+  push:
+
+jobs:
+  first:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: Ni55aN/easyhard-publish-action@master
