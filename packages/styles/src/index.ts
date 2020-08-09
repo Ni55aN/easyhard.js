@@ -1,4 +1,4 @@
-import { untilExist, Child, $ } from 'easyhard'
+import { untilExist, Child, $, createAnchor } from 'easyhard'
 import { Observable, combineLatest, pipe, MonoTypeOperatorFunction } from 'rxjs'
 
 export type CssSimpleValue = string | number;
@@ -122,7 +122,7 @@ export function css(object: RootStyleDeclaration, parent: ChildNode | null = nul
 }
 
 export function injectStyles(...styles: (RootStyleDeclaration | Style)[]): Child {
-    const anchor = document.createTextNode('');
+    const anchor = createAnchor();
 
     $(null).pipe(untilExist(anchor)).subscribe(() => {
         const element =  anchor.parentNode as HTMLElement
