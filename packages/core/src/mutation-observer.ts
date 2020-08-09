@@ -1,7 +1,6 @@
 import { getNested } from "./utils";
-import { Subscriber } from "rxjs";
 
-const observers = new WeakMap<Node, { observer: Subscriber<unknown>; values: unknown[] }[]>();
+const observers = new WeakMap<Node, { added: () => void; removed: () => void }[]>();
 const status = { connected: false };
 
 const observer = new MutationObserver((mutationsList: MutationRecord[]) => {
@@ -10,18 +9,14 @@ const observer = new MutationObserver((mutationsList: MutationRecord[]) => {
       const subscription = observers.get(addedNode);
 
       if (subscription) {
-        subscription.forEach(s => {
-          while(s.values.length > 0) {
-            s.observer.next(s.values.shift())
-          }
-        })
+        subscription.forEach(s => s.added())
       }
     }
     for (const removedNode of getNested(record.removedNodes)) {
       const subscription = observers.get(removedNode);
 
       if (subscription) {
-        subscription.forEach(s => s.observer.complete());
+        subscription.forEach(s => s.removed())
         observers.delete(removedNode);
       }
     }
@@ -38,14 +33,14 @@ export function connectObserver(container = document.body): void {
   observer.observe(container, { childList: true, subtree: true });
   status.connected = true;
 }
-export function observeElement(el: Node, observer: Subscriber<unknown>, values: unknown[] ): void {
+export function observeElement(el: Node, props: { added: () => void; removed: () => void }): void {
   if (!status.connected) { connectObserver(); }
 
   const list = observers.get(el);
 
   if (list) {
-    list.push({ observer, values });
+    list.push(props);
   } else {
-    observers.set(el, [{ observer, values }])
+    observers.set(el, [props])
   }
 }

@@ -5,7 +5,16 @@ export function untilExist<T>(el: ChildNode | null, container: Node = document.b
   return <T>(source: Observable<T>): Observable<T> => new Observable(observer => {
     const values: T[] = [];
 
-    if (el) observeElement(el, observer, values);
+    if (el) observeElement(el, {
+      added() {
+        while(values.length > 0) {
+          observer.next(values.shift())
+        }
+      },
+      removed() {
+        observer.complete()
+      }
+    })
 
     return source.subscribe({
       next(value) {
