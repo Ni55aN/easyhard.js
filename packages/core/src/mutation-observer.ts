@@ -1,9 +1,7 @@
 import { getNested } from "./utils";
 import { Subscriber } from "rxjs";
 
-export const NOT_INITED_VALUE = Symbol()
-
-const observers = new WeakMap<Node, { observer: Subscriber<unknown>; value: () => unknown }[]>();
+const observers = new WeakMap<Node, { observer: Subscriber<unknown>; values: unknown[] }[]>();
 const status = { connected: false };
 
 const observer = new MutationObserver((mutationsList: MutationRecord[]) => {
@@ -13,8 +11,9 @@ const observer = new MutationObserver((mutationsList: MutationRecord[]) => {
 
       if (subscription) {
         subscription.forEach(s => {
-          const value = s.value();
-          if (value !== NOT_INITED_VALUE) s.observer.next(value);
+          while(s.values.length > 0) {
+            s.observer.next(s.values.shift())
+          }
         })
       }
     }
@@ -39,14 +38,14 @@ export function connectObserver(container = document.body): void {
   observer.observe(container, { childList: true, subtree: true });
   status.connected = true;
 }
-export function observeElement(el: Node, observer: Subscriber<unknown>, value: () => unknown): void {
+export function observeElement(el: Node, observer: Subscriber<unknown>, values: unknown[] ): void {
   if (!status.connected) { connectObserver(); }
 
   const list = observers.get(el);
 
   if (list) {
-    list.push({ observer, value });
+    list.push({ observer, values });
   } else {
-    observers.set(el, [{ observer, value }])
+    observers.set(el, [{ observer, values }])
   }
 }

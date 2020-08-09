@@ -1,17 +1,18 @@
 import { Observable, MonoTypeOperatorFunction } from "rxjs";
-import { observeElement, NOT_INITED_VALUE } from "../mutation-observer";
+import { observeElement } from "../mutation-observer";
 
 export function untilExist<T>(el: ChildNode | null, container: Node = document.body): MonoTypeOperatorFunction<T> {
   return <T>(source: Observable<T>): Observable<T> => new Observable(observer => {
-    let lastValue: T | typeof NOT_INITED_VALUE = NOT_INITED_VALUE;
+    const values: T[] = [];
 
-    if (el) observeElement(el, observer, () => lastValue);
+    if (el) observeElement(el, observer, values);
 
     return source.subscribe({
       next(value) {
-        lastValue = value;
+        values.push(value);
         if (Boolean(el) && container.contains(el)) {
-          observer.next(lastValue);
+          observer.next(values.pop());
+          values.splice(0, values.length)
         }
       },
       error(err) { observer.error(err); },
