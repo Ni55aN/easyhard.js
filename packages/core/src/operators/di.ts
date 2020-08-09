@@ -3,6 +3,7 @@ import { untilExist } from './until-exist';
 import { Child } from '../types';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { createAnchor } from '../utils';
 
 type DiKey<T> = { new(): T } | {};
 type DiValue<T> = $<T>;
@@ -41,7 +42,7 @@ class Injections {
 const injections = new Injections();
 
 export function $provide<T extends unknown>(id: DiKey<T>, value: DiValue<T>): Child {
-    const anchor = document.createTextNode('');
+    const anchor = createAnchor();
 
     value.pipe(untilExist(anchor)).subscribe(value => {
         if (!anchor.parentNode) throw new Error('parentNode is undefined')
@@ -52,7 +53,7 @@ export function $provide<T extends unknown>(id: DiKey<T>, value: DiValue<T>): Ch
 }
 
 export function $inject<T extends unknown>(id: DiKey<T>, act: DiValue<T>): Child {
-    const anchor = document.createTextNode('');
+    const anchor = createAnchor();
     const injection = injections.observe(id);
 
     injection.pipe(untilExist(anchor)).subscribe((injectionValue: DiInjection<T>) => {
