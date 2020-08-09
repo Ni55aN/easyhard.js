@@ -1,8 +1,9 @@
 import { Subject, merge, Observable, of } from "rxjs";
-import { mergeMap, startWith, map } from "rxjs/operators";
+import { mergeMap, map } from "rxjs/operators";
 import { $ } from './value';
 
 export type $$<T> = {
+  value$: $<T[]>;
   insert$: Subject<{ item: any; i: number }>;
   remove$: Subject<{ i: number }>;
   value: T[];
@@ -18,29 +19,29 @@ export type $$<T> = {
 export const $$ = <T>(array: T[]): $$<T> => {
   const insert$ = new Subject<{ item: unknown; i: number }>();
   const remove$ = new Subject<{ i: number }>();
-  const self = $(array);
+  const value$ = $<T[]>(array);
 
-  function insert(item: T, i = self.value.length): void {
-    self.value.splice(i, 0, item);
+  function insert(item: T, i = value$.value.length): void {
+    value$.value.splice(i, 0, item);
     insert$.next({ item, i });
   }
 
   function removeAt(i: number): void {
-    self.value.splice(i, 1);
+    value$.value.splice(i, 1);
     remove$.next({ i });
   }
 
   return {
+    value$,
     insert$,
     remove$,
     get value(): T[] {
-      return self.value;
+      return value$.value;
     },
     get(i: number): Observable<T> {
-      return merge(insert$, remove$).pipe(
-        startWith(null),
+      return merge(value$, insert$, remove$).pipe(
         mergeMap(() => {
-          const value = self.value[i];
+          const value = value$.value[i];
           return value instanceof Observable ? value : of(value)
         })
       );
@@ -51,20 +52,19 @@ export const $$ = <T>(array: T[]): $$<T> => {
     },
     insert,
     remove(item: T): void {
-      const index = self.value.indexOf(item);
+      const index = value$.value.indexOf(item);
       removeAt(index);
     },
     removeAt,
     clear(): void {
-      for (let i = self.value.length - 1; i >=0; i--) {
-        self.value.splice(i, 1);
+      for (let i = value$.value.length - 1; i >=0; i--) {
+        value$.value.splice(i, 1);
         remove$.next({ i });
       }
     },
     get length(): Observable<number> {
-      return merge(insert$, remove$).pipe(
-        startWith(null),
-        map(() => self.value.length)
+      return merge(value$, insert$, remove$).pipe(
+        map(() => value$.value.length)
       );
     }
   }
