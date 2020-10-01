@@ -8,3 +8,4 @@ export { $ } from './structures/value';
 export { $$ } from './structures/array';
 export * from './operators';
 export * from './utils';
+export * from './hooks';
