@@ -1,15 +1,23 @@
-import { h, $, $if } from 'easyhard';
+import { h, $, $if, onMount, onDestroy } from 'easyhard';
 import { Observable, interval, Observer } from 'rxjs';
-import { map, tap, mergeMap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
 function Child(text: Observable<string>) {
-  const mountInfo = Observable.create((observer: Observer<any>) =>{
-    console.info('onMount');
-    return () => console.info('onDestroy');
+  const mountInfo = new Observable((observer: Observer<any>) =>{
+    console.info('onMount (legacy)');
+    return () => console.info('onDestroy (legacy)');
   });
   console.info('onCreate')
 
+  const container = document.createElement('div')
+
+  onMount(container, () => console.info('onMount (html)'))
+  onDestroy(container, () => console.info('onDestroy (html)'))
+
   return h('div', {},
+    container,
+    onMount(() => console.info('onMount')),
+    onDestroy(() => console.info('onDestroy')),
     mountInfo,
     text.pipe(tap(() => console.info('onUpdate')))
   )
