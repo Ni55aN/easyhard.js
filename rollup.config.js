@@ -1,6 +1,7 @@
 import typescript from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
 import alias from '@rollup/plugin-alias';
+import fromEntries from 'fromentries'
 import fs from 'fs-extra'
 import path from 'path'
 
@@ -38,7 +39,7 @@ export default packages.map(({ folder, pkg }) => {
             declaration: true,
             declarationDir: path.resolve(`build/${folder}/types`),
             baseUrl: '.',
-            paths: Object.fromEntries(packages.map(({ folder, pkg }) => [pkg.name, [`../../build/${folder}`]]))
+            paths: fromEntries(packages.map(({ folder, pkg }) => [pkg.name, [`../../build/${folder}`]]))
           }
          }
       }),
