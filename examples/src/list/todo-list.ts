@@ -40,7 +40,7 @@ function App() {
   const list = $$<$<Task>>([])
   const target = $('');
 
-  const add = (text: string) => list.insert($({ text: $(text), done: $(false) }))
+  const add = (text: string) => list.insert($({ text: $(text), done: $(false as boolean) }))
   const remove = (task: $<Task>) => list.remove(task);
 
   return h('div', {},

@@ -34,7 +34,7 @@ function useTabs(list: $$<TabItem>, component: TabHeaderComponent = TabComponent
 
 
 function App() {
-  const tabs = [
+  const tabs: TabItem[] = [
     { label: $('Tab 1'), content: $('Content 1') },
     { label: $('Tab 2'), content: $('Content 2'), hidden: $(true) },
     { label: $('Tab 3'), content: $('Content 3') },
