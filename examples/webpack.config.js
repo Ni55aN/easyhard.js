@@ -32,7 +32,7 @@ module.exports = {
         test: /\.tsx?$/,
         loader: 'ts-loader',
         options:{	
-          transpileOnly: true	
+          transpileOnly: true	// prevent bug with HMR
         },
         exclude: /node_modules/,
       },
