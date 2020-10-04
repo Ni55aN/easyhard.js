@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { Observable } from "rxjs";
+import { Observable, Subject } from "rxjs";
 import { distinctUntilChanged } from "rxjs/operators";
-import { DomElement, Attrs, Child, PropAttrs, TagName } from "./types";
+import { DomElement, Attrs, Child, PropAttrs, TagName, EventAttrs, EventHandler, EventName } from "./types";
 import { insertNode, createAnchor } from "./utils";
 import { untilExist } from "./operators";
 
@@ -12,19 +12,31 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
 
   for (const name in attrs) {
     if (name && attrs.hasOwnProperty(name)) {
-      const attr = attrs[name as keyof Attrs<K>];
-      const attrName = name as keyof PropAttrs<K>;
+      if (`on${name}` in element) {
+        const attrName = name as EventName
+        const attr = attrs[attrName] as EventHandler<keyof EventAttrs>
 
-      if (attr === true) {
-        element[attrName] = true as any;
-      } else if (attr instanceof Observable) {
-        attr.pipe(untilExist(element)).subscribe(value => {
-          element[attrName] = value;
-        });
-      } else if (typeof attr === "function") {
-        element.addEventListener(name, attr as unknown as EventListenerObject);
-      } else if (attr !== false && attr != null) {
-        element[attrName] = attr as any;
+        if (attr instanceof Subject) {
+          element.addEventListener(attrName, ((e: HTMLElementEventMap[EventName]) => attr.next(e)) as EventListener)
+        } else if (attr) {
+          const subject = new Subject<HTMLElementEventMap[EventName]>();
+      
+          subject.pipe(untilExist(element), attr as any).subscribe()
+          element.addEventListener(attrName, ((e: HTMLElementEventMap[EventName]) => subject.next(e)) as EventListener)
+        }
+      } else {
+        const attrName = name as keyof PropAttrs<K>
+        const attr = attrs[attrName];
+
+        if (attr === true) {
+          element[attrName] = true as any;
+        } else if (attr instanceof Observable) {
+          attr.pipe(untilExist(element)).subscribe(value => {
+            element[attrName] = value;
+          });
+        } else if (attr !== false && attr != null) {
+          element[attrName] = attr as any;
+        }
       }
     }
   }

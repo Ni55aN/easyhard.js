@@ -1,5 +1,5 @@
 import { h, $if, $, $inject, $provide, DomElement } from 'easyhard';
-import { map, mergeMap, startWith, shareReplay } from 'rxjs/operators';
+import { map, mergeMap, startWith, shareReplay, tap } from 'rxjs/operators';
 import { of, Observable, interval, combineLatest } from 'rxjs';
 import { takeUntilChanged } from '../operators/until-changed';
 import { not } from '../utils/observables';
@@ -72,10 +72,10 @@ function Section() {
   return h('div', { style: 'margin: 3em 3em 3em 20em; height: 80vh; background: #888; border: 2px solid green; position: relative' },
     mainModal.consume(),
     modal.provide(),
-    h('button', { click() { mainModal.open($('Title!'), $('Content!')) }, disabled: mainModal.opened }, 'Open modal'),
-    h('button', { click() { mainModal.close() }, disabled: not(mainModal.opened) }, 'Close modal'),
-    h('button', { click() { modal.open($('Title nested'), $('Content nested')) }, disabled: modal.opened }, 'Open nested modal'),
-    h('button', { click() { modal.close() }, disabled: not(modal.opened) }, 'Close nested modal')
+    h('button', { click: tap(() => mainModal.open($('Title!'), $('Content!'))), disabled: mainModal.opened }, 'Open modal'),
+    h('button', { click: tap(() => mainModal.close()), disabled: not(mainModal.opened) }, 'Close modal'),
+    h('button', { click: tap(() => modal.open($('Title nested'), $('Content nested'))), disabled: modal.opened }, 'Open nested modal'),
+    h('button', { click: tap(modal.close), disabled: not(modal.opened) }, 'Close nested modal')
   )
 }
 
@@ -85,8 +85,8 @@ function App() {
 
   return h('div', {},
     mainModal.provide(),
-    h('button', { click() { mainModal.open(modalTitle, $('Content')) }, disabled: mainModal.opened }, 'Open modal'),
-    h('button', { click: mainModal.close, disabled: not(mainModal.opened) }, 'Close modal'),
+    h('button', { click: tap(() => mainModal.open(modalTitle, $('Content'))), disabled: mainModal.opened }, 'Open modal'),
+    h('button', { click: tap(mainModal.close), disabled: not(mainModal.opened) }, 'Close modal'),
     Section()
   );
 }

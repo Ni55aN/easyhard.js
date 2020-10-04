@@ -84,8 +84,8 @@ const childRoutes: Route[] = [
 
       return h('c' as any, {},
         routerOutlet(child2Routes),
-        h('button', { click() { navigate('f') }}, 'C/D/F'),
-        h('button', { click() { navigate('g') }}, 'C/D/G'),
+        h('button', { click: tap(() => navigate('f')) }, 'C/D/F'),
+        h('button', { click: tap(() => navigate('g')) }, 'C/D/G'),
       );
     })
   },
@@ -115,8 +115,8 @@ const routes: Route[] = [
 
       return h('c' as any, {},
         routerOutlet(childRoutes),
-        h('button', { click() { navigate('d') }}, 'C/D'),
-        h('button', { click() { navigate('e') }}, 'C/E'),
+        h('button', { click: tap(() => navigate('d')) }, 'C/D'),
+        h('button', { click: tap(() => navigate('e')) }, 'C/E'),
       );
     })
   }
@@ -127,9 +127,9 @@ function App() {
 
   return h('span', {},
     routerOutlet(routes),
-    h('button', { click() { navigate('a')}}, 'A'),
-    h('button', { click() { navigate('b')}}, 'B'),
-    h('button', { click() { navigate('c')}}, 'C')
+    h('button', { click: tap(() => navigate('a')) }, 'A'),
+    h('button', { click: tap(() => navigate('b')) }, 'B'),
+    h('button', { click: tap(() => navigate('c')) }, 'C')
   )
 }
 

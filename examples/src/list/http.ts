@@ -24,7 +24,7 @@ function App() {
   const response = url.pipe(load<{ data: User[] }>(), map(data => data.data));
 
   return h('div', {},
-    h('button', { click() { page.next(page.value + 1)}}, 'Next page'),
+    h('button', { click: tap(() => page.next(page.value + 1)) }, 'Next page'),
     response.pipe(tap(console.log), map(UsersList))
   );
 }

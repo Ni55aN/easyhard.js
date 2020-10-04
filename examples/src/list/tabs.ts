@@ -8,7 +8,7 @@ type TabHeaderComponent = (item: TabItem, active: Observable<boolean>, selected:
 const TabComponent: TabHeaderComponent = (item, active, selected) => {
   const styles = 'display: inline-block; cursor: pointer; padding: 1em 2em;';
 
-  return h('div', { click: selected, style: active.pipe(map(ac => ac ? styles+' border-bottom: 2px solid blue' : styles)) }, item.label);
+  return h('div', { click: tap(selected), style: active.pipe(map(ac => ac ? styles+' border-bottom: 2px solid blue' : styles)) }, item.label);
 }
 
 function useTabs(list: $$<TabItem>, component: TabHeaderComponent = TabComponent) {

@@ -37,7 +37,7 @@ function Checkbox(checked: FormValue<boolean>, params: InputParams<boolean>) {
   return h('input', {
     type: 'checkbox',
     checked,
-    change(e: Event) { checked.next((e.target as HTMLInputElement).checked)},
+    change: tap((e: Event) => checked.next((e.target as HTMLInputElement).checked)),
     ...params
   })
 }
@@ -45,7 +45,7 @@ function Checkbox(checked: FormValue<boolean>, params: InputParams<boolean>) {
 function Select<T>(options: $$<SelectOption>) {
   return (value: FormValue<T>, params: InputParams<string>) => {
     return h('select', {
-        change(e: Event) { value.next((e.target as HTMLSelectElement).value as unknown as T)},
+        change: tap((e: Event) => value.next((e.target as HTMLSelectElement).value as unknown as T)),
         ...params
       },
       $for(options, pipe(switchMap(option => option), map(option => option &&
@@ -63,9 +63,9 @@ function Textbox(value: FormValue<string>, params: InputParams<string>) {
   });
   return h('input', {
       value: formattedValue,
-      input(e: Event) {
+      input: tap((e: Event) => {
         next((e.target as HTMLInputElement).value);
-      },
+      }),
       ...params,
     },
     injection
@@ -81,9 +81,9 @@ function Numbox(value: FormValue<number>, params: InputParams<number>) {
 
   return h('input', {
       value: formattedValue,
-      input(e: Event) {
+      input: tap((e: Event) => {
         next((e.target as HTMLInputElement).value);
-      },
+      }),
       ...params
     },
     injection
@@ -91,7 +91,7 @@ function Numbox(value: FormValue<number>, params: InputParams<number>) {
 }
 
 function Button(text: string | Observable<string>, click: () => void) {
-  return h('button', { click }, text);
+  return h('button', { click: tap(click) }, text);
 }
 
 function minLength(min: number, message?: string): Validator<string> {

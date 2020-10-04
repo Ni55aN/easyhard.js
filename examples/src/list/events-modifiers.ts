@@ -1,22 +1,24 @@
 import { h, $ } from 'easyhard'
-import { debounceTime, first } from 'rxjs/operators';
-import { OperatorFunction, Subject } from 'rxjs';
+import { debounceTime, first, tap, takeUntil } from 'rxjs/operators';
+import { Subject, pipe } from 'rxjs';
 
-function pipeEvent(pipe: OperatorFunction<any, any>, handler: (e: Event) => void) {
-  const subject = new Subject()
-  subject.pipe(pipe).subscribe(handler); // TODO unsubscribe
+function Counter() {
+  const n = $(0)
+  const blockEvent = new Subject<MouseEvent>()
 
-  return (e: Event) => {
-    subject.next(e);
-  }
+  return h('div', {},
+    h('button', { click: blockEvent }, 'Block'),
+    h('button', { click: pipe(takeUntil(blockEvent), tap(() => n.next(n.value + 1))) }, n)
+  )
 }
 
 function App() {
   const move = $(0)
 
   return h('div', {},
-    h('button', { click: pipeEvent(first(), () => alert('Clicked once'))}, 'Click'),
-    h('div', { style: 'padding: 2em; background: #ffa760', mousemove: pipeEvent(debounceTime(100), () => move.next(move.value + 1)) }, 'Move', '[', move, ']')
+    h('button', { click: pipe(first(), tap(() => alert('Clicked once'))) }, 'Click'),
+    h('div', { style: 'padding: 2em; background: #ffa760', mousemove: pipe(debounceTime(100), tap(() => move.next(move.value + 1))) }, 'Move', '[', move, ']'),
+    Counter()
   )
 }
 

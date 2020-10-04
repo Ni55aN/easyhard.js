@@ -37,7 +37,7 @@ function ListView<T>(list: $$<T>, props: { height: number }, render: OperatorFun
 
   return h('div', {
         style: 'height: 100%; overflow: auto',
-        scroll: e => scrollTop.next((e.srcElement as HTMLElement).scrollTop)
+        scroll: tap(e => scrollTop.next((e.srcElement as HTMLElement).scrollTop))
       },
       h('div', {
           style: list.length.pipe(map(value => `height: ${value * props.height}px; overflow: hidden;`)),

@@ -1,6 +1,6 @@
 import { h, $, $if, onMount, onDestroy } from 'easyhard';
-import { Observable, interval, Observer } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { Observable, interval, Observer, Subject } from 'rxjs';
+import { map, tap, startWith, scan, mapTo } from 'rxjs/operators';
 
 function Child(text: Observable<string>) {
   const mountInfo = new Observable((observer: Observer<any>) =>{
@@ -26,10 +26,11 @@ function Child(text: Observable<string>) {
 
 function App() {
   const text = interval(100).pipe(map(n => `number: ${n}`));
-  const mount = $(true)
+  const toggle = new Subject<MouseEvent>()
+  const mount = toggle.pipe(startWith(false), scan(acc => !acc, false))
 
   return h('div', {},
-    h('button', { click() {  mount.next(!mount.value) }}, 'toggle'),
+    h('button', { click: toggle }, 'toggle'),
     $if(mount, map(() => Child(text)))
   );
 }

@@ -1,5 +1,5 @@
 import { h, $, $provide, $inject } from 'easyhard';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
 function useTheme<T>() {
     const theme = $<T | null>(null);
@@ -50,7 +50,7 @@ function Button(text: string, click: EventListener) {
     const { theme, themeInjection, mode } = useModeTheme<Mode, Theme>();
     const style = theme.pipe(map(th => th ? `background: ${th.bg}; color: ${th.font}` : ''));
 
-    return h('button', { style, click },
+    return h('button', { style, click: tap(click) },
         themeInjection,
         text, ' ', mode.pipe(map(m => m === Mode.DAY ? '[day]' : '[night]'))
     )

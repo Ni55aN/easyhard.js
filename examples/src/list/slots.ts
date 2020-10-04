@@ -1,11 +1,18 @@
 import { h, $, Child } from 'easyhard'
-import { map } from 'rxjs/operators';
+import { map, mapTo, startWith, shareReplay } from 'rxjs/operators';
+import { Subject, merge } from 'rxjs';
 import { Observable } from 'rxjs';
 
-function Hoverable(content: (active: Observable<boolean>) => Child) {
-  const hovered = $(false)
+function switcher<T, K>(a: Subject<T>, b: Subject<K>) {
+  return merge(a.pipe(mapTo(true)), b.pipe(mapTo(false))).pipe(startWith(false), shareReplay(1))
+}
 
-  return h('div', { mouseenter() { hovered.next(true) }, mouseleave() { hovered.next(false) } },
+function Hoverable(content: (active: Observable<boolean>) => Child) {
+  const mouseenter = new Subject<MouseEvent>()
+  const mouseleave = new Subject<MouseEvent>()
+  const hovered = switcher(mouseenter, mouseleave)
+
+  return h('div', { mouseenter, mouseleave },
     content(hovered)
   )
 }

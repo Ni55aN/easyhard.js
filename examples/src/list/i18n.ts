@@ -1,6 +1,6 @@
 import { h, $, $provide, $inject, Child, $$, $for } from 'easyhard';
 import { Observable, interval, of, combineLatest } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 type Dictionary = { [text: string]: { [locale: string]: string } };
 type Text = string | Observable<string>;
@@ -72,7 +72,7 @@ function Child() {
 
   return h('div', {},
     injectTranslation,
-    h('u', { click() { setLocale('ua'); } }, t('dictionary'))
+    h('u', { click: tap(() => setLocale('ua')) }, t('dictionary'))
   )
 }
 
@@ -85,7 +85,7 @@ function App() {
 
   return h('div', {},
     provideTranslation,
-    h('button', { click: () => setLocale(getLocale() === 'ua' ? 'ru' : 'ua') }, 'switch'),
+    h('button', { click: tap(() => setLocale(getLocale() === 'ua' ? 'ru' : 'ua')) }, 'switch'),
     Child(),
     $for(list, map(i => h('div', {}, t(text), i)))
   );

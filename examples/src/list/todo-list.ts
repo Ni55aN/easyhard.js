@@ -1,5 +1,5 @@
 import { h, $, $$, $for, $if } from 'easyhard';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { Input } from '../components/input';
 
 type Reactive<T> = {[key in keyof T]: $<T[key]>};
@@ -23,8 +23,8 @@ function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => 
       Editable(
         (toggle) => h('b', {
           style: done.pipe(map(done => done ? 'text-decoration: line-through;' : '' )),
-          click() { done.next(!done.value) },
-          contextmenu(e: Event) { e.preventDefault(); toggle(); }
+          click: tap(() => done.next(!done.value)),
+          contextmenu: tap((e: Event) => { e.preventDefault(); toggle(); })
         }, text),
         (toggle) => Input({
           model: text,
@@ -32,7 +32,7 @@ function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => 
           events: { blur: toggle }
         })
       ),
-      h('button', { click() { remove(item) } }, 'x')
+      h('button', { click: tap(() => remove(item)) }, 'x')
   );
 }
 
@@ -45,7 +45,7 @@ function App() {
 
   return h('div', {},
     Input({ model: target }),
-    h('button', { click() { add(target.value); target.next(''); }}, '+'),
+    h('button', { click: tap(() => { add(target.value); target.next('');}) }, '+'),
     $for(list, map(item => TodoItem({ item, remove })))
   );
 }
