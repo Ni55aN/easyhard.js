@@ -1,6 +1,6 @@
 {
   "name": "easyhard",
-  "version": "0.4.7",
+  "version": "0.5.0",
   "peerDependencies": {
     "rxjs": "6.5.3",
     "rxjs-compat": "6.5.3"
