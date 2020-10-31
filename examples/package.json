@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "start": "node --inspect node_modules/webpack-dev-server/bin/webpack-dev-server.js",
+        "start": "webpack serve",
         "build": "webpack",
         "stats": "webpack --profile --json > dist/stats.json"
     },
@@ -17,12 +17,12 @@
     "devDependencies": {
         "babel-plugin-overload": "0.0.2",
         "eslint-loader": "^4.0.2",
-        "html-webpack-plugin": "^3.2.0",
+        "html-webpack-plugin": "4.5.0",
         "recast": "^0.19.0",
-        "ts-loader": "^6.2.1",
-        "typescript": "3.3.3",
-        "webpack": "^4.41.5",
-        "webpack-cli": "^3.3.10",
-        "webpack-dev-server": "^3.9.0"
+        "ts-loader": "8.0.7",
+        "typescript": "4.0.5",
+        "webpack": "^5.3.2",
+        "webpack-cli": "^4.1.0",
+        "webpack-dev-server": "3.11.0"
     }
 }
