@@ -5,26 +5,26 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { createAnchor } from '../utils';
 
-type DiKey<T> = { new(): T } | Record<string, unknown>;
+type DiKey = { new(): unknown } | { (): unknown } | Record<string, unknown>;
 type DiValue<T> = $<T>;
 type DiInjection<T> = WeakMap<Node, T>;
 
 class Injections {
-    map = new WeakMap<DiKey<unknown>, DiInjection<unknown>>();
+    map = new WeakMap<DiKey, DiInjection<unknown>>();
     list$ = $<Node | null>(null);
 
-    observe<T>(id: DiKey<T>): Observable<DiInjection<T>> {
+    observe<T>(id: DiKey): Observable<DiInjection<T>> {
         return this.list$.pipe(
             map(() => this.getNodeMap(id))
         );
     }
 
-    next<T>(id: DiKey<T>, node: Node, value: T): void {
+    next<T>(id: DiKey, node: Node, value: T): void {
         this.getNodeMap(id).set(node, value);
         this.list$.next(null);
     }
 
-    private getNodeMap<T>(id: DiKey<T>): DiInjection<T> {
+    private getNodeMap<T>(id: DiKey): DiInjection<T> {
         let m = this.map.get(id);
 
         if (!m) {
@@ -41,7 +41,7 @@ class Injections {
 
 const injections = new Injections();
 
-export function $provide<T extends unknown>(id: DiKey<T>, value: DiValue<T>): Child {
+export function $provide<T extends unknown>(id: DiKey, value: DiValue<T>): Child {
     const anchor = createAnchor();
 
     value.pipe(untilExist(anchor)).subscribe(value => {
@@ -52,18 +52,18 @@ export function $provide<T extends unknown>(id: DiKey<T>, value: DiValue<T>): Ch
     return anchor;
 }
 
-export function $inject<T extends unknown>(id: DiKey<T>, act: DiValue<T>): Child {
+export function $inject<T extends unknown>(id: DiKey, act: DiValue<T>): Child {
     const anchor = createAnchor();
     const injection = injections.observe(id);
 
-    injection.pipe(untilExist(anchor)).subscribe((injectionValue: DiInjection<T>) => {
+    injection.pipe(untilExist(anchor)).subscribe(injectionValue => {
         const target = anchor.parentNode;
         if (!target) return;
         
         const value = Injections.find(target.parentElement, injectionValue);
 
         if (value) {
-            act.next(value);
+            act.next(value as T);
         }
     });
 
