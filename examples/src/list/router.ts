@@ -71,11 +71,13 @@ const routes: Route[] = [
 ]
 
 function App() {
-  const { routerOutlet, navigate } = useRouter();
+  const { routerOutlet, navigate, params } = useRouter();
 
   return h('span', {},
+    'query=', params.pipe(map(p => p.get('query'))),
+    h('br', {}),
     routerOutlet(routes),
-    h('button', { click: tap(() => navigate(['a'])) }, 'A'),
+    h('button', { click: tap(() => navigate(['a'], { key: '12345' })) }, 'A'),
     h('button', { click: tap(() => navigate(['b'])) }, 'B'),
     h('button', { click: tap(() => navigate(['c'])) }, 'C')
   )

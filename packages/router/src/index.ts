@@ -1,13 +1,14 @@
 import { h, $, $provide, $inject } from 'easyhard';
-import { combineLatest, of } from 'rxjs';
+import { combineLatest, Observable, of } from 'rxjs';
 import { distinctUntilChanged, map, tap, switchMap } from 'rxjs/operators';
 import { History } from 'history';
 import { fromHistory, toPath, match } from './location';
 import { ParentRoute, Path, Route } from './types';
 
 type UseRouter = {
-  navigate(path: Path, replace?: boolean): void;
+  navigate(path: Path, params?: ConstructorParameters<typeof URLSearchParams>[0], replace?: boolean): void;
   routerOutlet(routes: Route[]): HTMLElement;
+  params: Observable<URLSearchParams>;
   back(): void;
   forward(): void;
 }
@@ -20,14 +21,20 @@ export function useRouter({ history }: UseRouterProps): UseRouter {
   const parentRoute = $<null | ParentRoute>(null);
 
   return {
-    navigate(path, replace = false) {
-      const pathString = [...toPath(parentRoute.value), ...path].join('/')
+    navigate(path, params, replace = false) {
+      const fullPath = [...toPath(parentRoute.value), ...path]
+      const to = `/${fullPath.join('/')}?${params ? new URLSearchParams(params).toString() : ''}`
   
       if (replace) {
-        history.replace(`/${pathString}`)
+        history.replace(to)
       } else {
-        history.push(`/${pathString}`)
+        history.push(to)
       }
+    },
+    get params() {
+      const location$ = fromHistory(history);
+      
+      return location$.pipe(map(l => new URLSearchParams(l.search)))
     },
     back() {
       history.back()
