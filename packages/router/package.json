@@ -1,0 +1,8 @@
+{
+  "name": "easyhard-router",
+  "version": "0.1.0",
+  "peerDependencies": {
+    "easyhard": "^0.4.3",
+    "rxjs": "^6.5.3"
+  }
+}
