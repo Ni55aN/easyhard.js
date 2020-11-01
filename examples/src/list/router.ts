@@ -1,6 +1,10 @@
 import { h } from 'easyhard';
 import { map, tap } from 'rxjs/operators';
-import { Route, useRouter } from 'easyhard-router'
+import { createHashHistory } from 'history';
+import { Route, useRouter as useRouterOrigin } from 'easyhard-router'
+
+const history = createHashHistory()
+const useRouter = () => useRouterOrigin({ history })
 
 const child2Routes: Route[] = [
   {

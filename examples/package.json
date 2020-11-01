@@ -11,6 +11,7 @@
         "easyhard-loader": "file:../build/loader",
         "easyhard-router": "file:../build/router",
         "easyhard-styles": "file:../build/styles",
+        "history": "^5.0.0",
         "jss": "^10.0.0",
         "jss-preset-default": "^10.0.0",
         "lodash-es": "^4.17.15"

@@ -1,26 +1,47 @@
 import { h, $, $provide, $inject } from 'easyhard';
 import { combineLatest, of } from 'rxjs';
 import { distinctUntilChanged, map, tap, switchMap } from 'rxjs/operators';
-import { fromLocation, toPath, match, setLocation } from './location';
+import { History } from 'history';
+import { fromHistory, toPath, match } from './location';
 import { ParentRoute, Path, Route } from './types';
 
-type UseRouter = { navigate(path: Path): void, routerOutlet(routes: Route[]): HTMLElement }
+type UseRouter = {
+  navigate(path: Path, replace?: boolean): void;
+  routerOutlet(routes: Route[]): HTMLElement;
+  back(): void;
+  forward(): void;
+}
+type UseRouterProps = {
+  history: History
+}
 
-export function useRouter(): UseRouter {
+export function useRouter({ history }: UseRouterProps): UseRouter {
   const currentRoute = $<Route | null>(null);
   const parentRoute = $<null | ParentRoute>(null);
 
   return {
-    navigate(path) {
-      setLocation([...toPath(parentRoute.value), ...path]);
+    navigate(path, replace = false) {
+      const pathString = [...toPath(parentRoute.value), ...path].join('/')
+  
+      if (replace) {
+        history.replace(`/${pathString}`)
+      } else {
+        history.push(`/${pathString}`)
+      }
+    },
+    back() {
+      history.back()
+    },
+    forward() {
+      history.forward()
     },
     routerOutlet(routes) {
-      const path$ = fromLocation();
+      const location$ = fromHistory(history);
 
       return h('span', {},
         $inject(useRouter, parentRoute),
         $provide(useRouter, $<ParentRoute>({ current: currentRoute, parent: parentRoute })),
-        combineLatest([path$, parentRoute]).pipe(
+        combineLatest([location$, parentRoute]).pipe(
           map(([path, parent]) => {
             const prefix = toPath(parent);
 
