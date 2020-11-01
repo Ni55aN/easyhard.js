@@ -50,18 +50,19 @@ function prepareCssValue(val: CssSimpleValue): string {
 }
 
 function stringifyMedia(args: [MediaKeys, CssMediaValue][]): string {
-    return args.map(([key, value]: [MediaKeys, CssMediaValue]) => {
+    return args.map(([key, value]) => {
         switch (key) {
-            case 'maxWidth': return `(max-width: ${value})`;
-            case 'minWidth': return `(min-width: ${value})`;
-            case 'orientation': return `(orientation: ${value})`;
+            case 'maxWidth': return `(max-width: ${value as string})`;
+            case 'minWidth': return `(min-width: ${value as string})`;
+            case 'orientation': return `(orientation: ${value as string})`;
             default: return value;
         }
     }).join(' and ');
 }
 
 function untilExistStyle<T>(style: HTMLStyleElement, parent: ChildNode | null): MonoTypeOperatorFunction<T> {
-    return parent ? pipe(untilExist<T>(style, document.head), untilExist(parent)) : untilExist<T>(style, document.head);
+    if (parent) return pipe(untilExist<T>(style, document.head), untilExist(parent))
+    return untilExist<T>(style, document.head);
 }
 
 function injectCssProperties(selector: string, media: CssMediaItem[], style: HTMLStyleElement, props: StyleDeclaration, head: HTMLHeadElement, parent: ChildNode | null): void {
@@ -95,7 +96,7 @@ function injectCssProperties(selector: string, media: CssMediaItem[], style: HTM
 
             injectCssProperties(selector, localMedia, style, localProps as StyleDeclaration, head, parent);
         } else if (key === '@import') {
-            sheet.insertRule(`@import ${val}`)
+            sheet.insertRule(`@import ${val as string}`)
         } else if (key.startsWith(':')) {
             const localProps = props[key] as unknown as StyleDeclaration;
 

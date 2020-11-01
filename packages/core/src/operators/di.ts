@@ -5,12 +5,12 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { createAnchor } from '../utils';
 
-type DiKey<T> = { new(): T } | {};
+type DiKey<T> = { new(): T } | Record<string, unknown>;
 type DiValue<T> = $<T>;
 type DiInjection<T> = WeakMap<Node, T>;
 
 class Injections {
-    map = new WeakMap<DiKey<unknown>, DiInjection<any>>();
+    map = new WeakMap<DiKey<unknown>, DiInjection<unknown>>();
     list$ = $<Node | null>(null);
 
     observe<T>(id: DiKey<T>): Observable<DiInjection<T>> {
@@ -31,7 +31,7 @@ class Injections {
             m = new WeakMap();
             this.map.set(id, m);
         }
-        return m;
+        return m as DiInjection<T>;
     }
 
     static find<T>(el: Node | null, data: DiInjection<T>): T | null {
@@ -46,7 +46,7 @@ export function $provide<T extends unknown>(id: DiKey<T>, value: DiValue<T>): Ch
 
     value.pipe(untilExist(anchor)).subscribe(value => {
         if (!anchor.parentNode) throw new Error('parentNode is undefined')
-        injections.next(id, anchor.parentNode, value as any);
+        injections.next(id, anchor.parentNode, value);
     });
 
     return anchor;

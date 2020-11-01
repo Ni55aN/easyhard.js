@@ -2,11 +2,11 @@ import { Subject, merge, Observable, of } from "rxjs";
 import { mergeMap, map } from "rxjs/operators";
 import { $ } from './value';
 
-type Change<T extends 'insert' | 'remove'> = { item: any; i: number; type: T }
+type Change<T extends 'insert' | 'remove', I> = { item: I; i: number; type: T }
 
 export type $$<T> = {
   value$: $<T[]>;
-  change$: Subject<Change<'insert'> | Change<'remove'>>;
+  change$: Subject<Change<'insert', T> | Change<'remove', T>>;
   value: T[];
   get(i: number): Observable<T>;
   insert(item: T, i?: number): void;
@@ -18,7 +18,7 @@ export type $$<T> = {
 }
 
 export const $$ = <T>(array: T[]): $$<T> => {
-  const change$ = new Subject<Change<'insert'> | Change<'remove'>>();
+  const change$ = new Subject<Change<'insert', T> | Change<'remove', T>>();
   const value$ = $<T[]>(array);
 
   function insert(item: T, i = value$.value.length): void {

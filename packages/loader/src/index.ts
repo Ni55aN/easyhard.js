@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { parse, print, types } from 'recast'
 
 const ID = '___id';
@@ -6,13 +7,13 @@ const RENDERER = '___renderer';
 
 const { builders: b } = types;
 
-export default function(this: any, source: string): string {
+export default function(this: { resourcePath: string }, source: string): string {
   const ast = parse(source);
   
   const imports = ast.program.body.filter((item: any) => item.type === 'ImportDeclaration');
   const exportFuncBlocks = ast.program.body.filter((item: any) => item.type === 'ExportNamedDeclaration');
   const hmrFunctions = exportFuncBlocks.filter((item: any) => item.comments && item.comments.some((comment: any) => comment.type === 'Line' && comment.value.match('@hmr')))
-  const hmrFunctionNames = hmrFunctions.map((item: any) => item.declaration.id.name);
+  const hmrFunctionNames: string[] = hmrFunctions.map((item: any) => item.declaration.id.name);
 
   if (hmrFunctions.length === 0) return source;
 

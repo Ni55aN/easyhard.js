@@ -20,8 +20,8 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
           element.addEventListener(attrName, ((e: HTMLElementEventMap[EventName]) => attr.next(e)) as EventListener)
         } else if (attr) {
           const subject = new Subject<HTMLElementEventMap[EventName]>();
-      
-          subject.pipe(untilExist(element), attr as any).subscribe()
+
+          subject.pipe(untilExist(element), attr).subscribe()
           element.addEventListener(attrName, ((e: HTMLElementEventMap[EventName]) => subject.next(e)) as EventListener)
         }
       } else {
@@ -29,13 +29,13 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
         const attr = attrs[attrName];
 
         if (attr === true) {
-          element[attrName] = true as any;
+          element[attrName] = true as unknown as HTMLElementTagNameMap[K][typeof attrName];
         } else if (attr instanceof Observable) {
           attr.pipe(untilExist(element)).subscribe(value => {
-            element[attrName] = value;
+            element[attrName] = value as unknown as HTMLElementTagNameMap[K][typeof attrName];
           });
         } else if (attr !== false && attr != null) {
-          element[attrName] = attr as any;
+          element[attrName] = attr as unknown as HTMLElementTagNameMap[K][typeof attrName];
         }
       }
     }
