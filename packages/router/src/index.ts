@@ -1,7 +1,7 @@
 import { h, $, $provide, $inject } from 'easyhard';
 import { combineLatest, of } from 'rxjs';
 import { distinctUntilChanged, map, tap, switchMap } from 'rxjs/operators';
-import { fromLocation, getFullPath, match, setLocation } from './location';
+import { fromLocation, toPath, match, setLocation } from './location';
 import { ParentRoute, Path, Route } from './types';
 
 type UseRouter = { navigate(path: Path): void, routerOutlet(routes: Route[]): HTMLElement }
@@ -12,7 +12,7 @@ export function useRouter(): UseRouter {
 
   return {
     navigate(path) {
-      setLocation([...getFullPath(parentRoute.value), ...path]);
+      setLocation([...toPath(parentRoute.value), ...path]);
     },
     routerOutlet(routes) {
       const path$ = fromLocation();
@@ -22,7 +22,7 @@ export function useRouter(): UseRouter {
         $provide(useRouter, $<ParentRoute>({ current: currentRoute, parent: parentRoute })),
         combineLatest([path$, parentRoute]).pipe(
           map(([path, parent]) => {
-            const prefix = getFullPath(parent);
+            const prefix = toPath(parent);
 
             return routes.find(r => r.path === '*' || match(path, [...prefix, r.path]))
           }),

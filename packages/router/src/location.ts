@@ -1,22 +1,21 @@
-/* eslint-disable @typescript-eslint/prefer-regexp-exec */
 import { Observable } from 'rxjs';
 import { ParentRoute, Path } from './types';
 
 const parse = (path: string): Path => path.slice(1).split('/');
 const stringify = (path: Path): string => `#${path.join('/')}`;
 
-export function getFullPath(route: ParentRoute | null): Path {
+export function toPath(route: ParentRoute | null): Path {
   if (!route) return [];
   const { parent, current } = route;
 
   return [
-    ...(parent ? getFullPath(parent.value) : []),
+    ...(parent ? toPath(parent.value) : []),
     ...(current && current.value ? current.value.path : [])
   ]
 }
 
-export function match(currentPath: Path, routePath: Path): boolean {
-  return Boolean(currentPath.join('/').match(routePath.join('/')))
+export function match(path: Path, target: Path): boolean {
+  return Boolean(path.join('/').startsWith(target.join('/')))
 }
 
 export function fromLocation(): Observable<Path> {
