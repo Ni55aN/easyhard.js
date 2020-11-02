@@ -28,6 +28,7 @@
     "fs-extra": "^9.0.1",
     "history": "^5.0.0",
     "husky": "^4.2.5",
+    "recast": "^0.20.4",
     "rollup": "2.32.1",
     "rollup-plugin-copy": "^3.3.0",
     "rollup-plugin-eslint": "^7.0.0",
