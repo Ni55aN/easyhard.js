@@ -1,0 +1,39 @@
+name: Check versions
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  first:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [
+          {name: 'easyhard-api', folder: 'api'},
+          {name: 'easyhard', folder: 'core'},
+          {name: 'easyhard-loader', folder: 'loader'},
+          {name: 'easyhard-router', folder: 'router'},
+          {name: 'easyhard-styles', folder: 'styles'},
+        ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check if version has been updated
+        id: checkVersion
+        uses: EndBug/version-check@v1.6.0
+        with:
+          diff-search: true
+          file-name: packages/${{matrix.package.folder}}/package.json
+      - name: Dispatch publish
+        if: steps.checkVersion.outputs.changed == 'true'
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Publish
+          token: ${{secrets.PERSONAL_TOKEN}}
+          inputs: '{
+            "name": "${{matrix.package.name}}",
+            "folder": "${{matrix.package.folder}}",
+            "version": "${{steps.checkVersion.outputs.version}}"
+            }'
+

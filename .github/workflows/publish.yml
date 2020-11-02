@@ -1,20 +1,44 @@
 name: Publish
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Package name'
+        required: true
+      folder:
+        description: 'Package folder'
+        required: true
+      version:
+        description: 'Package version'
+        required: true
 
 jobs:
-  build:
+  first:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
           node-version: 12
           registry-url: https://registry.npmjs.org/
       - run: npm install
       - run: npm run build
-      - run: npm publish --access public
+      - name: Publish to NPM
+        run: npm publish ./build/${{github.event.inputs.folder}}
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          tag_name: ${{github.event.inputs.name}}-v${{github.event.inputs.version}}
+          release_name: Release ${{github.event.inputs.name}} (v${{github.event.inputs.version}})
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: false
+          prerelease: false
