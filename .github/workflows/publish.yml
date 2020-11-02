@@ -35,7 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
           tag_name: ${{github.event.inputs.name}}-v${{github.event.inputs.version}}
-          release_name: Release ${{github.event.inputs.name}} (v${{github.event.inputs.version}})
+          release_name: ${{github.event.inputs.name}} (v${{github.event.inputs.version}})
           body: |
             -
           draft: false
