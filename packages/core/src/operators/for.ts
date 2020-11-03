@@ -3,7 +3,7 @@ import { $$ } from '../structures/array'
 import { DomElement, SimpleType, Anchor } from '../types'
 import { merge, OperatorFunction, Observable, Subject } from 'rxjs'
 import { filter, startWith, map } from 'rxjs/operators'
-import { untilExist } from '../operators'
+import { untilExist } from '../operators/until-exist'
 import { createFragment } from '../fragment'
 
 type ForFragment<T> = {

@@ -3,7 +3,7 @@ import { Observable, Subject } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
 import { DomElement, Attrs, Child, PropAttrs, TagName, EventAttrs, EventHandler, EventName } from './types'
 import { insertNode, createAnchor } from './utils'
-import { untilExist } from './operators'
+import { untilExist } from './operators/until-exist'
 
 type NestedChild = Child | NestedChild[];
 
