@@ -4,7 +4,7 @@ import { DomElement, SimpleType, Anchor } from "../types";
 import { merge, OperatorFunction, Observable, Subject } from 'rxjs';
 import { filter, startWith, map } from 'rxjs/operators';
 import { untilExist } from '../operators';
-import { createFragment } from '../utils';
+import { createFragment } from '../fragment';
 
 type ForFragment<T> = {
   anchor: Anchor;

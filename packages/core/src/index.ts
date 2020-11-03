@@ -9,3 +9,4 @@ export { $$ } from './structures/array';
 export * from './operators';
 export * from './utils';
 export * from './hooks';
+export * from './fragment';
