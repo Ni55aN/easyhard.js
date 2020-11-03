@@ -1,9 +1,10 @@
 import typescript from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
 import alias from '@rollup/plugin-alias';
-import fromEntries from 'fromentries'
-import fs from 'fs-extra'
-import path from 'path'
+import fromEntries from 'fromentries';
+import resolve from '@rollup/plugin-node-resolve';
+import fs from 'fs-extra';
+import path from 'path';
 
 const mainPkg = require('./package.json')
 const packages = ['core', 'styles', 'router', 'loader', 'api'].map(folder => ({
@@ -18,10 +19,12 @@ export default packages.map(({ folder, pkg }) => {
     output: ['cjs', 'esm'].map(format => {
       return {
         file: `build/${folder}/${format}.js`,
-        format
+        format,
+        exports: 'auto'
       }
     }),
     plugins: [
+      resolve(),
       alias({
         entries: packages.map(({ folder, pkg }) => {
           return {
