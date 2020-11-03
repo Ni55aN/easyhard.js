@@ -2,7 +2,7 @@
   "scripts": {
     "build": "rollup -c",
     "build:dev": "rollup -cw",
-    "lint": "./node_modules/.bin/eslint packages/*/src/**/*",
+    "lint": "eslint packages/*/src/**",
     "commit": "git-cz"
   },
   "repository": {
