@@ -5,31 +5,31 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { createAnchor } from '../utils'
 
-type DiKey = { new(): unknown } | { (...args: any[]): unknown } | Record<string, unknown>;
+type DiKey<T> = { new(): unknown } | { (...args: T[]): unknown } | Record<string, unknown>;
 type DiValue<T> = $<T>;
 type DiInjection<T> = WeakMap<Node, T>;
 
 class Injections {
-    map = new WeakMap<DiKey, DiInjection<unknown>>();
+    map = new WeakMap<DiKey<unknown>, DiInjection<unknown>>();
     list$ = $<Node | null>(null);
 
-    observe<T>(id: DiKey): Observable<DiInjection<T>> {
+    observe<T, K>(id: DiKey<K>): Observable<DiInjection<T>> {
         return this.list$.pipe(
             map(() => this.getNodeMap(id))
         )
     }
 
-    next<T>(id: DiKey, node: Node, value: T): void {
+    next<T,K>(id: DiKey<K>, node: Node, value: T): void {
         this.getNodeMap(id).set(node, value)
         this.list$.next(null)
     }
 
-    private getNodeMap<T>(id: DiKey): DiInjection<T> {
-        let m = this.map.get(id)
+    private getNodeMap<T,K>(id: DiKey<K>): DiInjection<T> {
+        let m = this.map.get(id as DiKey<unknown>)
 
         if (!m) {
             m = new WeakMap()
-            this.map.set(id, m)
+            this.map.set(id as DiKey<unknown>, m)
         }
         return m as DiInjection<T>
     }
@@ -41,7 +41,7 @@ class Injections {
 
 const injections = new Injections()
 
-export function $provide<T extends unknown>(id: DiKey, value: DiValue<T>): Child {
+export function $provide<T extends unknown, K extends unknown>(id: DiKey<K>, value: DiValue<T>): Child {
     const anchor = createAnchor()
 
     value.pipe(untilExist(anchor)).subscribe(value => {
@@ -52,7 +52,7 @@ export function $provide<T extends unknown>(id: DiKey, value: DiValue<T>): Child
     return anchor
 }
 
-export function $inject<T extends unknown>(id: DiKey, act: DiValue<T>): Child {
+export function $inject<T extends unknown, K extends unknown>(id: DiKey<K>, act: DiValue<T>): Child {
     const anchor = createAnchor()
     const injection = injections.observe(id)
 
