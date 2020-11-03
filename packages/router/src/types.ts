@@ -1,5 +1,5 @@
-import { $ } from 'easyhard';
-import { OperatorFunction } from 'rxjs';
+import { $ } from 'easyhard'
+import { OperatorFunction } from 'rxjs'
 
 export type Route = {
   path: string;

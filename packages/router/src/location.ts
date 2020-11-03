@@ -1,10 +1,10 @@
-import { Observable } from 'rxjs';
-import { History, Location } from 'history';
-import { ParentRoute, Path } from './types';
+import { Observable } from 'rxjs'
+import { History, Location } from 'history'
+import { ParentRoute, Path } from './types'
 
 export function toPath(route: ParentRoute | null): Path {
-  if (!route) return [];
-  const { parent, current } = route;
+  if (!route) return []
+  const { parent, current } = route
 
   return [
     ...(parent ? toPath(parent.value) : []),

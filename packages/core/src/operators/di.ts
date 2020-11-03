@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { createAnchor } from '../utils'
 
-type DiKey = { new(): unknown } | { (...args: unknown[]): unknown } | Record<string, unknown>;
+type DiKey = { new(): unknown } | { (...args: any[]): unknown } | Record<string, unknown>;
 type DiValue<T> = $<T>;
 type DiInjection<T> = WeakMap<Node, T>;
 
