@@ -23,6 +23,8 @@
     "es2017": true
   },
   "rules": {
+    "semi": ["error", "never"],
+    "quotes": ["error", "single"],
     "no-prototype-builtins": "off",
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-unsafe-assignment": "off",

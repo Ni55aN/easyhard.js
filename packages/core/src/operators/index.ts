@@ -1,5 +1,5 @@
-export { untilExist } from './until-exist';
-export { $for } from './for';
-export { $if } from './if';
-export { $show } from './show';
-export { $inject, $provide } from './di';
+export { untilExist } from './until-exist'
+export { $for } from './for'
+export { $if } from './if'
+export { $show } from './show'
+export { $inject, $provide } from './di'

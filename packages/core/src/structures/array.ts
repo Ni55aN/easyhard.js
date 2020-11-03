@@ -1,6 +1,6 @@
-import { Subject, merge, Observable, of } from "rxjs";
-import { mergeMap, map } from "rxjs/operators";
-import { $ } from './value';
+import { Subject, merge, Observable, of } from 'rxjs'
+import { mergeMap, map } from 'rxjs/operators'
+import { $ } from './value'
 
 type Change<T extends 'insert' | 'remove', I> = { item: I; i: number; type: T }
 
@@ -18,43 +18,43 @@ export type $$<T> = {
 }
 
 export const $$ = <T>(array: T[]): $$<T> => {
-  const change$ = new Subject<Change<'insert', T> | Change<'remove', T>>();
-  const value$ = $<T[]>(array);
+  const change$ = new Subject<Change<'insert', T> | Change<'remove', T>>()
+  const value$ = $<T[]>(array)
 
   function insert(item: T, i = value$.value.length): void {
-    value$.value.splice(i, 0, item);
-    change$.next({ item, i, type: 'insert' });
+    value$.value.splice(i, 0, item)
+    change$.next({ item, i, type: 'insert' })
   }
 
   function removeAt(i: number): void {
     const item = value$.value[i]
 
-    value$.value.splice(i, 1);
-    change$.next({ item, i, type: 'remove' });
+    value$.value.splice(i, 1)
+    change$.next({ item, i, type: 'remove' })
   }
 
   return {
     value$,
     change$,
     get value(): T[] {
-      return value$.value;
+      return value$.value
     },
     get(i: number): Observable<T> {
       return merge(value$, change$).pipe(
         mergeMap(() => {
-          const value = value$.value[i];
+          const value = value$.value[i]
           return value instanceof Observable ? value : of(value)
         })
-      );
+      )
     },
     set(i: number, v: T): void {
-      removeAt(i);
-      insert(v, i);
+      removeAt(i)
+      insert(v, i)
     },
     insert,
     remove(item: T): void {
-      const index = value$.value.indexOf(item);
-      removeAt(index);
+      const index = value$.value.indexOf(item)
+      removeAt(index)
     },
     removeAt,
     clear(): void {
@@ -65,7 +65,7 @@ export const $$ = <T>(array: T[]): $$<T> => {
     get length(): Observable<number> {
       return merge(value$, change$).pipe(
         map(() => value$.value.length)
-      );
+      )
     }
   }
 }

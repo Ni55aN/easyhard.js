@@ -1,7 +1,7 @@
-import { Observable } from 'rxjs';
-import { first } from 'rxjs/operators';
-import { untilExist } from '../operators';
-import { $ } from '../structures/value';
+import { Observable } from 'rxjs'
+import { first } from 'rxjs/operators'
+import { untilExist } from '../operators'
+import { $ } from '../structures/value'
 
 type Cb = () => void
 
