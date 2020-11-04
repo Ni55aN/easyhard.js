@@ -1,8 +1,6 @@
 import typescript from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
-import alias from '@rollup/plugin-alias';
 import fromEntries from 'fromentries';
-import resolve from '@rollup/plugin-node-resolve';
 import fs from 'fs-extra';
 import path from 'path';
 
@@ -23,16 +21,8 @@ export default packages.map(({ folder, pkg }) => {
         exports: 'auto'
       }
     }),
+    external: ['rxjs', 'rxjs/operators', 'recast', 'easyhard'],
     plugins: [
-      resolve(),
-      alias({
-        entries: packages.map(({ folder, pkg }) => {
-          return {
-            find: pkg.name,
-            replacement: path.resolve(`build/${folder}/esm.js`)
-          }
-        })
-      }),
       eslint(),
       typescript({
         tsconfig: `packages/${folder}/tsconfig.json`,
