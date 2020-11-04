@@ -52,6 +52,7 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
+    symlinks: false
   },
   output: {
     filename: `[name]${mode === 'development'?'':'.[chunkhash]'}.js`,
