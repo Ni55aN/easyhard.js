@@ -13,6 +13,16 @@ jobs:
           node-version: 12
       - run: npm install
       - run: npm run build # npm run lint is executed internally
+      - run: npm run test
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm install
+      - run: npm run test
   sonarcloud:
     runs-on: ubuntu-latest
     steps:
