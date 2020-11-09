@@ -3,6 +3,7 @@
     "build": "rollup -c",
     "build:dev": "rollup -cw",
     "lint": "eslint packages/*/src/**",
+    "test": "jest",
     "commit": "git-cz"
   },
   "repository": {
@@ -17,9 +18,11 @@
   "homepage": "https://github.com/Ni55aN/easyhard.js#readme",
   "devDependencies": {
     "@rollup/plugin-typescript": "6.1.0",
+    "@types/jest": "^26.0.15",
     "@typescript-eslint/eslint-plugin": "4.6.0",
     "@typescript-eslint/parser": "4.6.0",
     "commitizen": "4.2.2",
+    "core-js": "^3.7.0",
     "cz-conventional-changelog": "3.3.0",
     "eslint": "7.12.1",
     "eslint-loader": "4.0.2",
@@ -27,12 +30,14 @@
     "fs-extra": "^9.0.1",
     "history": "^5.0.0",
     "husky": "^4.2.5",
+    "jest": "^26.6.3",
     "recast": "^0.20.4",
     "rollup": "2.32.1",
     "rollup-plugin-copy": "^3.3.0",
     "rollup-plugin-eslint": "^7.0.0",
     "rollup-plugin-typescript2": "0.29.0",
     "rxjs": "^6.6.3",
+    "ts-jest": "^26.4.4",
     "ts-loader": "8.0.7",
     "typescript": "4.0.5"
   },
