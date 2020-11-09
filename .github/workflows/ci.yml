@@ -23,12 +23,20 @@ jobs:
           node-version: 12
       - run: npm install
       - run: npm run test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage
+          path: coverage
   sonarcloud:
+    needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
+    - uses: actions/download-artifact@v2
+      with:
+        name: coverage
     - name: SonarCloud Scan
       uses: sonarsource/sonarcloud-github-action@v1.4
       env:
