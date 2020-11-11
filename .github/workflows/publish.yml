@@ -23,6 +23,7 @@ jobs:
           node-version: 12
           registry-url: https://registry.npmjs.org/
       - run: npm install
+      - run: npm run test
       - run: npm run build
       - name: Publish to NPM
         run: npm publish ./build/${{github.event.inputs.folder}}
