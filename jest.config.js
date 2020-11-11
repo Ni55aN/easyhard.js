@@ -7,7 +7,7 @@ module.exports = {
   setupFiles: ['core-js'],
   collectCoverage: true,
   collectCoverageFrom: [
-    'packages/*/src/**.ts'
+    'packages/*/src/**/*.ts'
   ],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' })
 };
