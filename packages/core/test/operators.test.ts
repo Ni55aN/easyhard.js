@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { $, $$, $for, $if, h } from '../src/index'
+import { $, $$, $for, $if, $inject, $provide, h } from '../src/index'
 import { delay, waitAnimationFrame } from './utils/timers'
 
 describe('hooks', () => {
@@ -68,5 +68,45 @@ describe('hooks', () => {
     document.body.appendChild(div)
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('1234')
+  })
+
+  it('$for - async insert', async () => {
+    const array = $$([1,2,3])
+    const div = h('div', {}, $for(array, map(item => item)))
+    document.body.appendChild(div)
+
+    await waitAnimationFrame()
+    array.insert(0, 1)
+    await delay(100)
+    expect(document.body.textContent).toBe('1023')
+  })
+
+  it('$inject/$provide', async () => {
+    const StateKey = {}
+
+    function Child() {
+      const state = $(null)
+      return h('div', {}, $inject(StateKey, state), state)
+    }
+    function Parent<T>(props: { showChild: $<boolean>, state: $<T>, content: HTMLElement }) {
+      return h('div', {},
+        $provide(StateKey, props.state),
+        $if(showChild, map(() => props.content))
+      )
+    }
+
+    const showChild = $(false)
+    const state = $('test')
+    const div = Parent({ showChild, state, content: Child() })
+    document.body.appendChild(div)
+
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('')
+    showChild.next(true)
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('test')
+    state.next('state')
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('state')
   })
 })
