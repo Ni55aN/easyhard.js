@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { $, $$, $for, $if, $inject, $provide, h } from '../src/index'
+import { $, $$, $for, $if, $inject, $provide, h, untilExist } from '../src/index'
 import { delay, waitAnimationFrame } from './utils/timers'
 
 describe('hooks', () => {
@@ -108,5 +108,50 @@ describe('hooks', () => {
     state.next('state')
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('state')
+  })
+
+  describe('untilExist', () => {
+    let fn: jest.Mock
+    let value$: $<number>
+    let div: HTMLElement
+  
+    beforeEach(() => {
+      div = document.createElement('div')
+      value$ = $(0)
+      fn = jest.fn()
+      value$.pipe(untilExist(div)).subscribe(fn)
+    })
+    afterEach(() => {
+      document.body.innerHTML = ''
+    })
+
+    it('emits after adding to body', async () => {
+      expect(fn).not.toBeCalled()
+      document.body.appendChild(div)
+      await waitAnimationFrame()
+      expect(fn).toBeCalledTimes(1)
+    })
+
+    it('dont miss any emited value', async () => {
+      expect(fn).toBeCalledTimes(0)
+      value$.next(1)
+      expect(fn).toBeCalledTimes(0)
+      value$.next(2)
+      expect(fn).toBeCalledTimes(0)
+      document.body.appendChild(div)
+      await waitAnimationFrame()
+      expect(fn).toBeCalledTimes(3)
+    })
+
+    it('unsubscribe on remove', async () => {
+      expect(fn).not.toBeCalled()
+      document.body.appendChild(div)
+      await waitAnimationFrame()
+      expect(fn).toBeCalledTimes(1)
+      document.body.removeChild(div)
+      await waitAnimationFrame()
+      value$.next(1)
+      expect(fn).toBeCalledTimes(1)
+    })
   })
 })
