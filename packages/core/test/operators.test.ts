@@ -2,7 +2,7 @@ import { map } from 'rxjs/operators'
 import { $, $$, $for, $if, $inject, $provide, $show, h, untilExist } from '../src/index'
 import { delay, waitAnimationFrame } from './utils/timers'
 
-describe('hooks', () => {
+describe('operators', () => {
   afterEach(() => {
     document.body.innerHTML = ''
   })
