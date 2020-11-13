@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { $, $$, $for, $if, $inject, $provide, h, untilExist } from '../src/index'
+import { $, $$, $for, $if, $inject, $provide, $show, h, untilExist } from '../src/index'
 import { delay, waitAnimationFrame } from './utils/timers'
 
 describe('hooks', () => {
@@ -38,6 +38,21 @@ describe('hooks', () => {
     is.next(true)
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('test')
+  })
+
+  it('$show', async () => {
+    const is = $(true)
+    const div = h('div', {},
+      $show(is, () => h('div', { id: 'child' }, 'test'))
+    )
+    document.body.appendChild(div)
+    await waitAnimationFrame()
+
+    const el = document.body.querySelector('#child') as Element
+    expect(getComputedStyle(el).display).not.toBe('none')
+    is.next(false)
+    await waitAnimationFrame()
+    expect(getComputedStyle(el).display).toBe('none')
   })
 
   it('$for', async () => {
