@@ -40,6 +40,20 @@ describe('operators', () => {
     expect(document.body.textContent).toBe('test')
   })
 
+  it('$if - else', async () => {
+    const is = $(false)
+    const div = h('div', {},
+      $if(is, map(() => h('div', {}, '111')), map(() => h('div', {}, '222')))
+    )
+    document.body.appendChild(div)
+
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('222')
+    is.next(true)
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('111')
+  })
+
   it('$show', async () => {
     const is = $(true)
     const div = h('div', {},
