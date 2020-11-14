@@ -1,6 +1,5 @@
 import { interval, Subject } from 'rxjs'
-import { map, take, tap } from 'rxjs/operators'
-import { $, h } from '../src/index'
+import { map, mergeMap, take, takeUntil, tap } from 'rxjs/operators'
 import { delay, waitAnimationFrame } from './utils/timers'
 
 describe('core', () => {
@@ -75,7 +74,7 @@ describe('core', () => {
   })
 
   it('interval + take', async () => {
-    const value = interval(100).pipe(take(3))
+    const value = $(null).pipe(mergeMap(() => interval(100).pipe(take(3))))
     const div = h('div', {}, value)
     document.body.appendChild(div)
 
@@ -106,5 +105,20 @@ describe('core', () => {
     await waitAnimationFrame()
     value.next('333')
     expect(fn).toBeCalledTimes(2)
+  })
+  
+  it('remove if Observable completed', async () => {
+    const complete$ = new Subject()
+    const div = h('div', {},
+      $('111').pipe(takeUntil(complete$), map(v => h('b', {}, v))),
+      $('222').pipe(takeUntil(complete$))
+    )
+    document.body.appendChild(div)
+
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('111222')
+    complete$.next()
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('')
   })
 })
