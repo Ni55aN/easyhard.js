@@ -43,16 +43,20 @@ describe('operators', () => {
   it('$show', async () => {
     const is = $(true)
     const div = h('div', {},
-      $show(is, () => h('div', { id: 'child' }, 'test'))
+      $show(is, () => h('div', { id: 'child' }, 'test')),
+      $show(is, () => $('child2').pipe(map(id => h('div', { id }, 'test'))))
     )
     document.body.appendChild(div)
     await waitAnimationFrame()
 
-    const el = document.body.querySelector('#child') as Element
-    expect(getComputedStyle(el).display).not.toBe('none')
+    const el1 = document.body.querySelector('#child') as Element
+    const el2 = document.body.querySelector('#child') as Element
+    expect(getComputedStyle(el1).display).not.toBe('none')
+    expect(getComputedStyle(el2).display).not.toBe('none')
     is.next(false)
     await waitAnimationFrame()
-    expect(getComputedStyle(el).display).toBe('none')
+    expect(getComputedStyle(el1).display).toBe('none')
+    expect(getComputedStyle(el2).display).toBe('none')
   })
 
   it('$for', async () => {
