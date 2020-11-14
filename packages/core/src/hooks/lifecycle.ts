@@ -6,7 +6,7 @@ import { $ } from '../structures/value'
 type Cb = () => void
 
 const onMountElement = (el: Element, cb: Cb) => $('').pipe(untilExist(el), first()).subscribe(cb)
-const onMountInjected = (cb: Cb) => new Observable<null>(() => cb())
+const onMountInjected = (cb: Cb) => new Observable<null>(() => cb()) // FIXME
 
 export function onMount(...args: Parameters<typeof onMountElement>): void;
 export function onMount(...args: Parameters<typeof onMountInjected>): Observable<null>
