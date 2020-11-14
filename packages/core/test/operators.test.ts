@@ -1,4 +1,5 @@
-import { map } from 'rxjs/operators'
+import { Observable, pipe } from 'rxjs'
+import { filter, map, mergeMap, delay as delayOp } from 'rxjs/operators'
 import { $, $$, $for, $if, $inject, $provide, $show, h, untilExist } from '../src/index'
 import { delay, waitAnimationFrame } from './utils/timers'
 
@@ -112,6 +113,72 @@ describe('operators', () => {
     array.insert(0, 1)
     await delay(100)
     expect(document.body.textContent).toBe('1023')
+  })
+
+  it('$for - remove', async () => {
+    const array = $$([1,2,3])
+    const div = h('div', {}, $for(array, map(item => item)))
+    document.body.appendChild(div)
+
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('123')
+    array.remove(2)
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('13')
+  })
+
+  it('$for - removeAt', async () => {
+    const array = $$([1,2,3])
+    const div = h('div', {}, $for(array, map(item => item)))
+    document.body.appendChild(div)
+
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('123')
+    array.removeAt(1)
+    await waitAnimationFrame()
+    expect(document.body.textContent).toBe('13')
+  })
+
+  describe('$for - detached', () => {
+    afterEach(() => {
+      document.body.innerHTML = ''
+    })
+
+    it('shouldnt be removed', async () => {
+      const array = $$<number>([1,2,3])
+      const div = h('div', {}, $for(array, map(([item]) => item), { detached: true }))
+      document.body.appendChild(div)
+
+      await waitAnimationFrame()
+      expect(document.body.textContent).toBe('123')
+      array.remove(1)
+      await waitAnimationFrame()
+      expect(document.body.textContent).toBe('123')
+    })
+  
+    it('should be removed with delay', async () => {
+      const delayRemove = (time: number) => <K, T extends [K, Observable<boolean>]>(source: Observable<T>): Observable<T> => new Observable(observer => {
+        return source.subscribe({
+          next(value) { observer.next(value) },
+          error(err) { observer.error(err) },
+          complete() { observer.complete() }
+        }).add(source.pipe(mergeMap(value => value[1]), filter(removed => removed), delayOp(time)).subscribe({
+          next() { observer.complete() }
+        }))
+      })
+
+      const array = $$<number>([1,2,3])
+      const div = h('div', {}, $for(array, pipe(delayRemove(1000), map(([item]) => item)), { detached: true }))
+      document.body.appendChild(div)
+
+      await waitAnimationFrame()
+      expect(document.body.textContent).toBe('123')
+      array.remove(1)
+      await waitAnimationFrame()
+      expect(document.body.textContent).toBe('123')
+      await delay(1100)
+      expect(document.body.textContent).toBe('23')
+    })
   })
 
   it('$inject/$provide', async () => {
