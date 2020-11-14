@@ -9,7 +9,7 @@ export function createFragment(): { anchor: Anchor; insert: (item: Child, i?: nu
   return {
     anchor,
     insert(item: Child, i = elements.length): void {
-      if (!anchor.parentElement) { console.warn('Attempt to add Child, but the anchor has been removed'); return }
+      if (!anchor.parentElement) { throw new Error('Attempt to add Child, but the anchor has been removed') }
       const el = appendChild(item, anchor.parentElement as ChildNode, getEdge(elements[i - 1]) || anchor)
 
       elements.splice(i, 0, el)
