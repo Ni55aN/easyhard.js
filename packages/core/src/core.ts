@@ -70,7 +70,10 @@ function resolveChild(child: Child): DomElement {
       } else {
         anchor.textContent = v as string
       }
-    }, null, () => anchor.edge && anchor.edge.remove())
+    }, null, () => {
+      anchor.edge && anchor.edge.remove()
+      anchor.remove()
+    })
 
     return anchor
   }
