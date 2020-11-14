@@ -1,5 +1,6 @@
 import { interval, Subject } from 'rxjs'
 import { map, mergeMap, take, takeUntil, tap } from 'rxjs/operators'
+import { $, createFragment, h } from '../src/index'
 import { delay, waitAnimationFrame } from './utils/timers'
 
 describe('core', () => {
@@ -120,5 +121,38 @@ describe('core', () => {
     complete$.next()
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('')
+  })
+
+  describe('fragment', () => {
+    let fragment: ReturnType<typeof createFragment>
+    beforeEach(() => {
+      fragment = createFragment()
+    })
+    afterEach(() => {
+      document.body.innerHTML = ''
+    })
+
+    it('insert - not appended to document', () => {
+      expect(() => fragment.insert('111')).toThrowError()
+    })
+
+    it('insert - appended to document', () => {
+      document.body.appendChild(fragment.anchor)
+      expect(() => fragment.insert('111')).not.toThrowError()
+      expect(document.body.textContent).toBe('111')
+      fragment.insert('222')
+      expect(document.body.textContent).toBe('111222')
+    })
+
+    it('insert - remove', () => {
+      document.body.appendChild(fragment.anchor)
+      fragment.insert('111')
+      expect(document.body.textContent).toBe('111')
+      fragment.insert('222')
+      fragment.insert('333')
+      expect(document.body.textContent).toBe('111222333')
+      fragment.remove(1)
+      expect(document.body.textContent).toBe('111333')
+    })
   })
 })
