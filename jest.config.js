@@ -9,5 +9,6 @@ module.exports = {
   collectCoverageFrom: [
     'packages/*/src/**/*.ts'
   ],
-  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' })
+  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
+  modulePathIgnorePatterns: ['build']
 };

@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Ni55aN/easyhard.js#readme",
   "devDependencies": {
     "@rollup/plugin-typescript": "6.1.0",
+    "@testing-library/jest-dom": "^5.11.6",
     "@types/jest": "^26.0.15",
     "@typescript-eslint/eslint-plugin": "4.6.0",
     "@typescript-eslint/parser": "4.6.0",
