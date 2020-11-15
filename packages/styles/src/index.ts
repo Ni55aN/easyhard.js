@@ -1,4 +1,4 @@
-import { untilExist, Child, $, createAnchor } from 'easyhard'
+import { untilExist, Child, createAnchor, onLife } from 'easyhard'
 import { Observable, combineLatest, pipe, MonoTypeOperatorFunction } from 'rxjs'
 
 export type CssSimpleValue = string | number;
@@ -125,17 +125,22 @@ export function css(object: RootStyleDeclaration, parent: ChildNode | null = nul
 export function injectStyles(...styles: (RootStyleDeclaration | Style)[]): Child {
     const anchor = createAnchor()
 
-    $(null).pipe(untilExist(anchor)).subscribe(() => {
+    onLife(anchor, () => {
         const element =  anchor.parentNode as HTMLElement
+        const styleElements: HTMLStyleElement[] = []
         const classNames = styles.map((obj): string => {
             if ('className' in obj) return obj.className
 
-            const { className } = css(obj, anchor)
+            const { className, style } = css(obj, anchor)
+            styleElements.push(style)
             return className
         })
 
         element.classList.add(...classNames)
-        return null
+
+        return () => {
+            styleElements.slice().forEach(el => el.remove())
+        }
     })
     return anchor
 }
