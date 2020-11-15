@@ -65,11 +65,16 @@ function untilExistStyle<T>(style: HTMLStyleElement, parent: ChildNode | null): 
     return untilExist<T>(style, document.head)
 }
 
+function toHyphenCase(text: string) {
+    return text.replace(/([A-Z])/g, '-$1').toLocaleLowerCase()
+}
+
 function injectCssProperties(selector: string, media: CssMediaItem[], style: HTMLStyleElement, props: StyleDeclaration, head: HTMLHeadElement, parent: ChildNode | null): void {
     const sheet = style.sheet as CSSStyleSheet
     const len = sheet.cssRules.length
     sheet.insertRule(media.length > 0 ? `@media {${selector} {}}`: `${selector} {}`, len)
-    const rule = sheet.cssRules.item(len) as CSSStyleRule | CSSMediaRule
+
+    const rule = sheet.cssRules[len] as CSSStyleRule | CSSMediaRule
     const ruleStyles = rule instanceof CSSMediaRule ? (rule.cssRules[0] as CSSStyleRule).style : rule.style
 
     if (rule instanceof CSSMediaRule) {
@@ -102,9 +107,9 @@ function injectCssProperties(selector: string, media: CssMediaItem[], style: HTM
 
             injectCssProperties(`${selector}${key}`, media, style, localProps, head, parent)
         } else if (val instanceof Observable) {
-            val.pipe(untilExistStyle(style, parent)).subscribe(value => ruleStyles[key] = prepareCssValue(value))
+            val.pipe(untilExistStyle(style, parent)).subscribe(value => ruleStyles.setProperty(toHyphenCase(key), prepareCssValue(value)))
         } else if (val !== undefined) {
-            ruleStyles[key] = prepareCssValue(val)
+            ruleStyles.setProperty(toHyphenCase(key), prepareCssValue(val))
         }
     }
 }
