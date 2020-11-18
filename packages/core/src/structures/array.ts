@@ -27,6 +27,7 @@ export const $$ = <T>(array: T[]): $$<T> => {
   }
 
   function removeAt(i: number): void {
+    if (i < 0) return
     const item = value$.value[i]
 
     value$.value.splice(i, 1)
