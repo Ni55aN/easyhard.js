@@ -16,8 +16,6 @@ function Child(text: Observable<string>) {
 
   return h('div', {},
     container,
-    onMount(() => console.info('onMount')),
-    onDestroy(() => console.info('onDestroy')),
     mountInfo,
     text.pipe(tap(() => console.info('onUpdate')))
   )
