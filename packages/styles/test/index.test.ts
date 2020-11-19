@@ -2,6 +2,7 @@ import { h, $ } from 'easyhard'
 import '@testing-library/jest-dom'
 import { css, injectStyles } from '../src'
 import { waitAnimationFrame } from './utils/timers'
+import { of } from 'rxjs'
 
 describe('styles', () => {
   afterEach(() => {
@@ -74,6 +75,27 @@ describe('styles', () => {
       await waitAnimationFrame()
       expect(document.head).toBeEmptyDOMElement()
       expect(div).not.toHaveStyle({ background: 'red' })
+    })
+  
+    it('media', async () => {
+      const div = h('div', {}, injectStyles({
+        '@media': {
+          query: {
+            minWidth: '400px',
+            print: of(true)
+          },
+          background: 'red'
+        }
+      }))
+      document.body.appendChild(div)
+      await waitAnimationFrame()
+
+      expect(div).not.toHaveStyle({ background: 'red' })
+      
+      // TODO
+      // Object.defineProperty(window, 'innerWidth', {writable: true, configurable: true, value: 105})
+      // window.dispatchEvent(new Event('resize'))
+      // expect(div).toHaveStyle({ background: 'red' }) 
     })
   })
 })
