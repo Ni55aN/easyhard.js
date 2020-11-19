@@ -5,7 +5,7 @@ import { History } from 'history'
 import { fromHistory, toPath, match } from './location'
 import { ParentRoute, Path, Route } from './types'
 
-type UseRouter = {
+export type UseRouter = {
   navigate(path: Path, params?: ConstructorParameters<typeof URLSearchParams>[0], replace?: boolean): void;
   routerOutlet(routes: Route[]): HTMLElement;
   params: Observable<URLSearchParams>;
