@@ -1,12 +1,13 @@
 import { h, $, $$, $for, SimpleType, DomElement } from 'easyhard'
-import { OperatorFunction, Observable } from 'rxjs'
-import { map, tap, debounceTime } from 'rxjs/operators'
+import { OperatorFunction, Observable, combineLatest } from 'rxjs'
+import { map, tap, debounceTime, mapTo } from 'rxjs/operators'
 import { intersection, difference } from 'lodash-es'
 
 function observeResize() {
-  return new Observable((observer) => {
+  return new Observable<{ width: number; height: number }>((observer) => {
     const handle = () => observer.next({ width: window.innerWidth, height: window.innerHeight })
     window.addEventListener('resize', handle, false)
+    handle()
 
     return () => window.removeEventListener('resize', handle)
   })
@@ -14,35 +15,41 @@ function observeResize() {
 
 function ListView<T>(list: $$<T>, props: { height: number }, render: OperatorFunction<T, DomElement | SimpleType>) {
   const scrollTop = $(0)
-  const clientHeight = $(350)
+  const size = observeResize()
   const visibleList = $$<T>([])
-  function updateList(offset: number) {
+  function updateList(offset: number, height: number) {
     const startIndex = offset
-    const endIndex = offset + Math.ceil(clientHeight.value / props.height)
+    const numberOfItems = Math.ceil(height / props.height)
+    const endIndex = offset + numberOfItems
 
     const oldItems = visibleList.value
     const nextItems = list.value.slice(startIndex, endIndex)
-    const inters = intersection(oldItems, nextItems)
     const outdated = difference(oldItems, nextItems)
-    const recent = difference(nextItems, oldItems)
-    const appendNew = visibleList.value[0] === outdated[0]
+    const present = intersection(oldItems, nextItems)
 
-    // console.log({ visibleList: [...visibleList.value], inters, outdated, recent });
-  
     outdated.forEach(item => visibleList.remove(item))
-    recent.forEach((item, i) => appendNew ? visibleList.insert(item) : visibleList.insert(item, i))
+    nextItems.forEach((item, i) => {
+      if (present.includes(item)) return
+      visibleList.insert(item, i)
+    })
   }
 
   const offset = scrollTop.pipe(map(top => Math.floor(top/props.height)))
+  const height = size.pipe(map(({ height }) => height))
 
   return h('div', {
         style: 'height: 100%; overflow: auto',
         scroll: tap(e => scrollTop.next((e.srcElement as HTMLElement).scrollTop))
       },
+      combineLatest([offset, height]).pipe(
+        debounceTime(16),
+        tap(([offset, height]) => updateList(offset, height)),
+        mapTo(null)
+      ),
       h('div', {
           style: list.length.pipe(map(value => `height: ${value * props.height}px; overflow: hidden;`)),
         },
-          h('div', { style: offset.pipe(debounceTime(16), tap(updateList), map(value => `transform: translateY(${value * props.height}px)`))},
+          h('div', { style: offset.pipe(debounceTime(16), map((offset) => `transform: translateY(${offset * props.height}px)`))},
             $for(visibleList, render),
           )
       )
@@ -56,7 +63,7 @@ function App() {
     return h('div', {}, item)
   })
 
-  return h('div', {  style: 'height: 80vh; overflow: auto' },
+  return h('div', {  style: 'height: 80vh; border: 1px solid red; overflow: auto' },
     // $for(arr, renderItem),
     ListView(arr, { height: 18.4 }, renderItem)
   )
