@@ -1,16 +1,16 @@
-import { h, $, $provide, $inject, Child, $$, $for } from 'easyhard';
-import { Observable, interval, of, combineLatest } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { h, $, $provide, $inject, Child, $$, $for } from 'easyhard'
+import { Observable, interval, of, combineLatest } from 'rxjs'
+import { map, switchMap, tap } from 'rxjs/operators'
 
 type Dictionary = { [text: string]: { [locale: string]: string } };
 type Text = string | Observable<string>;
 
 function translate(value: Text, dictionary: Observable<Dictionary>, locale: Observable<string>): Observable<string> {
-  const input = value instanceof Observable ? value : of(value);
+  const input = value instanceof Observable ? value : of(value)
 
   return combineLatest(input, dictionary, locale).pipe(
     map(([text, d, l]) => d && d[text] ? d[text][l] || text : text)
-  );
+  )
 }
 
 interface TranslatorData {
@@ -31,9 +31,9 @@ function useTranslation(): Translator {
   const parent: $<TranslatorData> = $({
     locale: $('en'),
     dictionary: $<Dictionary>({})
-  });
-  const locale$ = parent.pipe(switchMap(m => m.locale));
-  const dictionary$ = parent.pipe(switchMap(m => m.dictionary));
+  })
+  const locale$ = parent.pipe(switchMap(m => m.locale))
+  const dictionary$ = parent.pipe(switchMap(m => m.dictionary))
 
   const translator: Translator = {
     t: (text: Text) => translate(text, dictionary$, locale$),
@@ -44,7 +44,7 @@ function useTranslation(): Translator {
     provideTranslation: $provide(useTranslation, parent)
   }
 
-  return translator;
+  return translator
 }
 
 
@@ -65,10 +65,10 @@ const dictionary: Dictionary = {
     'ru': 'Нажми',
     'ua': 'Натисни'
   }
-};
+}
 
 function Child() {
-  const { t, injectTranslation, setLocale } = useTranslation();
+  const { t, injectTranslation, setLocale } = useTranslation()
 
   return h('div', {},
     injectTranslation,
@@ -77,18 +77,18 @@ function Child() {
 }
 
 function App() {
-  const text = interval(1000).pipe(map(step => step % 2 === 0 ? 'first' : 'second'));
-  const list = $$(new Array(100).fill(null).map((_, i) => $(i)));
-  const { t, getLocale, setDictionary, setLocale, provideTranslation } = useTranslation();
+  const text = interval(1000).pipe(map(step => step % 2 === 0 ? 'first' : 'second'))
+  const list = $$(new Array(100).fill(null).map((_, i) => $(i)))
+  const { t, getLocale, setDictionary, setLocale, provideTranslation } = useTranslation()
 
-  setDictionary(dictionary);
+  setDictionary(dictionary)
 
   return h('div', {},
     provideTranslation,
     h('button', { click: tap(() => setLocale(getLocale() === 'ua' ? 'ru' : 'ua')) }, 'switch'),
     Child(),
     $for(list, map(i => h('div', {}, t(text), i)))
-  );
+  )
 }
 
-document.body.appendChild(App());
+document.body.appendChild(App())

@@ -1,10 +1,10 @@
-import { h, $ } from 'easyhard';
-import { map } from 'rxjs/operators';
+import { h, $ } from 'easyhard'
+import { map } from 'rxjs/operators'
 
 function App() {
-  const b = $('');
+  const b = $('')
 
-  return h('div', {}, b.pipe(map(() => h('b', {}, Math.random()))));
+  return h('div', {}, b.pipe(map(() => h('b', {}, Math.random()))))
 }
 
-document.body.appendChild(App());
+document.body.appendChild(App())

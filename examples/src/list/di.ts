@@ -1,36 +1,36 @@
-import { h, $, $provide, $inject } from 'easyhard';
-import { map, tap } from 'rxjs/operators';
+import { h, $, $provide, $inject } from 'easyhard'
+import { map, tap } from 'rxjs/operators'
 
 function useTheme<T>() {
-    const theme = $<T | null>(null);
+    const theme = $<T | null>(null)
 
     return {
         theme,
-        get themeInjection() { return $inject(useTheme, theme); },
-        get themeProvider() { return $provide(useTheme, theme); }
-    };
+        get themeInjection() { return $inject(useTheme, theme) },
+        get themeProvider() { return $provide(useTheme, theme) }
+    }
 }
 
 function useModeTheme<M, T>() {
-    const basic = useTheme<T>();
-    const themes = new Map<M, T>();
-    const mode = $<M | null>(null);
+    const basic = useTheme<T>()
+    const themes = new Map<M, T>()
+    const mode = $<M | null>(null)
 
     return {
         theme: basic.theme,
         setTheme(id: M, t: T) {
-            themes.set(id, t);
+            themes.set(id, t)
         },
         get themeInjection() { return [basic.themeInjection, $inject(useModeTheme, mode)] },
         get themeProvider() { return [basic.themeProvider, $provide(useModeTheme, mode)] },
         mode: mode.asObservable(),
-        getMode() { return mode.value; },
+        getMode() { return mode.value },
         setMode(id: M) {
             const th = themes.get(id)
 
             if (th) {
-                mode.next(id);
-                basic.theme.next(th);
+                mode.next(id)
+                basic.theme.next(th)
             }
         }
     }
@@ -47,8 +47,8 @@ enum Mode {
 }
 
 function Button(text: string, click: EventListener) {
-    const { theme, themeInjection, mode } = useModeTheme<Mode, Theme>();
-    const style = theme.pipe(map(th => th ? `background: ${th.bg}; color: ${th.font}` : ''));
+    const { theme, themeInjection, mode } = useModeTheme<Mode, Theme>()
+    const style = theme.pipe(map(th => th ? `background: ${th.bg}; color: ${th.font}` : ''))
 
     return h('button', { style, click: tap(click) },
         themeInjection,
@@ -59,15 +59,15 @@ function Button(text: string, click: EventListener) {
 function Form(onSubmit: EventListener) {
     return h('div', {}, 
         Button('Click', onSubmit)
-    );
+    )
 }
 
 function App() {
-    const { setTheme, setMode, getMode, themeProvider } = useModeTheme<Mode, Theme>();
+    const { setTheme, setMode, getMode, themeProvider } = useModeTheme<Mode, Theme>()
 
-    setTheme(Mode.DAY, { font: 'grey', bg: 'white' });
-    setTheme(Mode.NIGHT, { font: 'black', bg: 'grey' });
-    setMode(Mode.NIGHT);
+    setTheme(Mode.DAY, { font: 'grey', bg: 'white' })
+    setTheme(Mode.NIGHT, { font: 'black', bg: 'grey' })
+    setMode(Mode.NIGHT)
 
     return h('div', {},
         themeProvider,
@@ -75,4 +75,4 @@ function App() {
     )
 }
 
-document.body.appendChild(App());
+document.body.appendChild(App())

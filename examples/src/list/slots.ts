@@ -1,7 +1,7 @@
-import { h, $, Child } from 'easyhard'
-import { map, mapTo, startWith, shareReplay } from 'rxjs/operators';
-import { Subject, merge } from 'rxjs';
-import { Observable } from 'rxjs';
+import { h, Child } from 'easyhard'
+import { map, mapTo, startWith, shareReplay } from 'rxjs/operators'
+import { Subject, merge } from 'rxjs'
+import { Observable } from 'rxjs'
 
 function switcher<T, K>(a: Subject<T>, b: Subject<K>) {
   return merge(a.pipe(mapTo(true)), b.pipe(mapTo(false))).pipe(startWith(false), shareReplay(1))
@@ -29,7 +29,7 @@ function App() {
     Hoverable(active => h('div', { style: getBlockStyles(active) }, active.pipe(map(is => is ? 'I am being hovered upon.' : 'Hover over me!')))),
     Hoverable(active => h('div', { style: getBlockStyles(active) }, active.pipe(map(is => is ? 'I am being hovered upon.' : 'Hover over me!')))),
     Hoverable(active => h('div', { style: getBlockStyles(active) }, active.pipe(map(is => is ? 'I am being hovered upon.' : 'Hover over me!'))))
-  );
+  )
 }
 
-document.body.appendChild(App());
+document.body.appendChild(App())

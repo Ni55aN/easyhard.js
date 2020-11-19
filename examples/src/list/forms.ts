@@ -1,6 +1,6 @@
-import { h, $, $$, $for, $if } from 'easyhard';
-import { Observable, pipe, OperatorFunction, interval, Observer, combineLatest, observable } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { h, $, $$, $for, $if } from 'easyhard'
+import { Observable, pipe, OperatorFunction, combineLatest } from 'rxjs'
+import { map, switchMap, tap } from 'rxjs/operators'
 
 type FormValue<T> = $<T>;
 type SelectOption = Observable<{ key: string; label: $<string> } | null>;
@@ -11,18 +11,18 @@ type FieldInput<T> = (v: $<T>, params: InputParams<T>) => HTMLElement;
 type FormatterGroup<I> = { output: Formatter<I, string>, input: Formatter<string, I>};
 
 function useFormatter<T>(value: FormValue<T>, props: FormatterGroup<T>) {
-  const v = $<string>(String(value.value));
+  const v = $<string>(String(value.value))
 
   return {
-    next(value: string) { v.next(value); },
+    next(value: string) { v.next(value) },
     value: value.pipe(props.output),
     injection: v.pipe(props.input, tap(v => value.next(v)))
   }
 }
 
 
-function Field<T, K>(label: string | Observable<string>, value: $<T>, props: { type: FieldInput<T>, validations?: Observable<(string | boolean)[]> } & InputParams<T>) {
-  const { type, validations, ...params } = props;
+function Field<T>(label: string | Observable<string>, value: $<T>, props: { type: FieldInput<T>, validations?: Observable<(string | boolean)[]> } & InputParams<T>) {
+  const { type, validations, ...params } = props
 
   return h('p', {},
     h('div', {}, label),
@@ -30,7 +30,7 @@ function Field<T, K>(label: string | Observable<string>, value: $<T>, props: { t
     validations ? validations.pipe(map(validation =>
       h('div', { style: 'color: red' }, validation.map(result => h('div', {}, result === true ? null : result)))
     )) : null
-  );
+  )
 }
 
 function Checkbox(checked: FormValue<boolean>, params: InputParams<boolean>) {
@@ -60,11 +60,11 @@ function Textbox(value: FormValue<string>, params: InputParams<string>) {
   const { next, injection, value: formattedValue } = useFormatter(value, {
     input: params.formatters && params.formatters.input || pipe(),
     output: params.formatters && params.formatters.output || pipe()
-  });
+  })
   return h('input', {
       value: formattedValue,
       input: tap((e: Event) => {
-        next((e.target as HTMLInputElement).value);
+        next((e.target as HTMLInputElement).value)
       }),
       ...params,
     },
@@ -77,12 +77,12 @@ function Numbox(value: FormValue<number>, params: InputParams<number>) {
   const { next, injection, value: formattedValue } = useFormatter(value, {
     input: params.formatters && params.formatters.input || map(v => parseFloat(v) || 0),
     output: params.formatters && params.formatters.output || map(v => String(v))
-  });
+  })
 
   return h('input', {
       value: formattedValue,
       input: tap((e: Event) => {
-        next((e.target as HTMLInputElement).value);
+        next((e.target as HTMLInputElement).value)
       }),
       ...params
     },
@@ -91,27 +91,28 @@ function Numbox(value: FormValue<number>, params: InputParams<number>) {
 }
 
 function Button(text: string | Observable<string>, click: () => void) {
-  return h('button', { click: tap(click) }, text);
+  return h('button', { click: tap(click) }, text)
 }
 
 function minLength(min: number, message?: string): Validator<string> {
-  return map(v => v.length >= min || message || 'Text is too short');
+  return map(v => v.length >= min || message || 'Text is too short')
 }
 function maxLength(max: number, message?: string): Validator<string> {
-  return map(v => v.length <= max || message || 'Text is too long');
+  return map(v => v.length <= max || message || 'Text is too long')
 }
 function required(message?: string): Validator<string | number | boolean> {
-  return map(v => Boolean(v) || message || 'Field required');
+  return map(v => Boolean(v) || message || 'Field required')
 }
 
 function toNumber() : Formatter<string | number, number> {
-  return map(v => typeof v === "string" ? parseFloat(v) || 0 : v);
+  return map(v => typeof v === 'string' ? parseFloat(v) || 0 : v)
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function clamp(min: number, max: number): Formatter<string | number, number> {
-  return pipe(toNumber(), map((v: number) => Math.min(Math.max(v, min), max)));
+  return pipe(toNumber(), map((v: number) => Math.min(Math.max(v, min), max)))
 }
 function min(min: number): Formatter<string | number, number> {
-  return pipe(toNumber(), map((v: number) => Math.max(v, min)));
+  return pipe(toNumber(), map((v: number) => Math.max(v, min)))
 }
 function max(max: number): Formatter<string | number, number> {
   return pipe(toNumber(), map((v: number) => Math.min(v, max)))
@@ -124,12 +125,12 @@ type Control<T> = FormValue<T> | FormValue<T>[] | Group;
 
 
 function useValidation(form: Group) {
-  const validatorsMap = new WeakMap<FormValue<unknown>, Validator<unknown>[]>();
-  const validators$ = $(null);
+  const validatorsMap = new WeakMap<FormValue<unknown>, Validator<unknown>[]>()
+  const validators$ = $(null)
 
   function setValidators<T>(value: FormValue<T>, validators: Validator<T>[]) {
-    validatorsMap.set(value as FormValue<unknown>, validators as Validator<unknown>[]);
-    validators$.next(null);
+    validatorsMap.set(value as FormValue<unknown>, validators as Validator<unknown>[])
+    validators$.next(null)
 
     return {
       validations: combineLatest(validators.map(v => value.pipe(v)))
@@ -138,14 +139,14 @@ function useValidation(form: Group) {
 
   return {
     isValid: validators$.pipe(switchMap(() => {
-      const fields = Object.keys(form).filter(key => form[key] instanceof Observable).map(key => form[key]) as FormValue<unknown>[];
+      const fields = Object.keys(form).filter(key => form[key] instanceof Observable).map(key => form[key]) as FormValue<unknown>[]
       const validations = fields.reduce((acc, field) => {
-        const rules = validatorsMap.get(field) || [];
+        const rules = validatorsMap.get(field) || []
 
-        return [ ...acc, ...rules.map(rule => field.pipe(rule)) ];
-      }, [] as Observable<boolean | string>[]);
+        return [ ...acc, ...rules.map(rule => field.pipe(rule)) ]
+      }, [] as Observable<boolean | string>[])
       
-      return combineLatest(validations).pipe(map(v => v.every(item => item === true)));
+      return combineLatest(validations).pipe(map(v => v.every(item => item === true)))
     })),
     setValidators
   }
@@ -176,17 +177,17 @@ function App() {
         test: $('')
       }
     }
-  });
-  const { isValid, setValidators } = useValidation(form);
-  const { validations: textValidations } = setValidators(form.text, [required(), minLength(3), maxLength(8)]);
+  })
+  const { isValid, setValidators } = useValidation(form)
+  const { validations: textValidations } = setValidators(form.text, [required(), minLength(3), maxLength(8)])
 
   const selectOptions = $$<SelectOption>([
     $({ key: 'first', label: $('First')}),
     $({ key: 'second', label: $('Second')}),
     $if(form.checkbox, map(() => ({ key: 'third', label: $('Third') })))
-  ]);
+  ])
 
-  const disabled = form.checkbox.pipe(map(act => !act));
+  const disabled = form.checkbox.pipe(map(act => !act))
 
   return h('div', {},
     Field('Text Validation', form.text, { type: Textbox, disabled, validations: textValidations }),
@@ -200,7 +201,7 @@ function App() {
     }}),
     Button('Clear', () => form.text.next('')),
     h('p', {}, isValid)
-  );
+  )
 }
 
-document.body.appendChild(App());
+document.body.appendChild(App())

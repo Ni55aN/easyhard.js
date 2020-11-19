@@ -1,6 +1,6 @@
-import { h } from 'easyhard';
-import { map, tap } from 'rxjs/operators';
-import { createHashHistory } from 'history';
+import { h } from 'easyhard'
+import { map, tap } from 'rxjs/operators'
+import { createHashHistory } from 'history'
 import { Route, useRouter as useRouterOrigin } from 'easyhard-router'
 
 const history = createHashHistory()
@@ -18,7 +18,7 @@ const child2Routes: Route[] = [
   {
     path: '*',
     component: map(() => {
-      return h('span', {}, '-');
+      return h('span', {}, '-')
     })
   }
 ]
@@ -28,13 +28,13 @@ const childRoutes: Route[] = [
   {
     path: 'd',
     component: map(() => {
-      const { routerOutlet, navigate } = useRouter();
+      const { routerOutlet, navigate } = useRouter()
 
       return h('span', { id: 'c' },
         routerOutlet(child2Routes),
         h('button', { click: tap(() => navigate(['f'])) }, 'C/D/F'),
         h('button', { click: tap(() => navigate(['g'])) }, 'C/D/G'),
-      );
+      )
     })
   },
   {
@@ -59,19 +59,19 @@ const routes: Route[] = [
   {
     path: 'c',
     component: map(() => {
-      const { routerOutlet, navigate } = useRouter();
+      const { routerOutlet, navigate } = useRouter()
 
       return h('span', { id: 'c' },
         routerOutlet(childRoutes),
         h('button', { click: tap(() => navigate(['d'])) }, 'C/D'),
         h('button', { click: tap(() => navigate(['e'])) }, 'C/E'),
-      );
+      )
     })
   }
 ]
 
 function App() {
-  const { routerOutlet, navigate, params } = useRouter();
+  const { routerOutlet, navigate, params } = useRouter()
 
   return h('span', {},
     'query=', params.pipe(map(p => p.get('query'))),
@@ -83,4 +83,4 @@ function App() {
   )
 }
 
-document.body.appendChild(App());
+document.body.appendChild(App())

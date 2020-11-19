@@ -1,5 +1,5 @@
-import { h, $ } from 'easyhard';
-import { tap } from 'rxjs/operators';
+import { h, $ } from 'easyhard'
+import { tap } from 'rxjs/operators'
 
 type Props<T> = {
   value?: $<T>; 
@@ -15,15 +15,15 @@ export function Input<T>(props: Props<T>) {
       value: props.value || props.model,
       type: props.type,
       input: tap((v: Event) => {
-        let val = (v.target as any).value;
+        let val = (v.target as any).value
 
-        if (props.type === 'number') val = +val;
-        if (props.model) props.model.next(val);
-        if (props.change) props.change(val);
+        if (props.type === 'number') val = +val
+        if (props.model) props.model.next(val)
+        if (props.change) props.change(val)
       }),
       ...(props.events || {})
-    });
-    if (props.autofocus) requestAnimationFrame(() => el.focus());
+    })
+    if (props.autofocus) requestAnimationFrame(() => el.focus())
 
-    return el;
+    return el
 }

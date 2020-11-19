@@ -3,6 +3,7 @@
     "build": "rollup -c",
     "build:dev": "rollup -cw",
     "lint": "eslint packages/*/src/**",
+    "lint:examples": "eslint examples/src/**",
     "test": "jest",
     "commit": "git-cz"
   },

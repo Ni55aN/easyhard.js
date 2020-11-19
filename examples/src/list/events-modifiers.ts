@@ -1,6 +1,6 @@
 import { h, $ } from 'easyhard'
-import { debounceTime, first, tap, takeUntil } from 'rxjs/operators';
-import { Subject, pipe } from 'rxjs';
+import { debounceTime, first, tap, takeUntil } from 'rxjs/operators'
+import { Subject, pipe } from 'rxjs'
 
 function Counter() {
   const n = $(0)
@@ -22,4 +22,4 @@ function App() {
   )
 }
 
-document.body.appendChild(App());
+document.body.appendChild(App())

@@ -1,4 +1,4 @@
-import { $, $$, h, $for } from "easyhard"
+import { $, $$, h, $for } from 'easyhard'
 import { map } from 'rxjs/operators'
 
 type Item = number
@@ -10,7 +10,7 @@ function App(): HTMLElement {
   return h('div', {},
     source.pipe(
       map(items => {
-        list.clear();
+        list.clear()
         items.forEach(item => list.insert(item))
 
         return null
@@ -20,4 +20,4 @@ function App(): HTMLElement {
   )
 }
 
-document.body.appendChild(App());
+document.body.appendChild(App())
