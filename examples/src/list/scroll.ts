@@ -1,5 +1,5 @@
-import { h, $, $$, $for, SimpleType, DomElement } from 'easyhard'
-import { OperatorFunction, Observable, combineLatest } from 'rxjs'
+import { h, $, $$, $for, SimpleType, DomElement, appendChild } from 'easyhard'
+import { OperatorFunction, Observable, combineLatest, pipe, merge } from 'rxjs'
 import { map, tap, debounceTime, mapTo } from 'rxjs/operators'
 import { intersection, difference } from 'lodash-es'
 
@@ -13,47 +13,66 @@ function observeResize() {
   })
 }
 
-function ListView<T>(list: $$<T>, props: { height: number }, render: OperatorFunction<T, DomElement | SimpleType>) {
-  const scrollTop = $(0)
-  const size = observeResize()
-  const visibleList = $$<T>([])
-  function updateList(offset: number, height: number) {
-    const startIndex = offset
-    const numberOfItems = Math.ceil(height / props.height)
-    const endIndex = offset + numberOfItems
+function createVirtualList<T>(sourceList: $$<T>, scrollTop: $<number>, containerHeight: $<number>, itemHeight: $<number>) {
+  const list = $$<T>([])
+  const offset = $(0)
 
-    const oldItems = visibleList.value
-    const nextItems = list.value.slice(startIndex, endIndex)
+  function update(itemHeight: number, containerHeight: number, scrollTop: number) {
+    const startIndex = Math.floor(scrollTop / itemHeight)
+    const numberOfItems = Math.ceil(containerHeight / itemHeight)
+    const endIndex = startIndex + numberOfItems + 1
+
+    const oldItems = list.value
+    const nextItems = sourceList.value.slice(startIndex, endIndex)
     const outdated = difference(oldItems, nextItems)
     const present = intersection(oldItems, nextItems)
 
-    outdated.forEach(item => visibleList.remove(item))
+    outdated.forEach(item => list.remove(item))
     nextItems.forEach((item, i) => {
       if (present.includes(item)) return
-      visibleList.insert(item, i)
+      list.insert(item, i)
     })
+    offset.next(startIndex * itemHeight)
   }
 
-  const offset = scrollTop.pipe(map(top => Math.floor(top/props.height)))
-  const height = size.pipe(map(({ height }) => height))
+  return {
+    inject: combineLatest([merge(sourceList.change$, sourceList.value$), itemHeight, containerHeight, scrollTop]).pipe(
+      tap(([_, itemHeight, containerHeight, scrollTop]) => update(itemHeight, containerHeight, scrollTop)),
+      mapTo(null)
+    ),
+    list,
+    update,
+    offset: offset.asObservable(),
+    sourceHeight: combineLatest([sourceList.length, itemHeight]).pipe(map(([value, itemHeight]) => value * itemHeight))
+  }
+}
 
-  return h('div', {
-        style: 'height: 100%; overflow: auto',
-        scroll: tap(e => scrollTop.next((e.srcElement as HTMLElement).scrollTop))
-      },
-      combineLatest([offset, height]).pipe(
+function ListView<T>(source: $$<T>, props: { height: $<number> }, render: OperatorFunction<T, DomElement | SimpleType>) {
+  const scrollTop = $(0)
+  const containerHeight = $(0)
+  const { inject, list, sourceHeight, offset } = createVirtualList<T>(source, scrollTop, containerHeight, props.height)
+
+  const container: HTMLElement = h('div', {
+      style: 'height: 100%; overflow: auto',
+      scroll: pipe(
         debounceTime(16),
-        tap(([offset, height]) => updateList(offset, height)),
-        mapTo(null)
-      ),
-      h('div', {
-          style: list.length.pipe(map(value => `height: ${value * props.height}px; overflow: hidden;`)),
-        },
-          h('div', { style: offset.pipe(debounceTime(16), map((offset) => `transform: translateY(${offset * props.height}px)`))},
-            $for(visibleList, render),
-          )
+        map(e => scrollTop.next((e.srcElement as HTMLElement).scrollTop))
       )
+    },
+    inject,
+    h('div', { style: sourceHeight.pipe(map(h => `height: ${h}px; overflow: hidden;`)) },
+      h('div', { style: offset.pipe(map((offset) => `transform: translateY(${offset}px)`)) },
+        $for(list, render),
+      )
+    )
   )
+
+  appendChild(observeResize().pipe(
+    tap(() => requestAnimationFrame(() => containerHeight.next(container.clientHeight))),
+    mapTo(null)
+  ), container)
+
+  return container
 }
 
 function App() {
@@ -65,7 +84,7 @@ function App() {
 
   return h('div', {  style: 'height: 80vh; border: 1px solid red; overflow: auto' },
     // $for(arr, renderItem),
-    ListView(arr, { height: 18.4 }, renderItem)
+    ListView(arr, { height: $(18.4) }, renderItem)
   )
 }
 
