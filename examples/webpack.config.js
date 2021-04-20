@@ -2,12 +2,12 @@ const path = require('path');
 const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
-const examples = fs.readdirSync('./src/list').map(file => path.basename(file, '.ts'));
+const examples = fs.readdirSync('./client/list').map(file => path.basename(file, '.ts'));
 const mode = 'development';
 
 module.exports = {
   entry: examples.reduce((entries, name) => 
-    ({ ...entries, [name]: (`./src/list/${name}.ts`) }),
+    ({ ...entries, [name]: (`./client/list/${name}.ts`) }),
     {}
   ),
   mode,
