@@ -1,0 +1,8 @@
+{
+  "name": "easyhard-client",
+  "version": "0.1.0",
+  "peerDependencies": {
+    "easyhard-common": "^0.x",
+    "rxjs": "^6.5.3"
+  }
+}
