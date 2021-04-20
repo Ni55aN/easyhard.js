@@ -14,7 +14,13 @@ module.exports = {
   devtool: 'source-map',
   devServer: {
     contentBase: './dist',
-    hot: true
+    hot: true,
+    proxy: {
+      '/api': {
+         target: 'ws://localhost:3000',
+         ws: true
+      },
+    },
   },
   module: {
     rules: [
