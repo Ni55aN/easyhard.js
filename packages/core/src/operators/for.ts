@@ -1,5 +1,5 @@
 import { $ } from '../structures/value'
-import { $$ } from '../structures/array'
+import { readonly$$ } from '../structures/array'
 import { DomElement, SimpleType, Anchor } from '../types'
 import { merge, OperatorFunction, Observable, Subject } from 'rxjs'
 import { filter, startWith, map } from 'rxjs/operators'
@@ -46,10 +46,10 @@ function createAttachedFragment<T>(pipe: OperatorFunction<T, DomElement | Simple
   }
 }
 
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T, DomElement | SimpleType>): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props: { detached: false }): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>, props: { detached: true }): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean }): DomElement {
+export function $for<T>(array: readonly$$<T>, pipe: OperatorFunction<T, DomElement | SimpleType>): DomElement
+export function $for<T>(array: readonly$$<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props: { detached: false }): DomElement
+export function $for<T>(array: readonly$$<T>, pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>, props: { detached: true }): DomElement
+export function $for<T>(array: readonly$$<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean }): DomElement {
   const fragment = props && props.detached ? createDetachedFragment<T>(pipe) : createAttachedFragment<T>(pipe)
 
   merge(array.change$).pipe(
