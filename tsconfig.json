@@ -17,9 +17,6 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "strictNullChecks": true,
-    "baseUrl": ".",
-    "paths": {
-      "easyhard": ["packages/core/src"]
-    }
+    "baseUrl": "."
   }
 }
