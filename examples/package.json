@@ -2,7 +2,7 @@
     "scripts": {
         "start:client": "webpack serve",
         "start:server": "nodemon server/index.ts",
-        "build": "webpack",
+        "build": "webpack && tsc --project tsconfig.server.json",
         "stats": "webpack --profile --json > dist/stats.json"
     },
     "dependencies": {

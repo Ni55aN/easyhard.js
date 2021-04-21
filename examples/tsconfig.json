@@ -1,6 +1,7 @@
 {
     "include": [
-      "./client/**/*.ts"
+      "./client/**/*.ts",
+      "./shared/**/*.ts"
     ],
     "compilerOptions": {
         "lib": [
@@ -16,6 +17,7 @@
         "forceConsistentCasingInFileNames": true,
         "module": "CommonJS",
         "moduleResolution": "node",
+        "sourceMap": true,
         "resolveJsonModule": true,
         "strictNullChecks": true
     }

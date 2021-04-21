@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "./server/**/*.ts",
+    "./shared/**/*.ts"
+  ],
+  "compilerOptions": {
+    "outDir": "dist"
+  }
+}

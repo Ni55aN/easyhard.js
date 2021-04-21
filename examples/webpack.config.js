@@ -13,7 +13,7 @@ module.exports = {
   mode,
   devtool: 'source-map',
   devServer: {
-    contentBase: './dist',
+    contentBase: './dist/client',
     hot: true,
     proxy: {
       '/api': {
@@ -62,7 +62,7 @@ module.exports = {
   },
   output: {
     filename: `[name]${mode === 'development'?'':'.[chunkhash]'}.js`,
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist', 'client'),
   },
   plugins: [
     ...examples.map(name => new HtmlWebpackPlugin({
