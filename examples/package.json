@@ -2,7 +2,6 @@
     "scripts": {
         "start:client": "webpack serve",
         "start:server": "nodemon server/index.ts",
-        "start": "concurrently --kill-others 'npm run start:client' 'npm run start:server'",
         "build": "webpack",
         "stats": "webpack --profile --json > dist/stats.json"
     },
@@ -27,7 +26,6 @@
     },
     "devDependencies": {
         "babel-plugin-overload": "0.0.2",
-        "concurrently": "^6.0.2",
         "eslint-loader": "^4.0.2",
         "html-webpack-plugin": "4.5.0",
         "nodemon": "^2.0.7",
