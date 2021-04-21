@@ -1,4 +1,4 @@
-import { RequestId, Request, Response, CompleteResponse, ExtractPayload } from 'easyhard-common'
+import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload } from 'easyhard-common'
 import { Observable, Subscriber } from 'rxjs'
 
 type Props = {
@@ -67,6 +67,11 @@ export function easyhardClient<T>({
       }
 
       return () => {
+        const data: UnsubscribeRequest = { id, unsubscribe: true }
+
+        if (socket && socket.readyState === socket.OPEN) {
+          socket.send(JSON.stringify(data))
+        }
         delete subscriptions[id]
       }
     })

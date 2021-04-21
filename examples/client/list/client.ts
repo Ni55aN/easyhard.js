@@ -1,6 +1,6 @@
 import { h, $, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
-import { map, tap } from 'rxjs/operators'
+import { map, take, tap } from 'rxjs/operators'
 import { Actions } from '../../shared'
 
 const client = easyhardClient<Actions>({
@@ -16,8 +16,9 @@ const client = easyhardClient<Actions>({
 })
 
 function App() {
-  const count = client.call('getData').pipe(map(data => String(data.count)))
-  const el = h('div', {}, count)
+  const count1 = client.call('getData').pipe(take(5), map(data => String(data.count)))
+  const count2 = client.call('getData').pipe(map(data => String(data.count)))
+  const el = h('div', {}, count1, '|', count2)
 
   onMount(el, () => client.connect(`ws://${location.host}/api/`))
 
