@@ -1,6 +1,7 @@
 import { ExtractPayload, Response, Request, CompleteResponse, UnsubscribeRequest } from 'easyhard-common'
 import * as ws from 'ws'
-import { Observable, Subscription } from 'rxjs'
+import { Observable } from 'rxjs'
+import { useSubscriptions } from './subscriptions'
 
 export type Handler<T> = (
     payload?: ExtractPayload<T, 'request'>
@@ -12,19 +13,18 @@ export type Handlers<T> = {
 
 export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void } {
   function attachClient(connection: ws) {
-    const subscriptions: {[key: string]: Subscription } = {}
+    const subscriptions = useSubscriptions()
 
     connection.on('message', data => {
       const reqData: Request<T, keyof T> | UnsubscribeRequest = JSON.parse(data.toString('utf-8'))
       const id = reqData.id
 
       if ('unsubscribe' in reqData) {
-        subscriptions[id].unsubscribe()
-        delete subscriptions[id]
+        subscriptions.remove(id)
       } else if ('action' in reqData) {
         const handler = actions[reqData.action]
 
-        subscriptions[id] = handler(reqData.payload).subscribe({
+        subscriptions.add(id, handler(reqData.payload).subscribe({
           next(payload) {
             if (connection.readyState === connection.OPEN) {
               const response: Response<T, keyof T> = { id, payload }
@@ -39,10 +39,14 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
               connection.send(JSON.stringify(response))
             }
           }
-        })
+        }))
       } else {
         throw new Error(`WS message isn't recognized`)
       }
+    })
+
+    connection.on('close', () => {
+      subscriptions.clear()
     })
   }
 
@@ -50,4 +54,3 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
     attachClient
   }
 }
-
