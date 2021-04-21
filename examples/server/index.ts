@@ -2,6 +2,8 @@ import { easyhardServer } from 'easyhard-server'
 import { Actions } from '../shared';
 import express from 'express'
 import expressWs from 'express-ws'
+import { interval } from 'rxjs'
+import { first, map, take } from 'rxjs/operators';
 
 const app = express()
 expressWs(app)
@@ -10,14 +12,11 @@ const router = express.Router()
 app.use(router)
 
 const server = easyhardServer<Actions>({
-  getData(req, res) {
-    let i = 0;
-    const interval = setInterval(() => res.next({ count: ++i }), 1000)
-
-    setTimeout(() => {
-      clearInterval(interval)
-      res.complete()
-    }, 10000)
+  getData(payload) {
+    return interval(1000).pipe(
+      take(10),
+      map(count => ({ count }))
+    )
   }
 })
 
