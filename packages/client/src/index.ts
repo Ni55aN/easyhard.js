@@ -1,4 +1,4 @@
-import { RequestId, Response, CompleteResponse } from 'easyhard-common'
+import { RequestId, Request, Response, CompleteResponse, ExtractPayload } from 'easyhard-common'
 import { Observable, Subscriber } from 'rxjs'
 
 type Props = {
@@ -16,13 +16,13 @@ export function easyhardClient<T>({
   onClose
 }: Props = {}) {
   let socket: null | WebSocket = null
-  const subscriptions: {[key in RequestId]: { observer: Subscriber<unknown>, data: string }} = {}
+  const subscriptions: {[key in RequestId]: { observer: Subscriber<unknown>, data: unknown }} = {}
 
   function connect(url: string) {
     socket = new WebSocket(url)
 
     socket.onopen = () => {
-      Object.values(subscriptions).forEach(sub => socket?.send(sub.data))
+      Object.values(subscriptions).forEach(sub => socket?.send(JSON.stringify(sub.data)))
       onConnect && onConnect()
     }
 
@@ -55,15 +55,15 @@ export function easyhardClient<T>({
     socket && socket.close()
   }
 
-  function call<K extends keyof T>(action: K, payload?: T[K] extends { request?: unknown } ? T[K]['request'] : undefined) {
+  function call<K extends keyof T>(action: K, payload?: ExtractPayload<T[K], 'request'>) {
     const id: RequestId = Math.random().toString(16)
 
-    return new Observable<T[K] extends { response: unknown } ? T[K]['response'] : (T[K] extends { response?: unknown } ? T[K]['response'] : void)>(observer => {
-      const data = JSON.stringify({ action, id, payload })
+    return new Observable<ExtractPayload<T[K], 'response'>>(observer => {
+      const data: Request<T, K> = { action, id, payload }
       subscriptions[id] = { observer, data }
 
       if (socket && socket.readyState === socket.OPEN) {
-        socket.send(data)
+        socket.send(JSON.stringify(data))
       }
 
       return () => {
