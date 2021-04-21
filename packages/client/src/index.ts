@@ -27,7 +27,7 @@ export function easyhardClient<T>({
     }
 
     socket.onclose = event => {
-      if (!event.wasClean) setTimeout(connect, reconnectDelay)
+      if (!event.wasClean) setTimeout(() => socket && connect(socket.url), reconnectDelay)
       onClose && onClose(event)
     }
 
