@@ -1,5 +1,6 @@
 import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload } from 'easyhard-common'
 import { Observable, Subscriber } from 'rxjs'
+import { useSubscriptions } from './subscriptions'
 
 type Props = {
   reconnectDelay?: number;
@@ -16,13 +17,13 @@ export function easyhardClient<T>({
   onClose
 }: Props = {}) {
   let socket: null | WebSocket = null
-  const subscriptions: {[key in RequestId]: { observer: Subscriber<unknown>, data: unknown }} = {}
+  const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, data: unknown }>()
 
   function connect(url: string) {
     socket = new WebSocket(url)
 
     socket.onopen = () => {
-      Object.values(subscriptions).forEach(sub => socket?.send(JSON.stringify(sub.data)))
+      subscriptions.list().forEach(sub => send(sub.data))
       onConnect && onConnect()
     }
 
@@ -33,7 +34,7 @@ export function easyhardClient<T>({
 
     socket.onmessage = event => {
       const data: Response<T, keyof T> | CompleteResponse = JSON.parse(event.data)
-      const subscription = subscriptions[data.id]
+      const subscription = subscriptions.get(data.id)
 
       if (!subscription) {
         throw new Error('The subscription has been deleted, but the server is still sending data')
@@ -50,6 +51,12 @@ export function easyhardClient<T>({
       onError && onError(error as unknown as Error)
     }
   }
+
+  function send<T>(data: T) {
+    if (socket && socket.readyState === socket.OPEN) {
+      socket.send(JSON.stringify(data))
+    }
+  }
   
   function close() {
     socket && socket.close()
@@ -60,19 +67,13 @@ export function easyhardClient<T>({
 
     return new Observable<ExtractPayload<T[K], 'response'>>(observer => {
       const data: Request<T, K> = { action, id, payload }
-      subscriptions[id] = { observer, data }
+      subscriptions.add(id, { observer, data })
 
-      if (socket && socket.readyState === socket.OPEN) {
-        socket.send(JSON.stringify(data))
-      }
+      send(data)
 
       return () => {
-        const data: UnsubscribeRequest = { id, unsubscribe: true }
-
-        if (socket && socket.readyState === socket.OPEN) {
-          socket.send(JSON.stringify(data))
-        }
-        delete subscriptions[id]
+        send<UnsubscribeRequest>({ id, unsubscribe: true })
+        subscriptions.remove(id)
       }
     })
   }
