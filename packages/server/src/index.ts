@@ -1,14 +1,12 @@
-import { ExtractPayload, Response, Request, CompleteResponse, UnsubscribeRequest } from 'easyhard-common'
+import { Response, Request, CompleteResponse, UnsubscribeRequest } from 'easyhard-common'
 import * as ws from 'ws'
-import { Observable } from 'rxjs'
 import { useSubscriptions } from './subscriptions'
+import { Handlers } from './types'
 
-export type Handler<T> = (
-    payload?: ExtractPayload<T, 'request'>
-  ) => Observable<ExtractPayload<T, 'response'>>
-
-export type Handlers<T> = {
-  [K in keyof T]: Handler<T[K]>
+function send<T>(connection: ws, data: T) {
+  if (connection.readyState === connection.OPEN) {
+    connection.send(JSON.stringify(data))
+  }
 }
 
 export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void } {
@@ -16,30 +14,23 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
     const subscriptions = useSubscriptions()
 
     connection.on('message', data => {
-      const reqData: Request<T, keyof T> | UnsubscribeRequest = JSON.parse(data.toString('utf-8'))
-      const id = reqData.id
+      const request: Request<T, keyof T> | UnsubscribeRequest = JSON.parse(data.toString('utf-8'))
+      const id = request.id
 
-      if ('unsubscribe' in reqData) {
+      if ('unsubscribe' in request) {
         subscriptions.remove(id)
-      } else if ('action' in reqData) {
-        const handler = actions[reqData.action]
-
-        subscriptions.add(id, handler(reqData.payload).subscribe({
+      } else if ('action' in request) {
+        const handler = actions[request.action]
+        const subscription = handler(request.payload).subscribe({
           next(payload) {
-            if (connection.readyState === connection.OPEN) {
-              const response: Response<T, keyof T> = { id, payload }
-
-              connection.send(JSON.stringify(response))
-            }
+            send<Response<T, keyof T>>(connection, { id, payload })
           },
           complete() {
-            const response: CompleteResponse = { id, complete: true }
-
-            if (connection.readyState === connection.OPEN) {
-              connection.send(JSON.stringify(response))
-            }
+            send<CompleteResponse>(connection, { id, complete: true })
           }
-        }))
+        })
+
+        subscriptions.add(id, subscription)
       } else {
         throw new Error(`WS message isn't recognized`)
       }
