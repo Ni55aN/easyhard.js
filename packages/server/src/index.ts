@@ -32,7 +32,7 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
 
         subscriptions.add(id, subscription)
       } else {
-        throw new Error(`WS message isn't recognized`)
+        throw new Error('WS message isn\'t recognized')
       }
     })
 

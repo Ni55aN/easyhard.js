@@ -46,7 +46,7 @@ export function easyhardClient<T>({
         subscription.observer.next(data.payload)
       }
     }
-    
+
     socket.onerror = function(error) {
       onError && onError(error as unknown as Error)
     }
@@ -57,7 +57,7 @@ export function easyhardClient<T>({
       socket.send(JSON.stringify(data))
     }
   }
-  
+
   function close() {
     socket && socket.close()
   }
