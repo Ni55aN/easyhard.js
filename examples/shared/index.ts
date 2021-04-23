@@ -5,6 +5,6 @@ export interface Actions {
   },
   getDataWithParams: {
     request: { num: number }
-    response: { count: number }
+    response: { count: string }
   }
 }

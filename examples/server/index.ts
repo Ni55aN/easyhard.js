@@ -21,7 +21,7 @@ const server = easyhardServer<Actions>({
   getDataWithParams(payload) {
     return interval(500).pipe(
       take(14),
-      map(count => ({ count: count + '|' + payload.num }))
+      map(count => ({ count: count + '|' + payload?.num }))
     )
   }
 })

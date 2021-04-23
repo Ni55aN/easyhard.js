@@ -5,6 +5,7 @@
     "./shared/**/*.ts"
   ],
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist",
+    "baseUrl": "./node_modules"
   }
 }
