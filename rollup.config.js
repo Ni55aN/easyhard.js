@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import path from 'path';
 
 const mainPkg = require('./package.json')
-const packages = ['core', 'styles', 'router', 'loader', 'api', 'common', 'client', 'server'].map(folder => ({
+const packages = ['core', 'common', 'styles', 'router', 'loader', 'api', 'client', 'server'].map(folder => ({
   folder,
   pkg: require(`./packages/${folder}/package.json`)
 }))
@@ -21,7 +21,7 @@ export default packages.map(({ folder, pkg }) => {
         exports: 'auto'
       }
     }),
-    external: ['rxjs', 'rxjs/operators', 'recast', 'easyhard'],
+    external: ['rxjs', 'rxjs/operators', 'recast', 'easyhard', 'easyhard-common'],
     plugins: [
       eslint(),
       typescript({

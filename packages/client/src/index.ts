@@ -1,4 +1,4 @@
-import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload } from 'easyhard-common'
+import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID } from 'easyhard-common'
 import { Observable, Subscriber } from 'rxjs'
 import { useSubscriptions } from './subscriptions'
 
@@ -63,7 +63,7 @@ export function easyhardClient<T>({
   }
 
   function call<K extends keyof T>(action: K, payload?: ExtractPayload<T[K], 'request'>) {
-    const id: RequestId = Math.random().toString(16)
+    const id: RequestId = getUID()
 
     return new Observable<ExtractPayload<T[K], 'response'>>(observer => {
       const data: Request<T, K> = { action, id, payload }

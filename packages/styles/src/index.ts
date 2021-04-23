@@ -1,4 +1,5 @@
 import { untilExist, Child, createAnchor, onLife } from 'easyhard'
+import { getUID } from 'easyhard-common'
 import { Observable, combineLatest, pipe, MonoTypeOperatorFunction } from 'rxjs'
 
 export type CssSimpleValue = string | number;
@@ -36,10 +37,6 @@ export type RootStyleDeclaration = StyleDeclaration & {
     $name?: string;
 }
 export type Style = { className: string; style: HTMLStyleElement };
-
-function getUID(): string {
-    return (Date.now()+Math.random()).toString(36).replace('.', '')
-}
 
 export function px(val: number): string {
     return `${val}px`
