@@ -1,5 +1,6 @@
 import { RequestId } from 'easyhard-common'
 
+/* eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types */
 export function useSubscriptions<T>() {
   const subscriptions: {[key in RequestId]: T} = {}
 
