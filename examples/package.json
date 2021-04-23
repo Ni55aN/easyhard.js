@@ -22,7 +22,8 @@
         "history": "^5.0.0",
         "jss": "^10.0.0",
         "jss-preset-default": "^10.0.0",
-        "lodash-es": "^4.17.15"
+        "lodash-es": "^4.17.15",
+        "module-alias": "^2.2.2"
     },
     "devDependencies": {
         "babel-plugin-overload": "0.0.2",
@@ -36,5 +37,8 @@
         "webpack": "^5.3.2",
         "webpack-cli": "^4.1.0",
         "webpack-dev-server": "3.11.0"
+    },
+    "_moduleAliases": {
+        "easyhard-common": "../build/common"
     }
 }

@@ -1,3 +1,4 @@
 {
-  "ignoreRoot": [".git"]
+  "ignoreRoot": [".git"],
+  "exec": "ts-node --project tsconfig.server.json -r module-alias/register ./server/index.ts"
 }
