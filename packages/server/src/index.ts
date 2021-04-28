@@ -1,11 +1,12 @@
-import { Response, Request, CompleteResponse, UnsubscribeRequest } from 'easyhard-common'
+import { Response, Request, CompleteResponse, UnsubscribeRequest, ErrorResponse } from 'easyhard-common'
 import * as ws from 'ws'
 import { useSubscriptions } from './subscriptions'
 import { Handlers } from './types'
+import { serializeError } from './utils'
 
 function send<T>(connection: ws, data: T) {
   if (connection.readyState === connection.OPEN) {
-    connection.send(JSON.stringify(data))
+    connection.send(JSON.stringify(data, serializeError))
   }
 }
 
@@ -14,7 +15,7 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
     const subscriptions = useSubscriptions()
 
     connection.on('message', data => {
-      const request: Request<T, keyof T> | UnsubscribeRequest = JSON.parse(data.toString('utf-8'))
+      const request: Request<T, keyof T> | UnsubscribeRequest = JSON.parse(data.toString('utf-8'), serializeError)
       const id = request.id
 
       if ('unsubscribe' in request) {
@@ -24,6 +25,9 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
         const subscription = handler(request.payload).subscribe({
           next(payload) {
             send<Response<T, keyof T>>(connection, { id, payload })
+          },
+          error<E>(error: E) {
+            send<ErrorResponse<E>>(connection, { id, error })
           },
           complete() {
             send<CompleteResponse>(connection, { id, complete: true })

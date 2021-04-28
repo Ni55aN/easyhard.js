@@ -1,6 +1,7 @@
-import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID } from 'easyhard-common'
+import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID, ErrorResponse } from 'easyhard-common'
 import { Observable, Subscriber } from 'rxjs'
 import { useSubscriptions } from './subscriptions'
+import { deserializeError } from './utils'
 
 type Props = {
   reconnectDelay?: number;
@@ -33,7 +34,7 @@ export function easyhardClient<T>({
     }
 
     socket.onmessage = event => {
-      const data: Response<T, keyof T> | CompleteResponse = JSON.parse(event.data)
+      const data: Response<T, keyof T> | CompleteResponse | ErrorResponse<unknown> = JSON.parse(event.data)
       const subscription = subscriptions.get(data.id)
 
       if (!subscription) {
@@ -42,6 +43,8 @@ export function easyhardClient<T>({
 
       if ('complete' in data) {
         subscription.observer.complete()
+      } else if ('error' in data) {
+        subscription.observer.error(deserializeError(data.error))
       } else {
         subscription.observer.next(data.payload)
       }
