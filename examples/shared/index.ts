@@ -6,5 +6,8 @@ export interface Actions {
   getDataWithParams: {
     request: { num: number }
     response: { count: string }
+  },
+  getDataError: {
+    response: { count: number }
   }
 }
