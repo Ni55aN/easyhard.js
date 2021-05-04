@@ -1,72 +1,21 @@
-import { untilExist, Child, createAnchor, onLife } from 'easyhard'
+import { Child, createAnchor, onLife } from 'easyhard'
 import { getUID } from 'easyhard-common'
-import { Observable, combineLatest, pipe, MonoTypeOperatorFunction } from 'rxjs'
+import { Observable, combineLatest } from 'rxjs'
+import { CssMedia, CssMediaItem, CssMediaValue, Keys as MediaKeys, stringifyMedia } from './media'
+import { untilExistStyle } from './operators'
+import { CssSimpleValue, StyleDeclaration, RootStyleDeclaration, Style } from './types'
+import { px } from './units'
+import { toHyphenCase } from './utils'
 
-export type CssSimpleValue = string | number;
-export type CssValue = CssSimpleValue | Observable<string | number>;
-export type StyleBasicDeclaration = {[key in keyof CSSStyleDeclaration]?: CssValue };
-export type CssMediaValue = string | boolean;
-export type CssMediaItem = [MediaKeys, CssMediaValue | Observable<CssMediaValue>];
-export type CssMedia = StyleDeclaration & {
-    query: {
-        screen?: boolean | Observable<boolean>;
-        hover?: boolean | Observable<boolean>;
-        color?: boolean | Observable<boolean>;
-        print?: boolean | Observable<boolean>;
-        minWidth?: string | Observable<string>;
-        maxWidth?: string | Observable<string>;
-        speech?: boolean | Observable<boolean>;
-        orientation?: 'landscape' | 'portrait' | Observable<'landscape' | 'portrait'>;
-    };
-};
-export type MediaKeys = keyof CssMedia['query'];
-export type StyleDeclaration = StyleBasicDeclaration & {
-    '@media'?: CssMedia;
-    '@import'?: string;
-    ':hover'?: StyleDeclaration;
-    ':focus'?: StyleDeclaration;
-    ':link'?: StyleDeclaration;
-    ':first-child'?: StyleDeclaration;
-    ':last-child'?: StyleDeclaration;
-    ':enabled'?: StyleDeclaration;
-    ':disabled'?: StyleDeclaration;
-    ':checked'?: StyleDeclaration;
-    ':active'?: StyleDeclaration;
-};
-export type RootStyleDeclaration = StyleDeclaration & {
-    $name?: string;
-}
-export type Style = { className: string; style: HTMLStyleElement };
-
-export function px(val: number): string {
-    return `${val}px`
-}
+export * from './types'
+export * from './media'
+export * from './units'
 
 function prepareCssValue(val: CssSimpleValue): string {
     return typeof val === 'number' ? px(val) : val
 }
 
-function stringifyMedia(args: [MediaKeys, CssMediaValue][]): string {
-    return args.map(([key, value]) => {
-        switch (key) {
-            case 'maxWidth': return `(max-width: ${value as string})`
-            case 'minWidth': return `(min-width: ${value as string})`
-            case 'orientation': return `(orientation: ${value as string})`
-            default: return value
-        }
-    }).join(' and ')
-}
-
-function untilExistStyle<T>(style: HTMLStyleElement, parent: ChildNode | null): MonoTypeOperatorFunction<T> {
-    if (parent) return pipe(untilExist<T>(style, document.head), untilExist(parent))
-    return untilExist<T>(style, document.head)
-}
-
-function toHyphenCase(text: string) {
-    return text.replace(/([A-Z])/g, '-$1').toLocaleLowerCase()
-}
-
-function injectCssProperties(selector: string, media: CssMediaItem[], style: HTMLStyleElement, props: StyleDeclaration, head: HTMLHeadElement, parent: ChildNode | null): void {
+function injectCssProperties(selector: string, media: CssMediaItem<StyleDeclaration>[], style: HTMLStyleElement, props: StyleDeclaration, head: HTMLHeadElement, parent: ChildNode | null): void {
     const sheet = style.sheet as CSSStyleSheet
     const len = sheet.cssRules.length
     sheet.insertRule(media.length > 0 ? `@media {${selector} {}}`: `${selector} {}`, len)
@@ -76,15 +25,15 @@ function injectCssProperties(selector: string, media: CssMediaItem[], style: HTM
 
     if (rule instanceof CSSMediaRule) {
         const mediaObservable = media.filter(([_, value]) => value instanceof Observable)
-        const mediaStatic = media.filter(([_, value]) => !(value instanceof Observable)) as [MediaKeys, CssMediaValue][]
+        const mediaStatic = media.filter(([_, value]) => !(value instanceof Observable)) as [MediaKeys<StyleDeclaration>, CssMediaValue][]
 
-        rule.media.mediaText = stringifyMedia(mediaStatic)
+        rule.media.mediaText = stringifyMedia<StyleDeclaration>(mediaStatic)
 
         combineLatest<CssMediaValue[]>(...mediaObservable.map(([_, value]) => value as Observable<CssMediaValue>))
             .pipe(untilExistStyle(style, parent))
             .subscribe((args: CssMediaValue[]) => {
-                const mediaUpdated = args.map((ob, i) => [mediaObservable[i][0], ob] as [MediaKeys, CssMediaValue])
-                rule.media.mediaText = stringifyMedia([...mediaUpdated, ...mediaStatic])
+                const mediaUpdated = args.map((ob, i) => [mediaObservable[i][0], ob] as [MediaKeys<StyleDeclaration>, CssMediaValue])
+                rule.media.mediaText = stringifyMedia<StyleDeclaration>([...mediaUpdated, ...mediaStatic])
             })
     }
 
@@ -92,9 +41,9 @@ function injectCssProperties(selector: string, media: CssMediaItem[], style: HTM
         const val = props[key]
 
         if (key === '@media') {
-            const nestedProps = props[key] as unknown as CssMedia
+            const nestedProps = props[key] as unknown as CssMedia<StyleDeclaration>
             const  { query, ...localProps } = nestedProps
-            const localMedia = [...Object.entries(query), ...media] as CssMediaItem[]
+            const localMedia = [...Object.entries(query), ...media] as CssMediaItem<StyleDeclaration>[]
 
             injectCssProperties(selector, localMedia, style, localProps as StyleDeclaration, head, parent)
         } else if (key === '@import') {
