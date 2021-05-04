@@ -4,7 +4,7 @@ import { Observable, combineLatest } from 'rxjs'
 import { CssMedia, CssMediaItem, CssMediaValue, Keys as MediaKeys, stringifyMedia } from './media'
 import { untilExistStyle } from './operators'
 import { CssSimpleValue, StyleDeclaration, RootStyleDeclaration, Style } from './types'
-import { px } from './units'
+import { unit } from './units'
 import { toHyphenCase } from './utils'
 
 export * from './types'
@@ -12,7 +12,7 @@ export * from './media'
 export * from './units'
 
 function prepareCssValue(val: CssSimpleValue): string {
-    return typeof val === 'number' ? px(val) : val
+    return typeof val === 'number' ? unit('px')(val) : val
 }
 
 function injectCssProperties(selector: string, media: CssMediaItem<StyleDeclaration>[], style: HTMLStyleElement, props: StyleDeclaration, head: HTMLHeadElement, parent: ChildNode | null): void {
