@@ -1,6 +1,6 @@
 {
   "name": "easyhard-styles",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "peerDependencies": {
     "easyhard": "^0.6.0",
     "easyhard-common": "^0.1.0",
