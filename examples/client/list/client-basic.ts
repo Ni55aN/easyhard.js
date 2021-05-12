@@ -49,7 +49,7 @@ function App() {
     )
   )
 
-  onMount(el, () => client.connect(`ws://${location.host}/api/`))
+  onMount(el, () => client.connect(`ws://${location.host}/api/basic/`))
 
   return el
 }
