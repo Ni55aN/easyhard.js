@@ -11,3 +11,10 @@ export interface Actions {
     response: { count: number }
   }
 }
+
+export interface ActionsUpload {
+  upload: {
+    request: { filename: string, numberOfChunks: number, index: number, chunk: string }
+    response: boolean
+  }
+}
