@@ -2,12 +2,12 @@ import { h, $ } from 'easyhard'
 import { tap } from 'rxjs/operators'
 
 type Props<T> = {
-  value?: $<T>; 
+  value?: $<T>;
   model?: $<T>;
   type?: 'number' | 'text',
   autofocus?: boolean;
   change?: (v: string) => void,
-  events?: {[key: string]: Function}
+  events?: {[key: string]: () => void}
 };
 
 export function Input<T>(props: Props<T>) {

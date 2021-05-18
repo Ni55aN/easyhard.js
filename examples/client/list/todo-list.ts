@@ -5,7 +5,7 @@ import { Input } from '../components/input'
 type Reactive<T> = {[key in keyof T]: $<T[key]>};
 type Task = Reactive<{ text: string, done: boolean }>;
 
-function Editable(el: (toggle: Function) => HTMLElement, input: (toggle: Function) => HTMLElement) {
+function Editable(el: (toggle: () => void) => HTMLElement, input: (toggle: () => void) => HTMLElement) {
   const edited = $(false)
   const toggle = () => edited.next(!edited.value)
 

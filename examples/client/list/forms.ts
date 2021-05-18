@@ -145,7 +145,7 @@ function useValidation(form: Group) {
 
         return [ ...acc, ...rules.map(rule => field.pipe(rule)) ]
       }, [] as Observable<boolean | string>[])
-      
+
       return combineLatest(validations).pipe(map(v => v.every(item => item === true)))
     })),
     setValidators
@@ -164,7 +164,7 @@ function App() {
   const { form } = useForm({
     text: $('1'),
     text2: $('1'),
-    checkbox: $(false),
+    checkbox: $<boolean>(false),
     number: $(3),
     select: $('first'),
     items: [
@@ -196,7 +196,7 @@ function App() {
     } }),
     Field('Active', form.checkbox, { type: Checkbox }),
     Field('Select', form.select, { type: Select(selectOptions), disabled }),
-    Field('Number Formatter (min: 5, max: 8)', form.number, { type: Numbox, formatters: { 
+    Field('Number Formatter (min: 5, max: 8)', form.number, { type: Numbox, formatters: {
       input: pipe(min(5), max(8))
     }}),
     Button('Clear', () => form.text.next('')),
