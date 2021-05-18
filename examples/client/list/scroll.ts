@@ -1,5 +1,5 @@
 import { h, $, $$, $for, SimpleType, DomElement, appendChild } from 'easyhard'
-import { OperatorFunction, Observable, combineLatest, pipe, merge } from 'rxjs'
+import { OperatorFunction, Observable, combineLatest, pipe } from 'rxjs'
 import { map, tap, debounceTime, mapTo } from 'rxjs/operators'
 import { intersection, difference } from 'lodash-es'
 
@@ -36,7 +36,7 @@ function createVirtualList<T>(sourceList: $$<T>, scrollTop: $<number>, container
   }
 
   return {
-    inject: combineLatest([merge(sourceList.change$, sourceList.value$), itemHeight, containerHeight, scrollTop]).pipe(
+    inject: combineLatest([sourceList, itemHeight, containerHeight, scrollTop]).pipe(
       tap(([_, itemHeight, containerHeight, scrollTop]) => update(itemHeight, containerHeight, scrollTop)),
       mapTo(null)
     ),
