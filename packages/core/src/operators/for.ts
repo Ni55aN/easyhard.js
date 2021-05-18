@@ -1,7 +1,7 @@
 import { $ } from '../structures/value'
 import { $$ } from '../structures/array'
 import { DomElement, SimpleType, Anchor } from '../types'
-import { merge, OperatorFunction, Observable, Subject } from 'rxjs'
+import { OperatorFunction, Observable, Subject } from 'rxjs'
 import { filter, startWith, map } from 'rxjs/operators'
 import { untilExist } from '../operators/until-exist'
 import { createFragment } from '../fragment'
@@ -52,17 +52,14 @@ export function $for<T>(array: $$<T>, pipe: OperatorFunction<[T, Observable<bool
 export function $for<T>(array: $$<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean }): DomElement {
   const fragment = props && props.detached ? createDetachedFragment<T>(pipe) : createAttachedFragment<T>(pipe)
 
-  merge(array.change$).pipe(
-    startWith([...array.value]),
-    untilExist(fragment.anchor)
-  ).subscribe({
+  array.pipe(untilExist(fragment.anchor)).subscribe({
     next(args) {
       if (Array.isArray(args)) {
         fragment.clear()
         args.forEach(fragment.insert)
-      } else if (args.type === 'insert') {
+      } else if ('insert' in args) {
         fragment.insert(args.item, args.i)
-      } else if (args.type === 'remove') {
+      } else if ('remove' in args) {
         fragment.remove(args.item, args.i)
       }
     },
