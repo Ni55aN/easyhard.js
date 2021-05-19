@@ -1,4 +1,4 @@
-import { $, $$ } from 'easyhard-common'
+import { $, $$Return } from 'easyhard-common'
 import { DomElement, SimpleType, Anchor } from '../types'
 import { OperatorFunction, Observable, Subject } from 'rxjs'
 import { filter, startWith, map } from 'rxjs/operators'
@@ -45,10 +45,12 @@ function createAttachedFragment<T>(pipe: OperatorFunction<T, DomElement | Simple
   }
 }
 
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T, DomElement | SimpleType>): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props: { detached: false }): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>, props: { detached: true }): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean }): DomElement {
+type $$Observable<T> = Observable<$$Return<T>>
+
+export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T, DomElement | SimpleType>): DomElement
+export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props: { detached: false }): DomElement
+export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>, props: { detached: true }): DomElement
+export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean }): DomElement {
   const fragment = props && props.detached ? createDetachedFragment<T>(pipe) : createAttachedFragment<T>(pipe)
 
   array.pipe(untilExist(fragment.anchor)).subscribe({
