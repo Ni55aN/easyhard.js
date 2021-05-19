@@ -1,7 +1,8 @@
+import { $$ } from 'easyhard-common'
 import { easyhardServer } from 'easyhard-server'
-import { Actions } from '../shared'
 import { interval, throwError } from 'rxjs'
 import { concatMap, map, take } from 'rxjs/operators'
+import { Actions } from '../shared'
 
 export default easyhardServer<Actions>({
   getData() {
@@ -9,6 +10,13 @@ export default easyhardServer<Actions>({
       take(10),
       map(count => ({ count }))
     )
+  },
+  getArray() {
+    const array = $$([1,2,4])
+
+    setTimeout(() => array.insert(3, 2), 3000)
+    setTimeout(() => array.removeAt(0), 4000)
+    return array
   },
   getDataWithParams(payload) {
     return interval(500).pipe(
