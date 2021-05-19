@@ -1,9 +1,9 @@
 import { Subject, Observable, Subscriber, Subscription, SubscriptionLike, ObjectUnsubscribedError } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-export type ArrayEvent<T> = T[] | { insert: true, item: T, i: number } | { remove: true, item: T, i: number }
+export type Return<T> = T[] | { insert: true, item: T, i: number } | { remove: true, item: T, i: number }
 
-export class ArraySubject<T> extends Subject<ArrayEvent<T>> {
+export class ArraySubject<T> extends Subject<Return<T>> {
   constructor(private _value: T[]) {
     super()
   }
@@ -77,3 +77,4 @@ export class ArraySubject<T> extends Subject<ArrayEvent<T>> {
 }
 export const $$ = <T>(val: T[]): ArraySubject<T> => new ArraySubject(val)
 export type $$<T> = ArraySubject<T>;
+export type $$Return<T> = Return<T>

@@ -11,4 +11,4 @@ export function getUID(): string {
 }
 
 export { $ } from './structures/value'
-export { $$ } from './structures/array'
+export { $$, $$Return } from './structures/array'
