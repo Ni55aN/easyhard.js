@@ -1,8 +1,8 @@
-import { $ } from '../structures/value'
-import { untilExist } from './until-exist'
-import { Child } from '../types'
+import { $ } from 'easyhard-common'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { untilExist } from './until-exist'
+import { Child } from '../types'
 import { createAnchor } from '../utils'
 
 type DiKey<T> = { new(): unknown } | { (...args: T[]): unknown } | Record<string, unknown>;
@@ -59,7 +59,7 @@ export function $inject<T extends unknown, K extends unknown>(id: DiKey<K>, act:
     injection.pipe(untilExist(anchor)).subscribe(injectionValue => {
         const target = anchor.parentNode
         if (!target) return
-        
+
         const value = Injections.find(target.parentElement, injectionValue)
 
         if (value) {

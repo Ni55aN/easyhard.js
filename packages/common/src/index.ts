@@ -9,3 +9,6 @@ export type ErrorResponse<T> = { id: RequestId, error: T }
 export function getUID(): string {
   return (Date.now()+Math.random()).toString(36).replace('.', '')
 }
+
+export { $ } from './structures/value'
+export { $$ } from './structures/array'

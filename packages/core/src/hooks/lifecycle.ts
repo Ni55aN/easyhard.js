@@ -1,6 +1,6 @@
+import { $ } from 'easyhard-common'
 import { first } from 'rxjs/operators'
 import { untilExist } from '../operators'
-import { $ } from '../structures/value'
 
 type Callback = () => void
 

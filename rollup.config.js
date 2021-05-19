@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import path from 'path';
 
 const mainPkg = require('./package.json')
-const packages = ['core', 'common', 'styles', 'router', 'loader', 'api', 'client', 'server'].map(folder => ({
+const packages = ['common', 'core', 'styles', 'router', 'loader', 'api', 'client', 'server'].map(folder => ({
   folder,
   pkg: require(`./packages/${folder}/package.json`)
 }))

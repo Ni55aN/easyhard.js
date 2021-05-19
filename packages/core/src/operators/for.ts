@@ -1,5 +1,4 @@
-import { $ } from '../structures/value'
-import { $$ } from '../structures/array'
+import { $, $$ } from 'easyhard-common'
 import { DomElement, SimpleType, Anchor } from '../types'
 import { OperatorFunction, Observable, Subject } from 'rxjs'
 import { filter, startWith, map } from 'rxjs/operators'
