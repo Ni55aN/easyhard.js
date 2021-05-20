@@ -10,6 +10,12 @@ const packages = ['common', 'core', 'styles', 'router', 'loader', 'api', 'client
   pkg: require(`./packages/${folder}/package.json`)
 }))
 
+const getBanner = (pkg) => `/*!
+ * ${pkg.name} v${pkg.version}
+ * (c) 2019-${new Date().getFullYear()} ${mainPkg.author}
+ * Released under the ${mainPkg.license} license.
+ */`
+
 export default packages.map(({ folder, pkg }) => {
   return {
     input: `packages/${folder}/src/index.ts`,
@@ -18,7 +24,8 @@ export default packages.map(({ folder, pkg }) => {
       return {
         file: `build/${folder}/${format}.js`,
         format,
-        exports: 'auto'
+        exports: 'auto',
+        banner: getBanner(pkg)
       }
     }),
     external: ['rxjs', 'rxjs/operators', 'recast', 'easyhard', 'easyhard-common'],
