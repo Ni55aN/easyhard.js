@@ -19,6 +19,9 @@
         "moduleResolution": "node",
         "sourceMap": true,
         "resolveJsonModule": true,
-        "strictNullChecks": true
+        "strictNullChecks": true,
+        "paths": {
+            "easyhard-common": ["../build/common"]
+        }
     }
 }
