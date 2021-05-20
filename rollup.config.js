@@ -1,5 +1,6 @@
 import typescript from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
+import { terser } from 'rollup-plugin-terser';
 import fromEntries from 'fromentries';
 import fs from 'fs-extra';
 import path from 'path';
@@ -57,7 +58,12 @@ export default packages.map(({ folder, pkg }) => {
           fs.copyFileSync(path.resolve(`packages/${folder}/package-lock.json`), path.resolve(`build/${folder}/package-lock.json`))
           fs.writeFileSync(path.resolve(`build/${folder}/package.json`), JSON.stringify(packageJson, null, 4))
         }
-      }
+      },
+      terser({
+        format: {
+          comments: new RegExp(mainPkg.author)
+        }
+      })
     ]
   }
 })
