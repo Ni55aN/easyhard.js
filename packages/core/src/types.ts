@@ -1,4 +1,4 @@
-import { Observable, OperatorFunction, Subject } from "rxjs";
+import { Observable, OperatorFunction, Subject } from 'rxjs'
 
 export type Anchor = Text & { edge?: DomElement };
 export type DomElement = Anchor | Comment | HTMLElement | Text | null;

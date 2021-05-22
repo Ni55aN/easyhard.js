@@ -1,15 +1,21 @@
 import typescript from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
-import alias from '@rollup/plugin-alias';
-import fromEntries from 'fromentries'
-import fs from 'fs-extra'
-import path from 'path'
+import { terser } from 'rollup-plugin-terser';
+import fromEntries from 'fromentries';
+import fs from 'fs-extra';
+import path from 'path';
 
 const mainPkg = require('./package.json')
-const packages = ['core', 'styles', 'loader', 'api'].map(folder => ({
+const packages = ['common', 'core', 'styles', 'router', 'loader', 'api', 'client', 'server'].map(folder => ({
   folder,
   pkg: require(`./packages/${folder}/package.json`)
 }))
+
+const getBanner = (pkg) => `/*!
+ * ${pkg.name} v${pkg.version}
+ * (c) 2019-${new Date().getFullYear()} ${mainPkg.author}
+ * Released under the ${mainPkg.license} license.
+ */`
 
 export default packages.map(({ folder, pkg }) => {
   return {
@@ -18,18 +24,13 @@ export default packages.map(({ folder, pkg }) => {
     output: ['cjs', 'esm'].map(format => {
       return {
         file: `build/${folder}/${format}.js`,
-        format
+        format,
+        exports: 'auto',
+        banner: getBanner(pkg)
       }
     }),
+    external: ['rxjs', 'rxjs/operators', 'recast', 'easyhard', 'easyhard-common'],
     plugins: [
-      alias({
-        entries: packages.map(({ folder, pkg }) => {
-          return {
-            find: pkg.name,
-            replacement: path.resolve(`build/${folder}/esm.js`)
-          }
-        })
-      }),
       eslint(),
       typescript({
         tsconfig: `packages/${folder}/tsconfig.json`,
@@ -57,7 +58,12 @@ export default packages.map(({ folder, pkg }) => {
           fs.copyFileSync(path.resolve(`packages/${folder}/package-lock.json`), path.resolve(`build/${folder}/package-lock.json`))
           fs.writeFileSync(path.resolve(`build/${folder}/package.json`), JSON.stringify(packageJson, null, 4))
         }
-      }
+      },
+      terser({
+        format: {
+          comments: new RegExp(mainPkg.author)
+        }
+      })
     ]
   }
 })

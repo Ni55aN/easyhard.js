@@ -1,10 +1,9 @@
-import { $ } from '../structures/value';
-import { $$ } from '../structures/array';
-import { DomElement, SimpleType, Anchor } from "../types";
-import { merge, OperatorFunction, Observable, Subject } from 'rxjs';
-import { filter, startWith, map } from 'rxjs/operators';
-import { untilExist } from '../operators';
-import { createFragment } from '../utils';
+import { $, $$Return } from 'easyhard-common'
+import { DomElement, SimpleType, Anchor } from '../types'
+import { OperatorFunction, Observable, Subject } from 'rxjs'
+import { filter, startWith, map } from 'rxjs/operators'
+import { untilExist } from '../operators/until-exist'
+import { createFragment } from '../fragment'
 
 type ForFragment<T> = {
   anchor: Anchor;
@@ -14,7 +13,7 @@ type ForFragment<T> = {
 }
 
 function createDetachedFragment<T>(pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>): ForFragment<T> {
-  const fragment = createFragment();
+  const fragment = createFragment()
   const detached$ = new Subject<T>()
 
   return {
@@ -32,7 +31,7 @@ function createDetachedFragment<T>(pipe: OperatorFunction<[T, Observable<boolean
 }
 
 function createAttachedFragment<T>(pipe: OperatorFunction<T, DomElement | SimpleType>): ForFragment<T> {
-  const fragment = createFragment();
+  const fragment = createFragment()
 
   return {
     anchor: fragment.anchor,
@@ -41,33 +40,32 @@ function createAttachedFragment<T>(pipe: OperatorFunction<T, DomElement | Simple
       fragment.insert($<T>(item).pipe(pipe), i)
     },
     remove(_: T, i: number): void {
-      fragment.remove(i);
+      fragment.remove(i)
     }
   }
 }
 
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T, DomElement | SimpleType>): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props: { detached: false }): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>, props: { detached: true }): DomElement
-export function $for<T>(array: $$<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean }): DomElement {
+type $$Observable<T> = Observable<$$Return<T>>
+
+export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T, DomElement | SimpleType>): DomElement
+export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props: { detached: false }): DomElement
+export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>, props: { detached: true }): DomElement
+export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean }): DomElement {
   const fragment = props && props.detached ? createDetachedFragment<T>(pipe) : createAttachedFragment<T>(pipe)
 
-  merge(array.change$).pipe(
-    startWith([...array.value]),
-    untilExist(fragment.anchor)
-  ).subscribe({
+  array.pipe(untilExist(fragment.anchor)).subscribe({
     next(args) {
       if (Array.isArray(args)) {
         fragment.clear()
-        args.forEach(fragment.insert);
-      } else if (args.type === 'insert') {
+        args.forEach(fragment.insert)
+      } else if ('insert' in args) {
         fragment.insert(args.item, args.i)
-      } else if (args.type === 'remove') {
-        fragment.remove(args.item, args.i);
+      } else if ('remove' in args) {
+        fragment.remove(args.item, args.i)
       }
     },
-    complete() { fragment.clear(); }
-  });
+    complete() { fragment.clear() }
+  })
 
-  return fragment.anchor;
+  return fragment.anchor
 }

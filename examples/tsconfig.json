@@ -1,6 +1,7 @@
 {
     "include": [
-      "./src/**/*.ts"
+      "./client/**/*.ts",
+      "./shared/**/*.ts"
     ],
     "compilerOptions": {
         "lib": [
@@ -14,10 +15,13 @@
         "allowSyntheticDefaultImports": true,
         "strict": true,
         "forceConsistentCasingInFileNames": true,
-        "module": "esnext",
+        "module": "CommonJS",
         "moduleResolution": "node",
+        "sourceMap": true,
         "resolveJsonModule": true,
-        "strictNullChecks": true
+        "strictNullChecks": true,
+        "paths": {
+            "easyhard-common": ["../build/common"]
+        }
     }
 }
-  

@@ -2,19 +2,25 @@ const path = require('path');
 const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
-const examples = fs.readdirSync('./src/list').map(file => path.basename(file, '.ts'));
+const examples = fs.readdirSync('./client/list').map(file => path.basename(file, '.ts'));
 const mode = 'development';
 
 module.exports = {
   entry: examples.reduce((entries, name) => 
-    ({ ...entries, [name]: (`./src/list/${name}.ts`) }),
+    ({ ...entries, [name]: (`./client/list/${name}.ts`) }),
     {}
   ),
   mode,
   devtool: 'source-map',
   devServer: {
-    contentBase: './dist',
-    hot: true
+    contentBase: './dist/client',
+    hot: true,
+    proxy: {
+      '/api': {
+         target: 'ws://localhost:3000',
+         ws: true
+      },
+    },
   },
   module: {
     rules: [
@@ -52,10 +58,11 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
+    symlinks: false
   },
   output: {
     filename: `[name]${mode === 'development'?'':'.[chunkhash]'}.js`,
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist', 'client'),
   },
   plugins: [
     ...examples.map(name => new HtmlWebpackPlugin({
