@@ -1,24 +1,40 @@
-import { Observable, BehaviorSubject } from 'rxjs'
+import { Subject, Observable, Subscriber, Subscription, SubscriptionLike, ObjectUnsubscribedError } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 export type Return<T> = T[] | { insert: true, item: T, i: number } | { remove: true, item: T, i: number }
-export class ArraySubject<T> extends BehaviorSubject<Return<T>> {
-  constructor(private __value: T[]) {
-    super(__value)
+
+export class ArraySubject<T> extends Subject<Return<T>> {
+  constructor(private _value: T[]) {
+    super()
   }
 
   get value(): T[] {
     return this.getValue()
   }
 
+  _subscribe(subscriber: Subscriber<T[]>): Subscription {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const subscription = super._subscribe(subscriber)
+    if (subscription && !(<SubscriptionLike>subscription).closed) {
+      subscriber.next([...this._value])
+    }
+    return subscription
+  }
+
   getValue(): T[] {
-    super.getValue() // trigger internal checks
-    return this.__value
+    if (this.hasError) {
+      throw this.thrownError
+    } else if (this.closed) {
+      throw new ObjectUnsubscribedError()
+    } else {
+      return this._value
+    }
   }
 
   next(value: T[]): void {
-    this.__value = value
-    super.next([...this.__value])
+    this._value = value
+    super.next([...this._value])
   }
 
   insert(item: T, i = this.value.length): void {
