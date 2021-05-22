@@ -3,6 +3,6 @@
   "version": "0.1.2",
   "peerDependencies": {
     "easyhard-common": "^0.1.2",
-    "rxjs": "^6.5.3"
+    "rxjs": "^7.0.0"
   }
 }
