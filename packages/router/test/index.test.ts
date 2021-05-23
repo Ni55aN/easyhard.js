@@ -1,5 +1,5 @@
 import { h } from 'easyhard'
-import { first, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import '@testing-library/jest-dom'
 import { createMemoryHistory, MemoryHistory, History } from 'history'
 import { Route, UseRouter, useRouter } from '../src'
