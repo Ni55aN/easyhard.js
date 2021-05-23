@@ -13,6 +13,8 @@ export class ArraySubject<T> extends Subject<Return<T>> {
   }
 
   _subscribe(subscriber: Subscriber<T[]>): Subscription {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const subscription = super._subscribe(subscriber)
     if (subscription && !(<SubscriptionLike>subscription).closed) {
       subscriber.next([...this._value])

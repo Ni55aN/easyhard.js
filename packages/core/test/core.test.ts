@@ -53,7 +53,7 @@ describe('core', () => {
     document.body.appendChild(div)
 
     expect(fn).not.toBeCalled()
-  
+
     div.click()
     await waitAnimationFrame()
     expect(fn).toBeCalled()
@@ -68,7 +68,7 @@ describe('core', () => {
     subject.subscribe(fn)
 
     expect(fn).not.toBeCalled()
-  
+
     div.click()
     await waitAnimationFrame()
     expect(fn).toBeCalled()
@@ -107,9 +107,9 @@ describe('core', () => {
     value.next('333')
     expect(fn).toBeCalledTimes(2)
   })
-  
+
   it('remove if Observable completed', async () => {
-    const complete$ = new Subject()
+    const complete$ = new Subject<null>()
     const div = h('div', {},
       $('111').pipe(takeUntil(complete$), map(v => h('b', {}, v))),
       $('222').pipe(takeUntil(complete$))
@@ -118,7 +118,7 @@ describe('core', () => {
 
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('111222')
-    complete$.next()
+    complete$.next(null)
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('')
   })

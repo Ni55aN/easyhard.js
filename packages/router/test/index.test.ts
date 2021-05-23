@@ -1,9 +1,10 @@
 import { h } from 'easyhard'
-import { first, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import '@testing-library/jest-dom'
 import { createMemoryHistory, MemoryHistory, History } from 'history'
 import { Route, UseRouter, useRouter } from '../src'
 import { waitAnimationFrame } from './utils/timers'
+import { firstValueFrom } from 'rxjs'
 
 const routes: Route[] = [
   {
@@ -76,7 +77,7 @@ describe('router', () => {
 
     history.push('/a?param1=111')
     await waitAnimationFrame()
-    const urlParams = await params.pipe(first()).toPromise()
+    const urlParams = await firstValueFrom(params)
     const param1 = urlParams.get('param1')
 
     expect(param1).toBe('111')
@@ -93,7 +94,7 @@ describe('router', () => {
       })
     }
     const { navigate } = await initRouter([...routes, cRoute], history)
-    
+
     expect(childRouter).toBe(null)
     await waitAnimationFrame()
 

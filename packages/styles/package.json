@@ -4,6 +4,6 @@
   "peerDependencies": {
     "easyhard": "^0.6.0",
     "easyhard-common": "^0.1.0",
-    "rxjs": "^6.5.3"
+    "rxjs": ">= 6.x <=7.x"
   }
 }
