@@ -15,7 +15,7 @@
         "allowSyntheticDefaultImports": true,
         "strict": true,
         "forceConsistentCasingInFileNames": true,
-        "module": "CommonJS",
+        "module": "ES6",
         "moduleResolution": "node",
         "sourceMap": true,
         "resolveJsonModule": true,

@@ -6,7 +6,7 @@ const examples = fs.readdirSync('./client/list').map(file => path.basename(file,
 const mode = 'development';
 
 module.exports = {
-  entry: examples.reduce((entries, name) => 
+  entry: examples.reduce((entries, name) =>
     ({ ...entries, [name]: (`./client/list/${name}.ts`) }),
     {}
   ),
@@ -24,6 +24,11 @@ module.exports = {
   },
   module: {
     rules: [
+      {
+        test: /\.js$/,
+        enforce: 'pre',
+        use: ['source-map-loader']
+      },
       // {
       //   enforce: 'pre',
       //   test: /\.(j|t)sx?$/,
@@ -37,7 +42,7 @@ module.exports = {
       {
         test: /\.tsx?$/,
         loader: 'ts-loader',
-        options:{	
+        options:{
           transpileOnly: true	// prevent bug with HMR
         },
         exclude: /node_modules/,
