@@ -5,6 +5,7 @@ import fromEntries from 'fromentries';
 import fs from 'fs-extra';
 import path from 'path';
 
+const isDev = process.env.MODE === 'dev'
 const mainPkg = require('./package.json')
 const packages = ['common', 'core', 'styles', 'router', 'loader', 'api', 'client', 'server'].map(folder => ({
   folder,
@@ -26,7 +27,7 @@ export default packages.map(({ folder, pkg }) => {
         file: `build/${folder}/${format}.js`,
         format,
         exports: 'auto',
-        banner: getBanner(pkg)
+        banner: isDev ? undefined : getBanner(pkg)
       }
     }),
     external: ['rxjs', 'rxjs/operators', 'recast', 'easyhard', 'easyhard-common'],
@@ -59,7 +60,7 @@ export default packages.map(({ folder, pkg }) => {
           fs.writeFileSync(path.resolve(`build/${folder}/package.json`), JSON.stringify(packageJson, null, 4))
         }
       },
-      terser({
+      isDev ? undefined : terser({
         format: {
           comments: new RegExp(mainPkg.author)
         }

@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "build": "rollup -c",
-    "build:dev": "rollup -cw",
+    "build": "MODE=prod rollup -c",
+    "build:dev": "MODE=dev rollup -cw",
     "lint": "eslint packages/*/src/**",
     "lint:examples": "eslint examples/src/**",
     "test": "jest",
