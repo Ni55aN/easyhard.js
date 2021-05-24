@@ -27,6 +27,7 @@ export default packages.map(({ folder, pkg }) => {
         file: `build/${folder}/${format}.js`,
         format,
         exports: 'auto',
+        sourcemap: true,
         banner: isDev ? undefined : getBanner(pkg)
       }
     }),
@@ -38,6 +39,7 @@ export default packages.map(({ folder, pkg }) => {
         useTsconfigDeclarationDir: false,
  		    tsconfigOverride: {
           compilerOptions: {
+            sourceMap: true,
             declaration: true,
             declarationDir: path.resolve(`build/${folder}/types`),
             baseUrl: '.',
