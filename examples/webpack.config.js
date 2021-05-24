@@ -29,12 +29,12 @@ module.exports = {
         enforce: 'pre',
         use: ['source-map-loader']
       },
-      // {
-      //   enforce: 'pre',
-      //   test: /\.(j|t)sx?$/,
-      //   exclude: /node_modules/,
-      //   loader: 'eslint-loader'
-      // },
+      {
+        enforce: 'pre',
+        test: /\.(j|t)sx?$/,
+        exclude: /node_modules/,
+        loader: 'eslint-loader'
+      },
       {
         test: /\.tsx?$/,
         loader: 'easyhard-loader'
