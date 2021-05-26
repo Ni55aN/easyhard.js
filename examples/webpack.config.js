@@ -1,13 +1,22 @@
-const path = require('path');
+const { basename, join, resolve } = require('path');
 const fs = require('fs');
-const HtmlWebpackPlugin = require('html-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-const examples = fs.readdirSync('./client/list').map(file => path.basename(file, '.ts'));
 const mode = 'development';
+const LIST_PATH = resolve(__dirname, 'client', 'list')
+const examples = fs.readdirSync(LIST_PATH).map(item => {
+  const itemPath = join(LIST_PATH, item)
+  const stat = fs.statSync(itemPath)
+
+  return {
+    name: basename(item, '.ts'),
+    path: stat.isDirectory() ? join(itemPath, 'index.ts') : itemPath
+  }
+})
 
 module.exports = {
-  entry: examples.reduce((entries, name) =>
-    ({ ...entries, [name]: (`./client/list/${name}.ts`) }),
+  entry: examples.reduce((entries, { name, path }) =>
+    ({ ...entries, [name]: path }),
     {}
   ),
   mode,
@@ -28,6 +37,10 @@ module.exports = {
         test: /\.js$/,
         enforce: 'pre',
         use: ['source-map-loader']
+      },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader']
       },
       {
         enforce: 'pre',
@@ -67,10 +80,10 @@ module.exports = {
   },
   output: {
     filename: `[name]${mode === 'development'?'':'.[chunkhash]'}.js`,
-    path: path.resolve(__dirname, 'dist', 'client'),
+    path: resolve(__dirname, 'dist', 'client'),
   },
   plugins: [
-    ...examples.map(name => new HtmlWebpackPlugin({
+    ...examples.map(({ name }) => new HtmlWebpackPlugin({
       inject: true, filename: `${name}.html`, chunks: ['vendors', name]
     }))
   ]
