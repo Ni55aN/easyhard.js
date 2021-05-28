@@ -12,14 +12,16 @@ export function createFragment(): { anchor: Anchor; insert: (item: Child, i?: nu
       if (!anchor.parentElement) { throw new Error('Attempt to add Child, but the anchor has been removed') }
       const el = appendChild(item, anchor.parentElement as ChildNode, getEdge(elements[i - 1]) || anchor)
 
+      if (i < 0) { throw new Error('index is invalid') }
+
       elements.splice(i, 0, el)
       anchor.edge = elements[elements.length - 1]
     },
     remove(i: number): void {
       const exist = elements[i]
-      
+
       if (exist && 'remove' in exist) exist.remove()
-      elements.splice(i, 1)
+      if (i >= 0) elements.splice(i, 1)
       anchor.edge = elements[elements.length - 1]
     },
     clear(): void {
