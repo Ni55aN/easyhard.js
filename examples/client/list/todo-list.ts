@@ -29,7 +29,7 @@ function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => 
         (toggle) => Input({
           model: text,
           autofocus: true,
-          events: { blur: toggle }
+          events: { blur: tap(toggle) }
         })
       ),
       h('button', { click: tap(() => remove(item)) }, 'x')

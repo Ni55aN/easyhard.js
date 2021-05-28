@@ -1,4 +1,4 @@
-import { h, $ } from 'easyhard'
+import { h, $, EventAttrs } from 'easyhard'
 import { tap } from 'rxjs/operators'
 
 type Props<T> = {
@@ -7,7 +7,7 @@ type Props<T> = {
   type?: 'number' | 'text',
   autofocus?: boolean;
   change?: (v: string) => void,
-  events?: {[key: string]: () => void}
+  events?: EventAttrs
 };
 
 export function Input<T>(props: Props<T>) {
