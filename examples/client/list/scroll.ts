@@ -28,9 +28,9 @@ function createVirtualList<T>(sourceList: $$<T>, scrollTop: $<number>, container
     const present = intersection(oldItems, nextItems)
 
     outdated.forEach(item => list.remove(item))
-    nextItems.forEach((item, i) => {
+    nextItems.forEach(item => {
       if (present.includes(item)) return
-      list.insert(item, i)
+      list.insert(item)
     })
     offset.next(startIndex * itemHeight)
   }
@@ -62,7 +62,7 @@ function ListView<T>(source: $$<T>, props: { height: $<number> }, render: Operat
     inject,
     h('div', { style: sourceHeight.pipe(map(h => `height: ${h}px; overflow: hidden;`)) },
       h('div', { style: offset.pipe(map((offset) => `transform: translateY(${offset}px)`)) },
-        $for(list, render),
+        $for(list, render, { comparator: (a, b) => a <= b }),
       )
     )
   )

@@ -12,10 +12,10 @@ export default easyhardServer<Actions>({
     )
   },
   getArray() {
-    const array = $$([1,2,4])
+    const array = $$([1,2,3])
 
-    setTimeout(() => array.insert(3, 2), 3000)
-    setTimeout(() => array.removeAt(0), 4000)
+    setTimeout(() => array.insert(4), 3000)
+    setTimeout(() => array.remove(2), 4000)
     return array
   },
   getDataWithParams(payload) {

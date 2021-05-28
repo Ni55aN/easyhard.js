@@ -19,7 +19,7 @@ function applyOpacity(removed: Observable<boolean>): Observable<string> {
 function App(): HTMLElement {
   const source = $$([1,2,3,4,5])
 
-  setTimeout(() => source.removeAt(0), 2000)
+  setTimeout(() => source.remove(1), 2000)
 
   return h('div', {},
     $for(source, pipe(delayRemove(3000), map(([item, removed]) => h('div', { style: applyOpacity(removed) }, item))), { detached: true }),

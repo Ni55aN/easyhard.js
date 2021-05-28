@@ -3,7 +3,7 @@ import { map, tap } from 'rxjs/operators'
 import { Input } from '../components/input'
 
 type Reactive<T> = {[key in keyof T]: $<T[key]>};
-type Task = Reactive<{ text: string, done: boolean }>;
+type Task = { id: number } & Reactive<{ text: string, done: boolean }>;
 
 function Editable(el: (toggle: () => void) => HTMLElement, input: (toggle: () => void) => HTMLElement) {
   const edited = $(false)
@@ -15,9 +15,8 @@ function Editable(el: (toggle: () => void) => HTMLElement, input: (toggle: () =>
   )
 }
 
-function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => void }) {
-    const done = item.value.done
-    const text = item.value.text
+function TodoItem({ item, remove }: { item: Task, remove: (task: Task) => void }) {
+    const { done, text } = item
 
     return h('div', {},
       Editable(
@@ -37,11 +36,11 @@ function TodoItem({ item, remove }: { item: $<Task>, remove: (task: $<Task>) => 
 }
 
 function App() {
-  const list = $$<$<Task>>([])
+  const list = $$<Task>([])
   const target = $('')
 
-  const add = (text: string) => list.insert($({ text: $(text), done: $(false as boolean) }))
-  const remove = (task: $<Task>) => list.remove(task)
+  const add = (text: string) => list.insert({ id: Math.random(), text: $(text), done: $(false as boolean) })
+  const remove = (task: Task) => list.remove(task)
 
   return h('div', {},
     Input({ model: target }),
