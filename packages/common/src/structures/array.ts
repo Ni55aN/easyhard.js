@@ -1,8 +1,11 @@
-import { Subject, Observable, Subscriber, Subscription, SubscriptionLike, ObjectUnsubscribedError } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { Subject, Observable, Subscriber, Subscription, ObjectUnsubscribedError } from 'rxjs'
+import { map, startWith } from 'rxjs/operators'
 
-export type Return<T> = T[] | { insert: true, item: T, i: number } | { remove: true, item: T, i: number }
+export type Return<T> = { insert: true, item: T } | { remove: true, item: T }
 
+export const getCollectionItemId = <T>(item: T): T | unknown => typeof item === 'object' && 'id' in item ? (item as any).id : item
+
+// TODO rename CollectionSubject
 export class ArraySubject<T> extends Subject<Return<T>> {
   constructor(private _value: T[]) {
     super()
@@ -12,12 +15,14 @@ export class ArraySubject<T> extends Subject<Return<T>> {
     return this.getValue()
   }
 
-  _subscribe(subscriber: Subscriber<T[]>): Subscription {
+  _subscribe(subscriber: Subscriber<Return<T>>): Subscription {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const subscription = super._subscribe(subscriber)
-    if (subscription && !(<SubscriptionLike>subscription).closed) {
-      subscriber.next([...this._value])
+    if (subscription && !subscription.closed) {
+      this._value.forEach(item => {
+        subscriber.next({ insert: true, item })
+      })
     }
     return subscription
   }
@@ -32,47 +37,42 @@ export class ArraySubject<T> extends Subject<Return<T>> {
     }
   }
 
-  next(value: T[]): void {
-    this._value = value
-    super.next([...this._value])
+  next(value: Return<T>): void {
+    if ('insert' in value) return this.insert(value.item)
+    if ('remove' in value) return this.remove(value.item)
+    throw new Error('Argument type is invalid')
   }
 
-  insert(item: T, i = this.value.length): void {
-    this.value.splice(i, 0, item)
-    super.next({ item, i, insert: true })
+  insert(item: T): void {
+    this._value.push(item)
+    super.next({ item, insert: true })
   }
 
-  removeAt(i: number): void {
+  remove(item: T): void {
+    const id = getCollectionItemId(item)
+    const i = typeof item === 'object' && 'id' in item ? this._value.findIndex(el => getCollectionItemId(el) === id) : this._value.indexOf(item)
     if (i < 0) return
-    const item = this.value[i]
 
-    this.value.splice(i, 1)
-    super.next({ item, i, remove: true })
+    this._value.splice(i, 1)
+    super.next({ item, remove: true })
   }
 
   get(i: number): Observable<T> {
     return this.pipe(
+      startWith(null),
       map(() => this.value[i])
     )
   }
 
-  set(i: number, v: T): void {
-    this.removeAt(i)
-    this.insert(v, i)
-  }
-
-  remove(item: T): void {
-    const index = this.value.indexOf(item)
-
-    this.removeAt(index)
-  }
-
   clear(): void {
-    this.next([])
+    while(this._value.length > 0) {
+      this.remove(this._value[0])
+    }
   }
 
   get length(): Observable<number> {
     return this.pipe(
+      startWith(null),
       map(() => this.value.length)
     )
   }

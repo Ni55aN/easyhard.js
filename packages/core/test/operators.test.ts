@@ -106,13 +106,13 @@ describe('operators', () => {
 
   it('$for - async insert', async () => {
     const array = $$([1,2,3])
-    const div = h('div', {}, $for(array, map(item => item)))
+    const div = h('div', {}, $for(array, map(item => item), { comparator: (a, b) => a < b}))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
-    array.insert(0, 1)
+    array.insert(0)
     await delay(100)
-    expect(document.body.textContent).toBe('1023')
+    expect(document.body.textContent).toBe('0123')
   })
 
   it('$for - remove', async () => {
@@ -134,7 +134,7 @@ describe('operators', () => {
 
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('123')
-    array.removeAt(1)
+    array.remove(2)
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('13')
   })
@@ -155,7 +155,7 @@ describe('operators', () => {
       await waitAnimationFrame()
       expect(document.body.textContent).toBe('123')
     })
-  
+
     it('should be removed with delay', async () => {
       const delayRemove = (time: number) => <K, T extends [K, Observable<boolean>]>(source: Observable<T>): Observable<T> => new Observable(observer => {
         return source.subscribe({
@@ -214,7 +214,7 @@ describe('operators', () => {
     let fn: jest.Mock
     let value$: $<number>
     let div: HTMLElement
-  
+
     beforeEach(() => {
       div = document.createElement('div')
       value$ = $(0)
