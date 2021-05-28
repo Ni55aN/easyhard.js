@@ -1,12 +1,12 @@
 import { $ } from 'easyhard-common'
-import { Observable } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { untilExist } from './until-exist'
 import { Child } from '../types'
 import { createAnchor } from '../utils'
 
 type DiKey<T> = { new(): unknown } | { (...args: T[]): unknown } | Record<string, unknown>;
-type DiValue<T> = $<T>;
+type DiValue<T> = Subject<T>;
 type DiInjection<T> = WeakMap<Node, T>;
 
 class Injections {
