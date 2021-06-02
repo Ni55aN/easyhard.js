@@ -1,7 +1,9 @@
 import { Subject, Observable, Subscriber, Subscription, ObjectUnsubscribedError } from 'rxjs'
 import { map, startWith } from 'rxjs/operators'
 
-export type Return<T> = { insert: true, item: T } | { remove: true, item: T }
+export type InsertReturn<T> = { insert: true, item: T, batch?: boolean }
+export type RemoveReturn<T> = { remove: true, item: T }
+export type Return<T> = { idle: true } | InsertReturn<T> | RemoveReturn<T>
 
 export const getCollectionItemId = <T>(item: T): T | unknown => typeof item === 'object' && 'id' in item ? (item as any).id : item
 
@@ -21,8 +23,9 @@ export class ArraySubject<T> extends Subject<Return<T>> {
     const subscription = super._subscribe(subscriber)
     if (subscription && !subscription.closed) {
       this._value.forEach(item => {
-        subscriber.next({ insert: true, item })
+        subscriber.next({ insert: true, item, batch: true })
       })
+      subscriber.next({ idle: true })
     }
     return subscription
   }

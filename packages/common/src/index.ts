@@ -12,3 +12,4 @@ export function getUID(): string {
 
 export { $ } from './structures/value'
 export { $$, $$Return, getCollectionItemId } from './structures/array'
+export * from './operators/index'
