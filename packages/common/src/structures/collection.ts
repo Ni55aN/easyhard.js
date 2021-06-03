@@ -71,13 +71,6 @@ export class CollectionSubject<T> extends Subject<Return<T>> {
       this.remove(this._value[0])
     }
   }
-
-  get length(): Observable<number> {
-    return this.pipe(
-      startWith(null),
-      map(() => this.value.length)
-    )
-  }
 }
 export const $$ = <T>(val: T[]): CollectionSubject<T> => new CollectionSubject(val)
 export type $$<T> = CollectionSubject<T>;

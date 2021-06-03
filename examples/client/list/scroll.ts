@@ -2,6 +2,7 @@ import { h, $, $$, $for, SimpleType, DomElement, appendChild } from 'easyhard'
 import { OperatorFunction, Observable, combineLatest, pipe } from 'rxjs'
 import { map, tap, debounceTime, mapTo } from 'rxjs/operators'
 import { intersection, difference } from 'lodash-es'
+import { collectionLength } from 'easyhard-common'
 
 function observeResize() {
   return new Observable<{ width: number; height: number }>((observer) => {
@@ -43,7 +44,7 @@ function createVirtualList<T>(sourceList: $$<T>, scrollTop: $<number>, container
     list,
     update,
     offset: offset.asObservable(),
-    sourceHeight: combineLatest([sourceList.length, itemHeight]).pipe(map(([value, itemHeight]) => value * itemHeight))
+    sourceHeight: combineLatest([sourceList.pipe(collectionLength()), itemHeight]).pipe(map(([value, itemHeight]) => value * itemHeight))
   }
 }
 

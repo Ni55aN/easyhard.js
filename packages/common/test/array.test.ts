@@ -1,7 +1,7 @@
 import fc from 'fast-check'
 import { firstValueFrom } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { $$ } from '../src/index'
+import { $$, collectionLength } from '../src/index'
 
 describe('collection', () => {
   const anyPrimitive = fc.oneof(fc.integer(), fc.string(), fc.boolean())
@@ -51,7 +51,7 @@ describe('collection', () => {
   it('length', async () => {
     await fc.assert(fc.asyncProperty(fc.array(anyPrimitive), fc.scheduler(), async arr => {
       const collection$ = $$([...arr])
-      const l = await firstValueFrom(collection$.length)
+      const l = await firstValueFrom(collection$.pipe(collectionLength()))
 
       expect(l).toBe(arr.length)
     }))
