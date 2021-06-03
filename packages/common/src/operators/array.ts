@@ -37,7 +37,7 @@ export function filterCollection<K>(predicate: (data: K) => Observable<boolean>)
               const id = getCollectionItemId(data.item)
 
               if (is && ids.has(id)) return null
-              if (is) { ids.add(id); return data } //{ insert: true, item: data.item } }
+              if (is) { ids.add(id); return data }
               if (ids.has(id)) { ids.delete(id); return { remove: true, item: data.item } as T }
               return null
             }
@@ -48,7 +48,8 @@ export function filterCollection<K>(predicate: (data: K) => Observable<boolean>)
               ...sub,
               next(v) {
                 sub.next(v)
-                if (hadIdle) sub.next({ idle: true })
+                // force 'length' update on batch insert after it was emitted initially
+                if (hadIdle && v && 'insert' in v && v.batch) sub.next({ idle: true })
               }
             })
           }),
