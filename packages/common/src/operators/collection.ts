@@ -6,12 +6,13 @@ import { $$Return, getCollectionItemId } from '../structures/collection'
 export function collectionLength<T>(): UnaryFunction<Observable<$$Return<T>>, Observable<number>> {
   return pipe(
     scan((acc, curr) => {
-      return {
-        length: acc.length + ('insert' in curr ? 1 : ('remove' in curr ? -1 : 0)),
-        emit: 'idle' in curr || !('insert' in curr && curr.batch)
-      }
-    }, { length: 0 } as { length: number, emit?: boolean }),
-    filter(arg => Boolean(arg.emit)),
+      if ('initial' in curr) return { length: 0, skip: true }
+      if ('idle' in curr) return { length: acc.length }
+      if ('insert' in curr) return { length: acc.length + 1, skip: curr.batch }
+      if ('remove' in curr) return { length: acc.length - 1 }
+      throw new Error('value type isnt recognized')
+    }, { length: 0 } as { length: number, skip?: boolean }),
+    filter(arg => !arg.skip),
     map(arg => arg.length),
   )
 }
@@ -24,37 +25,42 @@ export function filterCollection<K>(predicate: (data: K) => Observable<boolean>)
       let hadIdle = false
 
       return source.pipe(
-        mergeMap(data => 'idle' in data ? (hadIdle = true, of(data)) : predicate(data.item).pipe(
-          takeUntil(source.pipe(filter(source => 'remove' in source && 'insert' in data && getCollectionItemId(source.item) === getCollectionItemId(data.item)))),
-          map(is => {
-            if ('remove' in data) {
-              const id = getCollectionItemId(data.item)
+        mergeMap(data => {
+          if ('idle' in data) hadIdle = true
+          if ('idle' in data || 'initial' in data) return of(data)
 
-              if (ids.has(id)) return (ids.delete(id), data)
-              return null
-            }
-            if ('insert' in data) {
-              const id = getCollectionItemId(data.item)
+          return predicate(data.item).pipe(
+            takeUntil(source.pipe(filter(source => 'remove' in source && 'insert' in data && getCollectionItemId(source.item) === getCollectionItemId(data.item)))),
+            map(is => {
+              if ('remove' in data) {
+                const id = getCollectionItemId(data.item)
 
-              if (is && ids.has(id)) return null
-              if (is) { ids.add(id); return data }
-              if (ids.has(id)) { ids.delete(id); return { remove: true, item: data.item } as T }
-              return null
-            }
-            return null
-          }),
-          source => new Observable(sub => {
-            return source.subscribe({
-              ...sub,
-              next(v) {
-                sub.next(v)
-                // force 'length' update on batch insert after it was emitted initially
-                if (hadIdle && v && 'insert' in v && v.batch) sub.next({ idle: true })
+                if (ids.has(id)) return (ids.delete(id), data)
+                return null
               }
-            })
-          }),
-          filter((data): data is T => data !== null)
-        ))
+              if ('insert' in data) {
+                const id = getCollectionItemId(data.item)
+
+                if (is && ids.has(id)) return null
+                if (is) { ids.add(id); return data }
+                if (ids.has(id)) { ids.delete(id); return { remove: true, item: data.item } as T }
+                return null
+              }
+              return null
+            }),
+            source => new Observable(sub => {
+              return source.subscribe({
+                ...sub,
+                next(v) {
+                  sub.next(v)
+                  // force 'length' update on batch insert after it was emitted initially
+                  if (hadIdle && v && 'insert' in v && v.batch) sub.next({ idle: true })
+                }
+              })
+            }),
+            filter((data): data is T => data !== null)
+          )
+        })
       )
     })
   )

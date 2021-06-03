@@ -2,7 +2,7 @@ import { Subject, Subscriber, Subscription, ObjectUnsubscribedError } from 'rxjs
 
 export type InsertReturn<T> = { insert: true, item: T, batch?: boolean }
 export type RemoveReturn<T> = { remove: true, item: T }
-export type Return<T> = { idle: true } | InsertReturn<T> | RemoveReturn<T>
+export type Return<T> = { idle: true } | { initial: true } |  InsertReturn<T> | RemoveReturn<T>
 
 export const getCollectionItemId = <T>(item: T): T | unknown => typeof item === 'object' && 'id' in item ? (item as any).id : item
 
@@ -20,6 +20,7 @@ export class CollectionSubject<T> extends Subject<Return<T>> {
     // @ts-ignore
     const subscription = super._subscribe(subscriber)
     if (subscription && !subscription.closed) {
+      subscriber.next({ initial: true })
       this._value.forEach(item => {
         subscriber.next({ insert: true, item, batch: true })
       })
