@@ -75,8 +75,8 @@ describe('operators', () => {
   })
 
   it('$for', async () => {
-    const array = $$([1,2,3])
-    const div = h('div', {}, $for(array, map(item => item)))
+    const collection = $$([1,2,3])
+    const div = h('div', {}, $for(collection, map(item => item)))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
@@ -84,20 +84,20 @@ describe('operators', () => {
   })
 
   it('$for - insert', async () => {
-    const array = $$([1,2,3])
-    const div = h('div', {}, $for(array, map(item => item)))
+    const collection = $$([1,2,3])
+    const div = h('div', {}, $for(collection, map(item => item)))
     document.body.appendChild(div)
 
-    array.insert(4)
+    collection.insert(4)
     await delay(100)
     expect(document.body.textContent).toBe('1234')
   })
 
   it('$for - insert before render', async () => {
-    const array = $$([1,2,3])
-    const div = h('div', {}, $for(array, map(item => item)))
+    const collection = $$([1,2,3])
+    const div = h('div', {}, $for(collection, map(item => item)))
 
-    array.insert(4)
+    collection.insert(4)
     await delay(100)
     document.body.appendChild(div)
     await waitAnimationFrame()
@@ -105,36 +105,36 @@ describe('operators', () => {
   })
 
   it('$for - async insert', async () => {
-    const array = $$([1,2,3])
-    const div = h('div', {}, $for(array, map(item => item), { comparator: (a, b) => a < b}))
+    const collection = $$([1,2,3])
+    const div = h('div', {}, $for(collection, map(item => item), { comparator: (a, b) => a < b}))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
-    array.insert(0)
+    collection.insert(0)
     await delay(100)
     expect(document.body.textContent).toBe('0123')
   })
 
   it('$for - remove', async () => {
-    const array = $$([1,2,3])
-    const div = h('div', {}, $for(array, map(item => item)))
+    const collection = $$([1,2,3])
+    const div = h('div', {}, $for(collection, map(item => item)))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('123')
-    array.remove(2)
+    collection.remove(2)
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('13')
   })
 
   it('$for - removeAt', async () => {
-    const array = $$([1,2,3])
-    const div = h('div', {}, $for(array, map(item => item)))
+    const collection = $$([1,2,3])
+    const div = h('div', {}, $for(collection, map(item => item)))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('123')
-    array.remove(2)
+    collection.remove(2)
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('13')
   })
@@ -145,13 +145,13 @@ describe('operators', () => {
     })
 
     it('shouldnt be removed', async () => {
-      const array = $$<number>([1,2,3])
-      const div = h('div', {}, $for(array, map(([item]) => item), { detached: true }))
+      const collection = $$<number>([1,2,3])
+      const div = h('div', {}, $for(collection, map(([item]) => item), { detached: true }))
       document.body.appendChild(div)
 
       await waitAnimationFrame()
       expect(document.body.textContent).toBe('123')
-      array.remove(1)
+      collection.remove(1)
       await waitAnimationFrame()
       expect(document.body.textContent).toBe('123')
     })
@@ -167,13 +167,13 @@ describe('operators', () => {
         }))
       })
 
-      const array = $$<number>([1,2,3])
-      const div = h('div', {}, $for(array, pipe(delayRemove(1000), map(([item]) => item)), { detached: true }))
+      const collection = $$<number>([1,2,3])
+      const div = h('div', {}, $for(collection, pipe(delayRemove(1000), map(([item]) => item)), { detached: true }))
       document.body.appendChild(div)
 
       await waitAnimationFrame()
       expect(document.body.textContent).toBe('123')
-      array.remove(1)
+      collection.remove(1)
       await waitAnimationFrame()
       expect(document.body.textContent).toBe('123')
       await delay(1100)

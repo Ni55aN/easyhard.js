@@ -1,10 +1,9 @@
 import fc from 'fast-check'
-import { firstValueFrom, interval, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { firstValueFrom } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { $, $$, filterCollection } from '../src/index'
+import { $$ } from '../src/index'
 
-describe('array', () => {
+describe('collection', () => {
   const anyPrimitive = fc.oneof(fc.integer(), fc.string(), fc.boolean())
 
   it('primitives', () => {
@@ -14,45 +13,45 @@ describe('array', () => {
   })
 
   it('clear', () => {
-    const array$ = $$([1,2,3])
+    const collection$ = $$([1,2,3])
 
-    expect(array$.value).not.toEqual([])
-    array$.clear()
-    expect(array$.value).toEqual([])
+    expect(collection$.value).not.toEqual([])
+    collection$.clear()
+    expect(collection$.value).toEqual([])
 
-    array$.insert(4)
-    expect(array$.value).not.toEqual([])
-    array$.clear()
-    expect(array$.value).toEqual([])
+    collection$.insert(4)
+    expect(collection$.value).not.toEqual([])
+    collection$.clear()
+    expect(collection$.value).toEqual([])
   })
 
   describe('insert', () => {
     it('without index', () => {
       fc.assert(fc.property(anyPrimitive, fc.array(anyPrimitive), (val, arr) => {
-        const array$ = $$([...arr])
-        expect(array$.value).toEqual(arr)
-        array$.insert(val)
+        const collection$ = $$([...arr])
+        expect(collection$.value).toEqual(arr)
+        collection$.insert(val)
 
-        expect(array$.value).toEqual([...arr, val])
+        expect(collection$.value).toEqual([...arr, val])
       }))
     })
   })
 
   it('remove', () => {
     fc.assert(fc.property(fc.integer({ min: -4, max: 100 }), fc.array(anyPrimitive), (index, arr) => {
-      const array$ = $$([...arr])
+      const collection$ = $$([...arr])
       const target = arr[index]
-      array$.remove(target)
+      collection$.remove(target)
       const firstIndex = arr.indexOf(target)
 
-      expect(array$.value).toEqual(arr.filter((_, i) => i !== firstIndex))
+      expect(collection$.value).toEqual(arr.filter((_, i) => i !== firstIndex))
     }))
   })
 
   it('length', async () => {
     await fc.assert(fc.asyncProperty(fc.array(anyPrimitive), fc.scheduler(), async arr => {
-      const array$ = $$([...arr])
-      const l = await firstValueFrom(array$.length)
+      const collection$ = $$([...arr])
+      const l = await firstValueFrom(collection$.length)
 
       expect(l).toBe(arr.length)
     }))
@@ -60,8 +59,8 @@ describe('array', () => {
 
   it('get', async () => {
     await fc.assert(fc.asyncProperty(fc.integer({ min: -4, max: 100 }), fc.array(anyPrimitive), async (index, arr) => {
-      const array$ = $$([...arr])
-      const v = await firstValueFrom(array$.get(index))
+      const collection$ = $$([...arr])
+      const v = await firstValueFrom(collection$.get(index))
 
       expect(v).toEqual([...arr][index])
     }))
@@ -101,13 +100,5 @@ describe('array', () => {
         }
       })
     })
-  })
-
-  it('forEach', async () => {
-
-  })
-
-  it('length', async () => {
-
   })
 })

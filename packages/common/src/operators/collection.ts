@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { defer, EMPTY, Observable, of, pipe, UnaryFunction } from 'rxjs'
 import { filter, map, mergeMap, scan, takeUntil } from 'rxjs/operators'
-import { $$Return, getCollectionItemId } from '../structures/array'
+import { $$Return, getCollectionItemId } from '../structures/collection'
 
-export function length<T>(): UnaryFunction<Observable<$$Return<T>>, Observable<number>> {
+export function collectionLength<T>(): UnaryFunction<Observable<$$Return<T>>, Observable<number>> {
   return pipe(
     scan((acc, curr) => {
       return {

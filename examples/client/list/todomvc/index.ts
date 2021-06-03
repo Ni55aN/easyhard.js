@@ -1,5 +1,5 @@
 import { $, $for, $if, h } from 'easyhard'
-import { $$Return, length, filterCollection, forEachCollection } from 'easyhard-common'
+import { $$Return, collectionLength, filterCollection, forEachCollection } from 'easyhard-common'
 import { combineLatest, Observable, pipe, Subject } from 'rxjs'
 import { first, map, mapTo, switchMap, tap } from 'rxjs/operators'
 import { Footer } from './footer'
@@ -13,7 +13,7 @@ import 'todomvc-app-css/index.css'
 function TodoList({ todos, filter: todosFilter }: { todos: Observable<$$Return<Todo>>, filter: Observable<Filter> }) {
   const { injectStore, addTodo, setDone, deleteTodo } = useTodos()
 
-  const todosCount = todos.pipe(length())
+  const todosCount = todos.pipe(collectionLength())
   const hasTodos = todosCount.pipe(map(Boolean))
 
   const activeTodos = todos.pipe(
@@ -23,8 +23,8 @@ function TodoList({ todos, filter: todosFilter }: { todos: Observable<$$Return<T
     filterCollection(data => data.done)
   )
 
-  const activeCount = activeTodos.pipe(length())
-  const doneCount = doneTodos.pipe(length())
+  const activeCount = activeTodos.pipe(collectionLength())
+  const doneCount = doneTodos.pipe(collectionLength())
 
   const visibleTodos = todos.pipe(
     filterCollection(data => combineLatest([todosFilter, data.done]).pipe(
@@ -135,7 +135,7 @@ function App() {
   const filter = useFilter()
   const { provideStore, todos } = useTodos()
 
-  const hasTodos = todos.pipe(length(), map(Boolean))
+  const hasTodos = todos.pipe(collectionLength(), map(Boolean))
 
   return h('div', {},
     provideStore,

@@ -11,5 +11,5 @@ export function getUID(): string {
 }
 
 export { $ } from './structures/value'
-export { $$, $$Return, getCollectionItemId } from './structures/array'
+export { $$, $$Return, getCollectionItemId } from './structures/collection'
 export * from './operators/index'

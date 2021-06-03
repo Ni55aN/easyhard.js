@@ -55,14 +55,14 @@ function getIndex<T>(list: T[], target: T, comparator: Comparator<T>) {
 
 type $$Observable<T> = Observable<$$Return<T>>
 
-export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props?: { comparator?: Comparator<T> }): DomElement
-export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props: { detached: false, comparator?: Comparator<T> }): DomElement
-export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>, props: { detached: true, comparator?: Comparator<T> }): DomElement
-export function $for<T>(array: $$Observable<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean, comparator?: Comparator<T> }): DomElement {
+export function $for<T>(collection: $$Observable<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props?: { comparator?: Comparator<T> }): DomElement
+export function $for<T>(collection: $$Observable<T>, pipe: OperatorFunction<T, DomElement | SimpleType>, props: { detached: false, comparator?: Comparator<T> }): DomElement
+export function $for<T>(collection: $$Observable<T>, pipe: OperatorFunction<[T, Observable<boolean>], DomElement | SimpleType>, props: { detached: true, comparator?: Comparator<T> }): DomElement
+export function $for<T>(collection: $$Observable<T>, pipe: OperatorFunction<T | [T, Observable<boolean>], DomElement | SimpleType>, props?: { detached?: boolean, comparator?: Comparator<T> }): DomElement {
   const fragment = props && props.detached ? createDetachedFragment<T>(pipe) : createAttachedFragment<T>(pipe)
   const list: T[] = []
 
-  array.pipe(untilExist(fragment.anchor)).subscribe({
+  collection.pipe(untilExist(fragment.anchor)).subscribe({
     next(args) {
       if ('insert' in args) {
         const i = props?.comparator ? getIndex(list, args.item, props.comparator) : list.length

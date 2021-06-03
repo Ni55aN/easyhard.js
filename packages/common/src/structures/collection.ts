@@ -7,8 +7,7 @@ export type Return<T> = { idle: true } | InsertReturn<T> | RemoveReturn<T>
 
 export const getCollectionItemId = <T>(item: T): T | unknown => typeof item === 'object' && 'id' in item ? (item as any).id : item
 
-// TODO rename CollectionSubject
-export class ArraySubject<T> extends Subject<Return<T>> {
+export class CollectionSubject<T> extends Subject<Return<T>> {
   constructor(private _value: T[]) {
     super()
   }
@@ -80,6 +79,6 @@ export class ArraySubject<T> extends Subject<Return<T>> {
     )
   }
 }
-export const $$ = <T>(val: T[]): ArraySubject<T> => new ArraySubject(val)
-export type $$<T> = ArraySubject<T>;
+export const $$ = <T>(val: T[]): CollectionSubject<T> => new CollectionSubject(val)
+export type $$<T> = CollectionSubject<T>;
 export type $$Return<T> = Return<T>
