@@ -1,5 +1,4 @@
-import { Subject, Observable, Subscriber, Subscription, ObjectUnsubscribedError } from 'rxjs'
-import { map, startWith } from 'rxjs/operators'
+import { Subject, Subscriber, Subscription, ObjectUnsubscribedError } from 'rxjs'
 
 export type InsertReturn<T> = { insert: true, item: T, batch?: boolean }
 export type RemoveReturn<T> = { remove: true, item: T }
@@ -57,13 +56,6 @@ export class CollectionSubject<T> extends Subject<Return<T>> {
 
     this._value.splice(i, 1)
     super.next({ item, remove: true })
-  }
-
-  get(i: number): Observable<T> {
-    return this.pipe(
-      startWith(null),
-      map(() => this.value[i])
-    )
   }
 
   clear(): void {

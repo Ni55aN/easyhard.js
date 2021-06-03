@@ -57,15 +57,6 @@ describe('collection', () => {
     }))
   })
 
-  it('get', async () => {
-    await fc.assert(fc.asyncProperty(fc.integer({ min: -4, max: 100 }), fc.array(anyPrimitive), async (index, arr) => {
-      const collection$ = $$([...arr])
-      const v = await firstValueFrom(collection$.get(index))
-
-      expect(v).toEqual([...arr][index])
-    }))
-  })
-
   it('filter', () => {
     const arr = $$([1,2,3])
 
