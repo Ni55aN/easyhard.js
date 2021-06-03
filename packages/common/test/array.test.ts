@@ -69,8 +69,11 @@ describe('collection', () => {
     })
     scheduler.run(({ expectObservable }) => {
 
-      const expected = '(abcd)'
+      const expected = '(zabcd)'
       expectObservable(arr).toBe(expected, {
+        z: {
+          initial: true
+        },
         a: {
           insert: true,
           batch: true,
