@@ -66,9 +66,8 @@ export function easyhardClient<T>({
   }
 
   function call<K extends keyof T>(action: K, payload?: ExtractPayload<T[K], 'request'>) {
-    const id: RequestId = getUID()
-
     return new Observable<ExtractPayload<T[K], 'response'>>(observer => {
+      const id: RequestId = getUID()
       const data: Request<T, K> = { action, id, payload }
       subscriptions.add(id, { observer, data })
 
