@@ -1,4 +1,4 @@
-import { $, RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID, ErrorResponse } from 'easyhard-common'
+import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID, ErrorResponse } from 'easyhard-common'
 import { defer, Observable, of, Subscriber } from 'rxjs'
 import { useSubscriptions } from './subscriptions'
 import { deserializeError } from './utils'
