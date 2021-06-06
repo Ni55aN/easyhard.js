@@ -1,5 +1,5 @@
-import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID, ErrorResponse } from 'easyhard-common'
-import { Observable, Subscriber } from 'rxjs'
+import { $, RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID, ErrorResponse } from 'easyhard-common'
+import { defer, Observable, of, Subscriber } from 'rxjs'
 import { useSubscriptions } from './subscriptions'
 import { deserializeError } from './utils'
 
@@ -19,6 +19,7 @@ export function easyhardClient<T>({
 }: Props = {}) {
   let socket: null | WebSocket = null
   const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, data: unknown }>()
+  const state = defer(() => of(socket?.readyState || null))
 
   function connect(url: string) {
     socket = new WebSocket(url)
@@ -83,6 +84,8 @@ export function easyhardClient<T>({
   return {
     connect,
     close,
-    call
+    call,
+    state,
+    socket
   }
 }
