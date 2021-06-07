@@ -54,6 +54,8 @@ export function easyhardClient<T>({
     socket.onerror = function(error) {
       onError && onError(error as unknown as Error)
     }
+
+    return socket
   }
 
   function send<T>(data: T) {
@@ -85,9 +87,6 @@ export function easyhardClient<T>({
     connect,
     close,
     call,
-    state,
-    getSocket() {
-      return socket
-    }
+    state
   }
 }
