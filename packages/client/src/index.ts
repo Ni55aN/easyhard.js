@@ -86,6 +86,8 @@ export function easyhardClient<T>({
     close,
     call,
     state,
-    socket
+    getSocket() {
+      return socket
+    }
   }
 }
