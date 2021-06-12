@@ -9,7 +9,9 @@ export function useSubscriptions() {
     subscriptions[id] = subscription
   }
   function remove(id: RequestId) {
-    subscriptions[id].unsubscribe()
+    if (subscriptions[id]) {
+      subscriptions[id].unsubscribe()
+    }
     delete subscriptions[id]
   }
   function clear() {
