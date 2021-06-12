@@ -21,7 +21,7 @@ export default easyhardServer<Actions>({
   getDataWithParams(payload) {
     return interval(500).pipe(
       take(14),
-      map(count => ({ count: String(count) + '|' + String(payload?.num) }))
+      map(count => ({ count: String(count) + '|' + String(payload.num) }))
     )
   },
   getDataError() {

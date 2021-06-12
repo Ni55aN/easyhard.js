@@ -68,10 +68,11 @@ export function easyhardClient<T>({
     socket && socket.close()
   }
 
-  function call<K extends keyof T>(action: K, payload?: ExtractPayload<T[K], 'request'>) {
+  function call<K extends keyof T>(...args: ExtractPayload<T[K], 'request'> extends undefined ? [K] : [K, ExtractPayload<T[K], 'request'>]) {
     return new Observable<ExtractPayload<T[K], 'response'>>(observer => {
+      const [action, payload] = args
       const id: RequestId = getUID()
-      const data: Request<T, K> = { action, id, payload }
+      const data: Request<T, K> = { action, id, payload: payload as ExtractPayload<T[K], 'request'> }
       subscriptions.add(id, { observer, data })
 
       send(data)
