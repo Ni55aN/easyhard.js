@@ -1,5 +1,6 @@
 import { $$ } from 'easyhard-common'
-import { easyhardServer } from 'easyhard-server'
+import fs from 'fs'
+import { easyhardServer, writeFile } from 'easyhard-server'
 import { interval, throwError } from 'rxjs'
 import { concatMap, map, take } from 'rxjs/operators'
 import { Actions } from '../shared'
@@ -31,6 +32,12 @@ export default easyhardServer<Actions>({
         return n > 3 ? throwError(new Error('more then 3')) : Promise.resolve(n)
       }),
       map(count => ({ count }))
+    )
+  },
+  uploadFile(params) {
+    return params.file.pipe(
+      writeFile(() => fs.createWriteStream(params.name)),
+      map(buffer => ({ progress: buffer.length }))
     )
   }
 })

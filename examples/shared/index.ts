@@ -13,5 +13,9 @@ export interface Actions {
   },
   getDataError: {
     response: { count: number }
+  },
+  uploadFile: {
+    request: { name: string, file: File }
+    response: { progress: number }
   }
 }

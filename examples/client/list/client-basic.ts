@@ -1,6 +1,7 @@
 import { h, $, onMount, $for } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
-import { catchError, filter, map, switchMap, take } from 'rxjs/operators'
+import { Subject } from 'rxjs'
+import { catchError, filter, map, mergeMap, pluck, switchMap, take, tap } from 'rxjs/operators'
 import { Actions } from '../../shared'
 
 const client = easyhardClient<Actions>({
@@ -16,6 +17,8 @@ const client = easyhardClient<Actions>({
 })
 
 function App() {
+  const file$ = new Subject<File>()
+  const upload$ = file$.pipe(mergeMap(file => client.call('uploadFile', { name: file.name, file })))
   const count1 = client.call('getData').pipe(
     take(5),
     map(data => String(data.count))
@@ -39,6 +42,11 @@ function App() {
   setTimeout(() => num.next(444), 9000)
 
   const el = h('div', {},
+    upload$.pipe(pluck('progress')),
+    h('input', { type: 'file', change: tap(e => {
+      const file = (e.target as HTMLInputElement).files?.item(0)
+      if (file) file$.next(file)
+    })}),
     h('div', {}, count1),
     h('div', {}, count2),
     h('div', {}, count3),
@@ -53,7 +61,7 @@ function App() {
     )
   )
 
-  onMount(el, () => client.connect(`ws://${location.host}/api/basic/`))
+  onMount(el, () => client.connect(`ws://${location.host}/api/basic/`, `http://${location.host}/api/basic/`))
 
   return el
 }

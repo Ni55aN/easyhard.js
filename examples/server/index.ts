@@ -14,9 +14,8 @@ router.get('/api', (req, res) => {
   res.send('test')
 })
 
-router.ws('/api/basic', connection => {
-  basic.attachClient(connection)
-})
+router.post('/api/basic', basic.httpTunnel)
+router.ws('/api/basic', basic.attachClient as any)
 
 app.listen(3000, () => {
   console.log('Listen port 3000')
