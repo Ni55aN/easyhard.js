@@ -22,6 +22,8 @@ export function useHttp(getUrl: () => string | undefined): { transform: <T>(item
       xhr.open('POST', url, true)
       xhr.setRequestHeader('file-id', id)
       xhr.send(file)
+
+      return xhr
     }
   }
 }

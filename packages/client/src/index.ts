@@ -66,10 +66,11 @@ export function easyhardClient<T>({
   function send<T, K extends keyof T, P extends Request<T, K> | UnsubscribeRequest>(data: P) {
     if (connection && connection.socket.readyState === connection.socket.OPEN) {
       const payload = 'payload' in data ? (data as Request<T, K>).payload : undefined
-      const { payload: transformedPayload, getByKey } = transform(payload)
+      const transformedData = transform(payload)
 
-      connection.socket.send(JSON.stringify({ ...data, payload: transformedPayload }))
-      getByKey('__file').forEach(item => http.upload(item.to, item.from))
+      connection.socket.send(JSON.stringify({ ...data, payload: transformedData.payload }))
+
+      return transformedData
     }
   }
 
@@ -84,9 +85,11 @@ export function easyhardClient<T>({
       const data: Request<T, K> = { action, id, payload: payload as ExtractPayload<T[K], 'request'> }
       subscriptions.add(id, { observer, data })
 
-      send<T, K, Request<T, K>>(data)
+      const transformedData = send<T, K, Request<T, K>>(data)
+      const xhrs = transformedData ? transformedData.getByKey('__file').map(item => http.upload(item.to, item.from)) : []
 
       return () => {
+        xhrs.forEach(xhr => xhr.abort())
         send<T, K, UnsubscribeRequest>({ id, unsubscribe: true })
         subscriptions.remove(id)
       }
