@@ -15,7 +15,7 @@ export interface Actions {
     response: { count: number }
   },
   uploadFile: {
-    request: { name: string, file: File }
+    request: { name: string, file: File, size: number }
     response: { progress: number }
   }
 }

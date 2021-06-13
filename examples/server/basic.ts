@@ -2,7 +2,7 @@ import { $$ } from 'easyhard-common'
 import fs from 'fs'
 import { easyhardServer, writeFile } from 'easyhard-server'
 import { interval, throwError } from 'rxjs'
-import { concatMap, map, take } from 'rxjs/operators'
+import { concatMap, map, scan, take } from 'rxjs/operators'
 import { Actions } from '../shared'
 
 export default easyhardServer<Actions>({
@@ -37,7 +37,8 @@ export default easyhardServer<Actions>({
   uploadFile(params) {
     return params.file.pipe(
       writeFile(() => fs.createWriteStream(params.name)),
-      map(buffer => ({ progress: buffer.length }))
+      scan((acc, buffer) => acc + buffer.length, 0),
+      map(loaded => ({ progress: loaded / params.size }))
     )
   }
 })
