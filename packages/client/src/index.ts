@@ -1,6 +1,9 @@
 import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID, ErrorResponse } from 'easyhard-common'
 import { defer, Observable, of, Subscriber } from 'rxjs'
+import { useHttp } from './http'
 import { useSubscriptions } from './subscriptions'
+import { payloadTransformer } from './transform'
+import { Transformers } from './types'
 import { deserializeError } from './utils'
 
 type Props = {
@@ -17,24 +20,28 @@ export function easyhardClient<T>({
   onError,
   onClose
 }: Props = {}) {
-  let socket: null | WebSocket = null
-  const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, data: unknown }>()
-  const state = defer(() => of(socket?.readyState || null))
+  let connection: null | { socket: WebSocket, http: string } = null
+  const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, data: Request<T, keyof T> }>()
+  const state = defer(() => of(connection?.socket.readyState || null))
+  const http = useHttp(() => connection?.http)
+  const transform = payloadTransformer<Transformers>({
+    __file: item => http.transform(item)
+  })
 
-  function connect(url: string) {
-    socket = new WebSocket(url)
+  function connect(url: string, http: string) {
+    connection = { socket: new WebSocket(url), http }
 
-    socket.onopen = () => {
-      subscriptions.list().forEach(sub => send(sub.data))
+    connection.socket.onopen = () => {
+      subscriptions.list().forEach(sub => send<T, keyof T, Request<T, keyof T>>(sub.data))
       onConnect && onConnect()
     }
 
-    socket.onclose = event => {
-      if (!event.wasClean) setTimeout(() => socket && connect(socket.url), reconnectDelay)
+    connection.socket.onclose = event => {
+      if (!event.wasClean) setTimeout(() => connection && connect(connection.socket.url, http), reconnectDelay)
       onClose && onClose(event)
     }
 
-    socket.onmessage = event => {
+    connection.socket.onmessage = event => {
       const data: Response<T, keyof T> | CompleteResponse | ErrorResponse<unknown> = JSON.parse(event.data)
       const subscription = subscriptions.get(data.id)
 
@@ -51,21 +58,25 @@ export function easyhardClient<T>({
       }
     }
 
-    socket.onerror = function(error) {
+    connection.socket.onerror = function(error) {
       onError && onError(error as unknown as Error)
     }
 
-    return socket
+    return connection.socket
   }
 
-  function send<T>(data: T) {
-    if (socket && socket.readyState === socket.OPEN) {
-      socket.send(JSON.stringify(data))
+  function send<T, K extends keyof T, P extends Request<T, K> | UnsubscribeRequest>(data: P) {
+    if (connection && connection.socket.readyState === connection.socket.OPEN) {
+      const payload = 'payload' in data ? (data as Request<T, K>).payload : undefined
+      const { payload: transformedPayload, getByKey } = transform(payload)
+
+      connection.socket.send(JSON.stringify({ ...data, payload: transformedPayload }))
+      getByKey('__file').forEach(item => http.upload(item.to, item.from))
     }
   }
 
   function close() {
-    socket && socket.close()
+    connection && connection.socket.close()
   }
 
   function call<K extends keyof T>(...args: ExtractPayload<T[K], 'request'> extends undefined ? [K] : [K, ExtractPayload<T[K], 'request'>]) {
@@ -75,10 +86,10 @@ export function easyhardClient<T>({
       const data: Request<T, K> = { action, id, payload: payload as ExtractPayload<T[K], 'request'> }
       subscriptions.add(id, { observer, data })
 
-      send(data)
+      send<T, K, Request<T, K>>(data)
 
       return () => {
-        send<UnsubscribeRequest>({ id, unsubscribe: true })
+        send<T, K, UnsubscribeRequest>({ id, unsubscribe: true })
         subscriptions.remove(id)
       }
     })

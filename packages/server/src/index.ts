@@ -1,8 +1,10 @@
 import { Response, Request, CompleteResponse, UnsubscribeRequest, ErrorResponse } from 'easyhard-common'
 import * as ws from 'ws'
 import { useSubscriptions } from './subscriptions'
-import { Handlers } from './types'
+import { Handlers, Transformers } from './types'
 import { serializeError } from './utils'
+import { HttpTunnel, useHttp } from './http'
+import { payloadTransformer } from './transform'
 
 function send<T>(connection: ws, data: T) {
   if (connection.readyState === connection.OPEN) {
@@ -10,7 +12,12 @@ function send<T>(connection: ws, data: T) {
   }
 }
 
-export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void } {
+export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void , httpTunnel: HttpTunnel } {
+  const http = useHttp()
+  const transform = payloadTransformer<Transformers>({
+    __file: http.track
+  })
+
   function attachClient(connection: ws) {
     const subscriptions = useSubscriptions()
 
@@ -22,7 +29,7 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
         subscriptions.remove(id)
       } else if ('action' in request) {
         const handler = actions[request.action]
-        const subscription = handler(request.payload).subscribe({
+        const subscription = handler(transform(request.payload)).subscribe({
           next(payload) {
             send<Response<T, keyof T>>(connection, { id, payload })
           },
@@ -46,6 +53,9 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
   }
 
   return {
-    attachClient
+    attachClient,
+    httpTunnel: http.tunnel
   }
 }
+
+export * from './operators'
