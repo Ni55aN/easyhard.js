@@ -1,23 +1,38 @@
 import { getUID } from 'easyhard-common'
 
-export function useHttp(getUrl: () => string | undefined): { transform: <T>(item: T) => boolean | string, upload: (id: string, item: File) => void } {
+type Return = {
+  transform: <T>(item: T) => boolean | string,
+  upload: (id: string, item: File,
+  onError: (error: Error) => void) => XMLHttpRequest
+}
+
+export function useHttp(getUrl: () => string | undefined): Return {
   return {
     transform(item) {
       return item instanceof File && getUID()
     },
-    upload(id, file) {
+    upload(id, file, onError) {
       const url = getUrl()
 
       if (!url) throw new Error('url is not defined')
       const xhr = new XMLHttpRequest()
 
-      xhr.onload = xhr.onerror = function() { // TODO
-        if (this.status == 200) {
-          console.log('success')
-        } else {
-          console.log('error', this.status)
+      xhr.addEventListener('error', e => {
+        onError(new Error((e.target as XMLHttpRequest)?.statusText))
+      })
+      xhr.addEventListener('timeout', e => {
+        onError(new Error((e.target as XMLHttpRequest)?.statusText))
+      })
+      xhr.addEventListener('abort', e => {
+        console.log(e)
+      })
+      xhr.addEventListener('load', e => {
+        const target = e.target as XMLHttpRequest
+
+        if (target.status !== 200) {
+          onError(new Error(target?.statusText))
         }
-      }
+      })
 
       xhr.open('POST', url, true)
       xhr.setRequestHeader('file-id', id)

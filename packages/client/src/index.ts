@@ -86,7 +86,7 @@ export function easyhardClient<T>({
       subscriptions.add(id, { observer, data })
 
       const transformedData = send<T, K, Request<T, K>>(data)
-      const xhrs = transformedData ? transformedData.getByKey('__file').map(item => http.upload(item.to, item.from)) : []
+      const xhrs = transformedData ? transformedData.getByKey('__file').map(item => http.upload(item.to, item.from, error => observer.error(error))) : []
 
       return () => {
         xhrs.forEach(xhr => xhr.abort())
