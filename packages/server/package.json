@@ -1,8 +1,8 @@
 {
   "name": "easyhard-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "peerDependencies": {
-    "easyhard-common": "^0.2.0",
+    "easyhard-common": "^0.2.1",
     "ws": ">6.x"
   }
 }
