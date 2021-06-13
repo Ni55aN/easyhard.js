@@ -23,9 +23,6 @@ export function useHttp(getUrl: () => string | undefined): Return {
       xhr.addEventListener('timeout', e => {
         onError(new Error((e.target as XMLHttpRequest)?.statusText))
       })
-      xhr.addEventListener('abort', e => {
-        console.log(e)
-      })
       xhr.addEventListener('load', e => {
         const target = e.target as XMLHttpRequest
 
