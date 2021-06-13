@@ -46,10 +46,8 @@ export function easyhardClient<T>({
       const subscription = subscriptions.get(data.id)
 
       if (!subscription) {
-        throw new Error('The subscription has been deleted, but the server is still sending data')
-      }
-
-      if ('complete' in data) {
+        return
+      } else if ('complete' in data) {
         subscription.observer.complete()
       } else if ('error' in data) {
         subscription.observer.error(deserializeError(data.error))
