@@ -1,4 +1,4 @@
-import { $$Return } from 'easyhard-common'
+import { $$Return, Cookie } from 'easyhard-common'
 
 export interface Actions {
   getData: {
@@ -17,5 +17,9 @@ export interface Actions {
   uploadFile: {
     request: { name: string, file: File, size: number }
     response: { progress: number }
+  },
+  sendCookie: {
+    request: { value: Cookie }
+    response: { value: string, ok: boolean }
   }
 }

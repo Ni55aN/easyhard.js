@@ -40,5 +40,8 @@ export default easyhardServer<Actions>({
       scan((acc, buffer) => acc + buffer.length, 0),
       map(loaded => ({ progress: loaded / params.size }))
     )
+  },
+  sendCookie(params) {
+    return params.value.pipe(map(value => ({ value, ok: true })))
   }
 })
