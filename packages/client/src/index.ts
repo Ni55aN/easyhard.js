@@ -1,4 +1,4 @@
-import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID, ErrorResponse } from 'easyhard-common'
+import { RequestId, Request, Response, CompleteResponse, UnsubscribeRequest, ExtractPayload, getUID, ErrorResponse, Cookie } from 'easyhard-common'
 import { defer, Observable, of, Subscriber } from 'rxjs'
 import { useHttp } from './http'
 import { useSubscriptions } from './subscriptions'
@@ -25,7 +25,8 @@ export function easyhardClient<T>({
   const state = defer(() => of(connection?.socket.readyState || null))
   const http = useHttp(() => connection?.http)
   const transform = payloadTransformer<Transformers>({
-    __file: item => http.transform(item)
+    __file: item => http.transform(item),
+    __cookie: item => item instanceof Cookie && getUID()
   })
 
   function connect(url: string, http: string) {
@@ -86,7 +87,10 @@ export function easyhardClient<T>({
       subscriptions.add(id, { observer, data })
 
       const transformedData = send<T, K, Request<T, K>>(data)
-      const xhrs = transformedData ? transformedData.getByKey('__file').map(item => http.upload(item.to, item.from, error => observer.error(error))) : []
+      const xhrs = transformedData ? [
+        ...transformedData.getByKey('__file').map(item => http.upload(item.to, item.from, error => observer.error(error))),
+        ...transformedData.getByKey('__cookie').map(item => http.sendCookie(item.to, item.from.key, error => observer.error(error)))
+      ] : []
 
       return () => {
         xhrs.forEach(xhr => xhr.abort())

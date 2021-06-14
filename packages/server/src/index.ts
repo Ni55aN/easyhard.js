@@ -15,7 +15,8 @@ function send<T>(connection: ws, data: T) {
 export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void , httpTunnel: HttpTunnel } {
   const http = useHttp()
   const transform = payloadTransformer<Transformers>({
-    __file: http.track
+    __file: http.trackFile,
+    __cookie: http.trackCookie
   })
 
   function attachClient(connection: ws) {

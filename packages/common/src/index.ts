@@ -5,6 +5,10 @@ export type UnsubscribeRequest = { id: RequestId, unsubscribe: true }
 export type Response<T, K extends keyof T> = { id: RequestId, payload: ExtractPayload<T[K], 'response'> }
 export type CompleteResponse = { id: RequestId, complete: true }
 export type ErrorResponse<T> = { id: RequestId, error: T }
+export class Cookie {
+  constructor(public key: string) {}
+}
+
 
 export function getUID(): string {
   return (Date.now()+Math.random()).toString(36).replace('.', '')

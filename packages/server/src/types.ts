@@ -1,9 +1,10 @@
-import { ExtractPayload } from 'easyhard-common'
+import { Cookie, ExtractPayload } from 'easyhard-common'
 import { Observable } from 'rxjs'
 import { FindNonNullableField } from './utility-types'
 
 export type Transformers = {
-  __file: [File, string, Observable<Buffer>]
+  __file: [File, string, Observable<Buffer>],
+  __cookie: [Cookie, string, Observable<string>]
 }
 
 export type TransformHandlerPayload<T> = { [K in keyof T]: FindNonNullableField<{
