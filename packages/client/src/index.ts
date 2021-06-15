@@ -1,5 +1,6 @@
-import { RequestId, Response, CompleteResponse, ExtractPayload, getUID, ErrorResponse, Cookie } from 'easyhard-common'
+import { RequestId, Request, Response, CompleteResponse, ExtractPayload, getUID, ErrorResponse, Cookie, UnsubscribeRequest } from 'easyhard-common'
 import { defer, Observable, of, Subscriber } from 'rxjs'
+import { createConnection } from './connection'
 import { useHttp } from './http'
 import { useSubscriptions } from './subscriptions'
 import { changeDetector, payloadTransformer, TransformedPayload } from './transform'
@@ -20,33 +21,24 @@ export function easyhardClient<T>({
   onError,
   onClose
 }: Props = {}) {
-  let connection: null | { socket: WebSocket, http: string } = null
-  const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, data: unknown, afterSend: any }>()
-  const state = defer(() => of(connection?.socket.readyState || null))
-  const http = useHttp(() => connection?.http)
-  const transform = payloadTransformer<Transformers>({
-    __file: item => http.transform(item),
-    __cookie: item => item instanceof Cookie && getUID()
-  })
-
-  function connect(url: string, http: string) {
-    connection = { socket: new WebSocket(url), http }
-
-    connection.socket.onopen = () => {
+  type ConnectionArgs = { http: string }
+  type SocketResponse = Response<T, keyof T> | CompleteResponse | ErrorResponse<unknown>
+  type SocketRequest = (Omit<Request<T, keyof T>, 'payload'> & { payload: TransformedPayload<Transformers> | undefined }) | UnsubscribeRequest
+  const connection = createConnection<ConnectionArgs, SocketRequest, SocketResponse>({
+    onClose(event) {
+      onClose && onClose(event)
+    },
+    onConnect() {
       subscriptions.list().forEach(sub => {
-        send(sub.data)
-        sub.afterSend.send()
+        connection.send(sub.data)
+        sub.afterSend && sub.afterSend.send()
       })
       onConnect && onConnect()
-    }
-
-    connection.socket.onclose = event => {
-      if (!event.wasClean) setTimeout(() => connection && connect(connection.socket.url, http), reconnectDelay)
-      onClose && onClose(event)
-    }
-
-    connection.socket.onmessage = event => {
-      const data: Response<T, keyof T> | CompleteResponse | ErrorResponse<unknown> = JSON.parse(event.data)
+    },
+    onError(error) {
+      onError && onError(error)
+    },
+    onMessage(data) {
       const subscription = subscriptions.get(data.id)
 
       if (!subscription) {
@@ -58,20 +50,19 @@ export function easyhardClient<T>({
       } else {
         subscription.observer.next(data.payload)
       }
-    }
+    },
+    reconnectDelay
+  })
+  const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, data: SocketRequest, afterSend: any }>()
+  const state = defer(() => of(connection.readyState))
+  const http = useHttp(() => connection.args?.http)
+  const transform = payloadTransformer<Transformers>({
+    __file: item => http.transform(item),
+    __cookie: item => item instanceof Cookie && getUID()
+  })
 
-    connection.socket.onerror = function(error) {
-      onError && onError(error as unknown as Error)
-    }
-
-    return connection.socket
-  }
-
-  function send<T>(data: T) {
-    if (connection && connection.socket.readyState === connection.socket.OPEN) {
-      connection.socket.send(JSON.stringify(data))
-      return true
-    }
+  function connect(url: string, http: string) {
+    return connection.connect(url, { http })
   }
 
   const onSend = <K extends keyof T, D extends TransformedPayload<Transformers>>(
@@ -95,10 +86,6 @@ export function easyhardClient<T>({
     }
   }
 
-  function close() {
-    connection && connection.socket.close()
-  }
-
   function call<K extends keyof T>(...args: ExtractPayload<T[K], 'request'> extends undefined ? [K] : [K, ExtractPayload<T[K], 'request'>]) {
     return new Observable<ExtractPayload<T[K], 'response'>>(observer => {
       const action = args[0]
@@ -110,14 +97,14 @@ export function easyhardClient<T>({
       const afterSend = payload && transformedPayload && onSend(payload, transformedPayload, error => observer.error(error))
       subscriptions.add(id, { observer, data, afterSend })
 
-      const sent = send(data)
+      const sent = connection.send(data)
 
       if (sent && afterSend) {
         afterSend.send()
       }
       return () => {
         afterSend && afterSend.abort()
-        send({ id, unsubscribe: true })
+        connection.send({ id, unsubscribe: true })
         subscriptions.remove(id)
       }
     })
