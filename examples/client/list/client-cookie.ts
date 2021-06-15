@@ -20,6 +20,7 @@ function App() {
   const set = client.call('sendCookie', { value: new Cookie('test-cookie') }).pipe(mapTo(null))
 
   const el = h('div', {},
+    set,
     h('button', { click: mergeMap(() => set) }, 'set cookie')
   )
 

@@ -20,6 +20,6 @@ export interface Actions {
   },
   sendCookie: {
     request: { value: Cookie }
-    response: { value: string, ok: boolean }
+    response: { value: string | null, ok?: boolean }
   }
 }
