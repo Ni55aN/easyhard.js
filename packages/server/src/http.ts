@@ -54,6 +54,7 @@ export function useHttp(): { trackFile: (id: string) => ReplaySubject<Buffer>, t
       const requestCookies = parseCookies(req.headers['cookie'] || '')
 
       cookies.get(cookieId)?.next(requestCookies[cookieKey])
+      cookies.delete(cookieId)
       res.end('ok')
       return
     }
