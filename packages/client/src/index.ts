@@ -67,7 +67,7 @@ export function easyhardClient<T>({
     reconnectDelay
   })
   const transform = payloadTransformer<Transformers>({
-    __file: item => http.transform(item),
+    __file: item => item instanceof File && getUID(),
     __cookie: item => item instanceof Cookie && getUID()
   })
 
