@@ -61,10 +61,6 @@ export function easyhardClient<T>({
     __cookie: item => item instanceof Cookie && getUID()
   })
 
-  function connect(url: string, http: string) {
-    return connection.connect(url, { http })
-  }
-
   const onSend = <K extends keyof T, D extends TransformedPayload<Transformers>>(
     payload: ExtractPayload<T[K], 'request'>,
     transformedPayload: D,
@@ -111,7 +107,7 @@ export function easyhardClient<T>({
   }
 
   return {
-    connect,
+    connect: connection.connect,
     close,
     call,
     state
