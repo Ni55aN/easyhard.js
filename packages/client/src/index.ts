@@ -1,10 +1,10 @@
-import { RequestId, Request, Response, CompleteResponse, ExtractPayload, getUID, ErrorResponse, Cookie, UnsubscribeRequest } from 'easyhard-common'
+import { ExtractPayload } from 'easyhard-common'
 import { defer, Observable, of, Subscriber } from 'rxjs'
 import { createConnection } from './connection'
 import { useHttp } from './http'
+import { Parcel } from './parcel'
 import { useSubscriptions } from './subscriptions'
-import { changeDetector, payloadTransformer, TransformedPayload } from './transform'
-import { Transformers } from './types'
+import { ConnectionArgs, SocketRequest, SocketResponse } from './types'
 import { deserializeError } from './utils'
 
 type Props = {
@@ -21,26 +21,23 @@ export function easyhardClient<T>({
   onError,
   onClose
 }: Props = {}) {
-  type ConnectionArgs = { http: string }
-  type SocketResponse = Response<T, keyof T> | CompleteResponse | ErrorResponse<unknown>
-  type SocketRequest = (Omit<Request<T, keyof T>, 'payload'> & { payload: TransformedPayload<Transformers> | undefined }) | UnsubscribeRequest
-  const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, data: SocketRequest, afterSend?: ReturnType<typeof onSend> }>({
+  const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, parcel: Parcel<T, keyof T> }>({
     onSet(item) {
-      const sent = connection.send(item.data)
+      const sent = connection.send(item.parcel.getInitWSPackage())
 
-      if (sent && item.afterSend) {
-        item.afterSend.send()
+      if (sent) {
+        item.parcel.getHttpPackages().forEach(args => {
+          http.send(item.parcel.id, args.headers, args.body, error => item.observer.error(error))
+        })
       }
     },
-    onRemove(item, id) {
-      if (item.afterSend) {
-        item.afterSend.abort()
-      }
-      connection.send({ id, unsubscribe: true })
+    onRemove(item) {
+      http.abort(item.parcel.id)
+      connection.send(item.parcel.getDestroyWSPackage())
     }
   })
   const http = useHttp(() => connection.args?.http)
-  const connection = createConnection<ConnectionArgs, SocketRequest, SocketResponse>({
+  const connection = createConnection<ConnectionArgs, SocketRequest<T>, SocketResponse<T>>({
     onClose(event) {
       onClose && onClose(event)
     },
@@ -66,45 +63,17 @@ export function easyhardClient<T>({
     },
     reconnectDelay
   })
-  const transform = payloadTransformer<Transformers>({
-    __file: item => item instanceof File && getUID(),
-    __cookie: item => item instanceof Cookie && getUID()
-  })
-
-  const onSend = <K extends keyof T, D extends TransformedPayload<Transformers>>(
-    payload: ExtractPayload<T[K], 'request'>,
-    transformedPayload: D,
-    onError: (error: Error) => void
-  ) => {
-    const getChangesByKey = changeDetector<Transformers>()
-    let xhrs: null | XMLHttpRequest[] = null
-
-    return {
-      send() {
-        xhrs = [
-          ...getChangesByKey('__file', payload, transformedPayload).map(item => http.upload(item.to, item.from, onError)),
-          ...getChangesByKey('__cookie', payload, transformedPayload).map(item => http.sendCookie(item.to, item.from.key, onError))
-        ]
-      },
-      abort() {
-        xhrs && xhrs.forEach(xhr => xhr.abort())
-      }
-    }
-  }
 
   function call<K extends keyof T>(...args: ExtractPayload<T[K], 'request'> extends undefined ? [K] : [K, ExtractPayload<T[K], 'request'>]) {
     return new Observable<ExtractPayload<T[K], 'response'>>(observer => {
       const action = args[0]
       const payload = args[1]
-      const id: RequestId = getUID()
-      const transformedPayload = transform(payload)
+      const parcel = new Parcel(action, payload)
 
-      const data = { action, id, payload: transformedPayload }
-      const afterSend = payload && transformedPayload && onSend(payload, transformedPayload, error => observer.error(error))
-      subscriptions.set(id, { observer, data, afterSend })
+      subscriptions.set(parcel.id, { observer, parcel })
 
       return () => {
-        subscriptions.remove(id)
+        subscriptions.remove(parcel.id)
       }
     })
   }

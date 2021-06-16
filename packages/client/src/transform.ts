@@ -1,15 +1,17 @@
 export type TransformerSchema = {[key: string]: [unknown, unknown]}
 export type TransformedPayload<G extends TransformerSchema> = Record<string, G[string][1] | {[key in keyof G]: G[key][1]}>
 
-export function payloadTransformer<G extends TransformerSchema>(transformers: {[key in keyof G]: (value: G[key][0]) => G[key][1] | boolean}) {
-  return function <T>(payload: T) {
+export class Transformer<G extends TransformerSchema> {
+  constructor(private scheme: {[key in keyof G]: (value: G[key][0]) => G[key][1] | boolean}) {}
+
+  apply<T>(payload: T) {
     if (!payload) return undefined
 
     const payloadObj = payload as unknown as Record<string, G[string][0]>
     const payloadKeys = Object.keys(payloadObj)
     const transformedPayload = payloadKeys.reduce((obj, key) => {
-      for (const transformerKey in transformers) {
-        const res = transformers[transformerKey](payloadObj[key])
+      for (const transformerKey in this.scheme) {
+        const res = this.scheme[transformerKey](payloadObj[key])
         if (res) {
           return { ...obj, [key]: { [transformerKey]: res } }
         }
@@ -19,10 +21,8 @@ export function payloadTransformer<G extends TransformerSchema>(transformers: {[
 
     return transformedPayload
   }
-}
 
-export function changeDetector<G extends TransformerSchema>() {
-  return function <K extends keyof G, T, D extends TransformedPayload<G>>(targetKey: K, payload: T, transformedPayload: D) {
+  diffs<K extends keyof G, T, D extends TransformedPayload<G>>(targetKey: K, payload: T, transformedPayload: D) {
     const payloadObj = payload as unknown as Record<string, G[string][0]>
 
     return Object.keys(transformedPayload).reduce((arr, key) => {
