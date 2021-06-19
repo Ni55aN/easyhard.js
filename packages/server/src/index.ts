@@ -1,16 +1,9 @@
-import { Response, Request, CompleteResponse, UnsubscribeRequest, ErrorResponse } from 'easyhard-common'
 import * as ws from 'ws'
 import { useSubscriptions } from './subscriptions'
-import { Handlers, Transformers } from './types'
-import { serializeError } from './utils'
+import { Handlers, SocketRequest, SocketResponse, Transformers } from './types'
 import { HttpTunnel, useHttp } from './http'
 import { payloadTransformer } from './transform'
-
-function send<T>(connection: ws, data: T) {
-  if (connection.readyState === connection.OPEN) {
-    connection.send(JSON.stringify(data, serializeError))
-  }
-}
+import { useConnection } from './connection'
 
 export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void , httpTunnel: HttpTunnel } {
   const http = useHttp()
@@ -19,37 +12,37 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
     __cookie: http.trackCookie
   })
 
-  function attachClient(connection: ws) {
+  function attachClient(ws: ws) {
     const subscriptions = useSubscriptions()
+    const connection = useConnection<SocketRequest<T>, SocketResponse<T>>(ws, {
+      onMessage(data) {
+        const id = data.id
 
-    connection.on('message', data => {
-      const request: Request<T, keyof T> | UnsubscribeRequest = JSON.parse(data.toString('utf-8'), serializeError)
-      const id = request.id
+        if ('unsubscribe' in data) {
+          subscriptions.remove(id)
+        } else if ('action' in data) {
+          const handler = actions[data.action]
+          const observable = handler(transform(data.payload))
+          const subscription = observable.subscribe({
+            next(payload) {
+              connection.send({ id, payload })
+            },
+            error<E>(error: E) {
+              connection.send({ id, error })
+            },
+            complete() {
+              connection.send({ id, complete: true })
+            }
+          })
 
-      if ('unsubscribe' in request) {
-        subscriptions.remove(id)
-      } else if ('action' in request) {
-        const handler = actions[request.action]
-        const subscription = handler(transform(request.payload)).subscribe({
-          next(payload) {
-            send<Response<T, keyof T>>(connection, { id, payload })
-          },
-          error<E>(error: E) {
-            send<ErrorResponse<E>>(connection, { id, error })
-          },
-          complete() {
-            send<CompleteResponse>(connection, { id, complete: true })
-          }
-        })
-
-        subscriptions.add(id, subscription)
-      } else {
-        throw new Error('WS message isn\'t recognized')
+          subscriptions.add(id, subscription)
+        } else {
+          throw new Error('WS message isn\'t recognized')
+        }
+      },
+      onClose() {
+        subscriptions.clear()
       }
-    })
-
-    connection.on('close', () => {
-      subscriptions.clear()
     })
   }
 

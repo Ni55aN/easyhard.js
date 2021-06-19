@@ -1,4 +1,4 @@
-import { Cookie, ExtractPayload } from 'easyhard-common'
+import { CompleteResponse, Cookie, ErrorResponse, Request, Response, ExtractPayload, UnsubscribeRequest } from 'easyhard-common'
 import { Observable } from 'rxjs'
 import { FindNonNullableField } from './utility-types'
 
@@ -18,3 +18,6 @@ export type Handler<T> = (
 export type Handlers<T> = {
   [K in keyof T]: Handler<T[K]>
 }
+
+export type SocketRequest<T> = Request<T, keyof T> | UnsubscribeRequest
+export type SocketResponse<T> = Response<T, keyof T> | ErrorResponse<unknown> | CompleteResponse
