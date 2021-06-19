@@ -50,6 +50,7 @@ export class Postbox {
       const cookieKey = headers['cookie-key']
 
       this.cookies.get(cookieId)?.next(cookies[cookieKey])
+      this.cookies.get(cookieId)?.complete()
       this.cookies.delete(cookieId)
     }
   }
