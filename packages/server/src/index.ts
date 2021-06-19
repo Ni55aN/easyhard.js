@@ -1,15 +1,19 @@
 import * as ws from 'ws'
 import { useSubscriptions } from './subscriptions'
-import { Handlers, SocketRequest, SocketResponse, Transformers } from './types'
+import { Handlers, SocketRequest, SocketResponse } from './types'
 import { HttpTunnel, useHttp } from './http'
-import { payloadTransformer } from './transform'
 import { useConnection } from './connection'
+import { Postbox } from './postbox'
 
-export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void , httpTunnel: HttpTunnel } {
-  const http = useHttp()
-  const transform = payloadTransformer<Transformers>({
-    __file: http.trackFile,
-    __cookie: http.trackCookie
+type Props = {
+  onError: (error: Error) => void
+}
+
+export function easyhardServer<T>(actions: Handlers<T>, props?: Props): { attachClient: (connection: ws) => void , httpTunnel: HttpTunnel } {
+  const postbox = new Postbox()
+  const http = useHttp({
+    onRequest: postbox.acceptHttp,
+    onError: props?.onError
   })
 
   function attachClient(ws: ws) {
@@ -22,7 +26,7 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
           subscriptions.remove(id)
         } else if ('action' in data) {
           const handler = actions[data.action]
-          const observable = handler(transform(data.payload))
+          const observable = handler(postbox.acceptWS(data.payload))
           const subscription = observable.subscribe({
             next(payload) {
               connection.send({ id, payload })

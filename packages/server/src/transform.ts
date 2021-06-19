@@ -2,24 +2,24 @@
 
 import { TransformHandlerPayload } from './types'
 
-export function payloadTransformer<G extends {[key: string]: [unknown, unknown, unknown]}>(transformers: {[key in keyof G]: (from: G[key][1]) => G[key][2] }) {
-  type Return<T> = TransformHandlerPayload<T>
+export class Transformer<G extends {[key: string]: [unknown, unknown, unknown]}> {
+  constructor(private transformers: {[key in keyof G]: (from: G[key][1]) => G[key][2] }) {}
 
-  return function <T>(payload: T) {
-    if (!payload) return payload as unknown as Return<T>
+  apply<T>(payload: T) {
+    if (!payload) return payload as unknown as TransformHandlerPayload<T>
 
     const payloadObj = payload as Record<string, unknown>
     const transformedPayload = Object.keys(payload).reduce((obj, key) => {
       const item = payloadObj[key]
 
-      for (const transformerKey in transformers) {
+      for (const transformerKey in this.transformers) {
         if (item && typeof item === 'object' && transformerKey in item) {
-          return { ...obj, [key]: transformers[transformerKey]((item as any)[transformerKey]) }
+          return { ...obj, [key]: this.transformers[transformerKey]((item as any)[transformerKey]) }
         }
       }
       return { ...obj, [key]: payloadObj[key] }
     }, {} as Record<string, unknown>)
 
-    return transformedPayload as Return<T>
+    return transformedPayload as TransformHandlerPayload<T>
   }
 }
