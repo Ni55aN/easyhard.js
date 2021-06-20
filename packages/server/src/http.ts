@@ -1,4 +1,4 @@
-import http from 'http'
+import { IncomingMessage, ServerResponse } from 'http'
 import { Subject } from 'rxjs'
 import { parse, serialize, CookieSerializeOptions } from 'cookie'
 
@@ -7,31 +7,34 @@ export type SubjectLike<T> = Pick<Subject<T>, 'next' | 'error' | 'complete'>
 export type HttpHeaders = Record<string, string | undefined>
 export type HttpCookies = Record<string, string>
 type Props = {
-  onRequest: (props: {headers: HttpHeaders, cookies: HttpCookies }) => void | SubjectLike<Buffer>,
+  onRequest: (props: {headers: HttpHeaders, cookies: HttpCookies }) => void | SubjectLike<Buffer>
   onError?: (error: Error) => void
 }
 
 export function useHttp({ onRequest, onError }: Props): { tunnel: HttpTunnel } {
-  function tunnel(req: http.IncomingMessage, res: http.OutgoingMessage) {
+  function tunnel(req: IncomingMessage, res: ServerResponse) {
     const headers = req.headers as Record<string, string | undefined>
     const cookies = parse(req.headers['cookie'] || '')
-    const body = onRequest({ headers, cookies })
+    const response = onRequest({ headers, cookies })
 
-    if (body) {
+    if (response && 'next' in response) {
       req
         .on('data', (data: Buffer) => {
-          body.next(data)
+          response.next(data)
         })
         .on('error', (error) => {
           onError && onError(error)
-          body.error(error)
+          response.error(error)
+          res.writeHead(400)
           res.end('fail')
         })
         .on('end', () => {
-          body.complete()
+          response.complete()
+          res.writeHead(200)
           res.end('ok')
         })
     } else {
+      res.writeHead(200)
       res.end('ok')
     }
   }
