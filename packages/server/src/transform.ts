@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-
+import { Cookie } from 'easyhard-common'
 import { TransformHandlerPayload } from './types'
 
 export class Transformer<G extends {[key: string]: [unknown, unknown, unknown]}> {
@@ -22,4 +22,13 @@ export class Transformer<G extends {[key: string]: [unknown, unknown, unknown]}>
 
     return transformedPayload as TransformHandlerPayload<T>
   }
+}
+
+
+export function serializeCookie<T extends Record<string, unknown>>(_: string, value: T): T | Record<string, unknown> {
+  if (value instanceof Cookie) {
+    return { __CookieInstance: true, key: value.key }
+
+  }
+  return value
 }

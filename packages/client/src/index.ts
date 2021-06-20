@@ -59,6 +59,9 @@ export function easyhardClient<T>({
         subscription.observer.error(deserializeError(data.error))
       } else {
         subscription.observer.next(data.payload)
+        if (data.cookie) {
+          http.send(data.id, { 'easyhard-set-cookie': data.cookie })
+        }
       }
     },
     reconnectDelay

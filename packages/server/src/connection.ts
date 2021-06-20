@@ -1,4 +1,5 @@
 import * as ws from 'ws'
+import { serializeCookie } from './transform'
 import { serializeError } from './utils'
 
 type Props<In> = {
@@ -16,7 +17,7 @@ export function useConnection<In, Out>(ws: ws, props: Props<In>) {
   return {
     send(data: Out) {
       if (ws.readyState === ws.OPEN) {
-        ws.send(JSON.stringify(data, serializeError))
+        ws.send(JSON.stringify(data, (key, value) => serializeCookie(key, serializeError(key, value))))
         return true
       }
     }

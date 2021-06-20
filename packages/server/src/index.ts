@@ -26,10 +26,11 @@ export function easyhardServer<T>(actions: Handlers<T>, props?: Props): { attach
           subscriptions.remove(id)
         } else if ('action' in data) {
           const handler = actions[data.action]
-          const observable = handler(postbox.acceptWS(data.payload))
+          const observable = handler(postbox.acceptWSRequest(data.payload))
           const subscription = observable.subscribe({
             next(payload) {
-              connection.send({ id, payload })
+              const args = postbox.acceptWSResponse(payload)
+              connection.send({ id, ...args })
             },
             error<E>(error: E) {
               connection.send({ id, error })
@@ -57,3 +58,4 @@ export function easyhardServer<T>(actions: Handlers<T>, props?: Props): { attach
 }
 
 export * from './operators'
+export { SetCookie } from './http'
