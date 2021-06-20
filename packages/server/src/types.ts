@@ -1,6 +1,5 @@
-import { CompleteResponse, Cookie, ErrorResponse, Request, Response, ExtractPayload, UnsubscribeRequest } from 'easyhard-common'
+import { CompleteResponse, Cookie, ErrorResponse, Request, Response, ExtractPayload, UnsubscribeRequest, FindNonNullableField } from 'easyhard-common'
 import { Observable } from 'rxjs'
-import { FindNonNullableField } from './utility-types'
 
 export type Transformers = {
   __file: [File, string, Observable<Buffer>],
