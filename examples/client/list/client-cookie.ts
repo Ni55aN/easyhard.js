@@ -1,7 +1,7 @@
 import { h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
 import { Cookie } from 'easyhard-common'
-import { mapTo, mergeMap } from 'rxjs/operators'
+import { mapTo, mergeMap, tap } from 'rxjs/operators'
 import { Actions } from '../../shared'
 
 const client = easyhardClient<Actions>({
@@ -17,11 +17,13 @@ const client = easyhardClient<Actions>({
 })
 
 function App() {
-  const set = client.call('sendCookie', { value: new Cookie('test-cookie') }).pipe(mapTo(null))
+  const passCookie = client.call('sendCookie', { value: new Cookie('test-cookie') }).pipe(mapTo(null))
+  const acceptCookie = client.call('setCookie').pipe(tap(console.log),mapTo(null))
 
   const el = h('div', {},
-    set,
-    h('button', { click: mergeMap(() => set) }, 'set cookie')
+    passCookie,
+    h('button', { click: mergeMap(() => passCookie) }, 'pass cookie'),
+    h('button', { click: mergeMap(() => acceptCookie) }, 'accept cookie')
   )
 
   onMount(el, () => client.connect(`ws://${location.host}/api/basic/`, { http: `http://${location.host}/api/basic/` }))

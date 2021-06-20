@@ -21,5 +21,8 @@ export interface Actions {
   sendCookie: {
     request: { value: Cookie }
     response: { value: string | null, ok?: boolean }
+  },
+  setCookie: {
+    response: { newCookie: Cookie }
   }
 }

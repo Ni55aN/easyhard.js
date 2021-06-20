@@ -1,8 +1,8 @@
 import { $$ } from 'easyhard-common'
 import fs from 'fs'
-import { easyhardServer, writeFile } from 'easyhard-server'
-import { interval, throwError } from 'rxjs'
-import { concatMap, map, scan, startWith, take } from 'rxjs/operators'
+import { easyhardServer, SetCookie, writeFile } from 'easyhard-server'
+import { interval, of, throwError } from 'rxjs'
+import { concatMap, map, scan, take } from 'rxjs/operators'
 import { Actions } from '../shared'
 
 export default easyhardServer<Actions>({
@@ -42,6 +42,11 @@ export default easyhardServer<Actions>({
     )
   },
   sendCookie(params) {
-    return params.value.pipe(startWith(null), map(value => ({ value, ok: true })))
+    return params.value.pipe( map(value => ({ value, ok: true,  })))
+  },
+  setCookie() {
+    return of({
+      newCookie: new SetCookie('test-new', new Date().toISOString(), { path: '/test' }),
+      newCookie2: new SetCookie('test-new2', new Date().toISOString(), { path: '/', httpOnly: true }) })
   }
 })
