@@ -9,6 +9,7 @@
         "@types/express": "^4.17.11",
         "@types/express-ws": "^3.0.0",
         "@types/lodash-es": "^4.17.3",
+        "cookie": "^0.4.1",
         "easyhard": "file:../build/core",
         "easyhard-api": "file:../build/api",
         "easyhard-client": "file:../build/client",

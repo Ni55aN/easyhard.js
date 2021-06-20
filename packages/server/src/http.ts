@@ -1,6 +1,6 @@
 import http from 'http'
 import { Subject } from 'rxjs'
-import { parseCookies } from './utils'
+import { parse, serialize, CookieSerializeOptions } from 'cookie'
 
 export type HttpTunnel = (req: http.IncomingMessage, res: http.OutgoingMessage) => void
 export type SubjectLike<T> = Pick<Subject<T>, 'next' | 'error' | 'complete'>
@@ -14,7 +14,7 @@ type Props = {
 export function useHttp({ onRequest, onError }: Props): { tunnel: HttpTunnel } {
   function tunnel(req: http.IncomingMessage, res: http.OutgoingMessage) {
     const headers = req.headers as Record<string, string | undefined>
-    const cookies = parseCookies(req.headers['cookie'] || '')
+    const cookies = parse(req.headers['cookie'] || '')
     const body = onRequest({ headers, cookies })
 
     if (body) {

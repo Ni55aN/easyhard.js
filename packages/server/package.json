@@ -3,6 +3,7 @@
   "version": "0.3.0",
   "peerDependencies": {
     "easyhard-common": "^0.2.1",
-    "ws": ">6.x"
+    "ws": ">6.x",
+    "cookie": "0.4.1"
   }
 }
