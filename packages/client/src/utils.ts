@@ -14,3 +14,7 @@ export function deserializeError<T extends ErrorIsh | Record<string, any> | unkn
   }
   return value
 }
+
+export async function delay(ms: number): Promise<void> {
+  return new Promise<void>(resolve => setTimeout(() => resolve(), ms))
+}

@@ -1,3 +1,5 @@
+import { delay } from './utils'
+
 type OnError = (error: Error) => void
 
 export type HttpHeaders = {[key:string]: string}
@@ -49,7 +51,8 @@ export function useHttp(getUrl: () => string | undefined): HTTP {
       set.add(xhr)
       requestsMap.set(id, set)
     },
-    abort(id: string) {
+    async abort(id: string) {
+      await delay(500)
       const requestsSet = requestsMap.get(id)
 
       if (requestsSet) {
