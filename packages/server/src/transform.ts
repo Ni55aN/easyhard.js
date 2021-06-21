@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Cookie } from 'easyhard-common'
+import { Cookie } from 'easyhard-bridge'
 import { TransformHandlerPayload } from './types'
 
 export class Transformer<G extends {[key: string]: [unknown, unknown, unknown]}> {

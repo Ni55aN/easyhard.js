@@ -1,6 +1,6 @@
 import { h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
-import { Cookie } from 'easyhard-common'
+import { Cookie } from 'easyhard-bridge'
 import { mapTo, mergeMap, tap } from 'rxjs/operators'
 import { Actions } from '../../shared'
 

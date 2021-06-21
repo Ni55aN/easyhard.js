@@ -1,7 +1,7 @@
+import { Cookie } from 'easyhard-bridge'
 import { IncomingMessage, ServerResponse } from 'http'
 import { Subject } from 'rxjs'
 import { parse, serialize, CookieSerializeOptions } from 'cookie'
-import { Cookie } from 'easyhard-common'
 
 export type HttpTunnel = (req: IncomingMessage, res: ServerResponse) => void
 export type SubjectLike<T> = Pick<Subject<T>, 'next' | 'error' | 'complete'>

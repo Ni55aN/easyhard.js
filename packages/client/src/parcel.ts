@@ -1,4 +1,5 @@
-import { Cookie, ExtractPayload, getUID } from 'easyhard-common'
+import { Cookie, ExtractPayload } from 'easyhard-bridge'
+import { getUID } from 'easyhard-common'
 import { HttpBody, HttpHeaders } from './http'
 import { TransformedPayload, Transformer } from './transform'
 import { Transformers, WSPackage } from './types'

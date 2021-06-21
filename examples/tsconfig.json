@@ -22,7 +22,8 @@
         "strictNullChecks": true,
         "baseUrl": ".",
         "paths": {
-            "easyhard-common": ["../build/common"]
+            "easyhard-common": ["../build/common"],
+            "easyhard-bridge": ["../build/bridge"]
         }
     }
 }

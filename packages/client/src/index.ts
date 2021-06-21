@@ -1,4 +1,4 @@
-import { ExtractPayload } from 'easyhard-common'
+import { ExtractPayload } from 'easyhard-bridge'
 import { defer, Observable, of, Subscriber } from 'rxjs'
 import { createConnection } from './connection'
 import { useHttp } from './http'

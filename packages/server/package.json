@@ -4,6 +4,7 @@
   "peerDependencies": {
     "easyhard-common": "^0.2.1",
     "ws": ">6.x",
-    "cookie": "0.4.1"
+    "cookie": "0.4.1",
+    "easyhard-bridge": "^0.1.0"
   }
 }

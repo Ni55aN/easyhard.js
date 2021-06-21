@@ -7,7 +7,7 @@ import path from 'path';
 
 const isDev = process.env.MODE === 'dev'
 const mainPkg = require('./package.json')
-const packages = ['common', 'core', 'styles', 'router', 'loader', 'api', 'client', 'server'].map(folder => ({
+const packages = ['common', 'core', 'styles', 'router', 'loader', 'api', 'bridge', 'client', 'server'].map(folder => ({
   folder,
   pkg: require(`./packages/${folder}/package.json`)
 }))

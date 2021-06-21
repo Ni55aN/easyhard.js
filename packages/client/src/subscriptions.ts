@@ -1,4 +1,4 @@
-import { RequestId } from 'easyhard-common'
+import { RequestId } from 'easyhard-bridge'
 
 type Props<T> = {
   onSet: (item: T, id: string) => void

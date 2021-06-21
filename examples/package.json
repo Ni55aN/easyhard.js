@@ -12,6 +12,7 @@
         "cookie": "^0.4.1",
         "easyhard": "file:../build/core",
         "easyhard-api": "file:../build/api",
+        "easyhard-bridge": "file:../build/bridge",
         "easyhard-client": "file:../build/client",
         "easyhard-common": "file:../build/common",
         "easyhard-loader": "file:../build/loader",
@@ -46,6 +47,7 @@
         "webpack-dev-server": "3.11.0"
     },
     "_moduleAliases": {
-        "easyhard-common": "../build/common"
+        "easyhard-common": "../build/common",
+        "easyhard-bridge": "../build/bridge"
     }
 }

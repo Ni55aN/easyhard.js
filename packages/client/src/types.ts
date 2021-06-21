@@ -1,4 +1,4 @@
-import { CompleteResponse, Cookie, ErrorResponse, Request, Response, UnsubscribeRequest } from 'easyhard-common'
+import { CompleteResponse, Cookie, ErrorResponse, Request, Response, UnsubscribeRequest } from 'easyhard-bridge'
 import { TransformedPayload } from './transform'
 
 export type Transformers = {

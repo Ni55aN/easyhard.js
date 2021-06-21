@@ -1,4 +1,4 @@
-import { RequestId } from 'easyhard-common'
+import { RequestId } from 'easyhard-bridge'
 import { Subscription } from 'rxjs'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types

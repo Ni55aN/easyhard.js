@@ -1,0 +1,7 @@
+{
+  "name": "easyhard-bridge",
+  "version": "0.1.0",
+  "peerDependencies": {
+    "rxjs": ">= 6.x <=7.x"
+  }
+}

@@ -1,4 +1,5 @@
-import { $$Return, Cookie } from 'easyhard-common'
+import { Cookie } from 'easyhard-bridge'
+import { $$Return } from 'easyhard-common'
 
 export interface Actions {
   getData: {

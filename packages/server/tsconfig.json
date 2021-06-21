@@ -4,7 +4,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "easyhard-common": ["../common/src"]
+      "easyhard-common": ["../common/src"],
+      "easyhard-bridge": ["../bridge/src"]
     }
   }
 }

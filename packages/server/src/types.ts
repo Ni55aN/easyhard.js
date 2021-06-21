@@ -1,4 +1,4 @@
-import { CompleteResponse, Cookie, ErrorResponse, Request, Response, ExtractPayload, UnsubscribeRequest, FindNonNullableField } from 'easyhard-common'
+import { CompleteResponse, Cookie, ErrorResponse, Request, Response, ExtractPayload, UnsubscribeRequest, FindNonNullableField } from 'easyhard-bridge'
 import { Observable } from 'rxjs'
 
 export type Transformers = {
