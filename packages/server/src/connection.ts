@@ -1,10 +1,18 @@
+import { Cookie } from 'easyhard-bridge'
 import * as ws from 'ws'
-import { serializeCookie } from './transform'
 import { serializeError } from './utils'
 
 type Props<In> = {
   onMessage: (data: In) => void
   onClose: () => void
+}
+
+export function serializeCookie<T extends Record<string, unknown>>(_: string, value: T): T | Record<string, unknown> {
+  if (value instanceof Cookie) {
+    return { __CookieInstance: true, key: value.key }
+
+  }
+  return value
 }
 
 export function useConnection<In, Out>(ws: ws, props: Props<In>) {

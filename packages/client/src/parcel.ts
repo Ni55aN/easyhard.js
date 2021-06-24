@@ -1,24 +1,23 @@
-import { Cookie, ExtractPayload } from 'easyhard-bridge'
+import { Cookie, ExtractPayload, RequestMapper, Transformer, ObjectMapping, Payload } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
 import { HttpBody, HttpHeaders } from './http'
-import { TransformedPayload, Transformer } from './transform'
-import { Transformers, WSPackage } from './types'
+import { SocketRequest } from './types'
 
-const transformer = new Transformer<Transformers>({
-  __file: item => item instanceof File && getUID(),
-  __cookie: item => item instanceof Cookie && getUID()
+const transformer = new Transformer<RequestMapper, 0, 1>({
+  __file: item => item instanceof File && { __file: getUID() },
+  __cookie: item => item instanceof Cookie && { __cookie: getUID() }
 })
 
 export class Parcel<T, K extends keyof T> {
   readonly id: string
-  private transformedPayload?: TransformedPayload<Transformers>
+  private transformedPayload?: ObjectMapping<ExtractPayload<T[K], 'request'>, RequestMapper, 0, 1>
 
   constructor(readonly action: K, private payload?: ExtractPayload<T[K], 'request'>) {
     this.id = getUID()
-    this.transformedPayload = transformer.apply(payload)
+    this.transformedPayload = payload && transformer.apply(payload)
   }
 
-  getInitWSPackage(): WSPackage<T> {
+  getInitWSPackage(): SocketRequest<T> {
     return {
       id: this.id,
       action: this.action,
@@ -26,7 +25,7 @@ export class Parcel<T, K extends keyof T> {
     }
   }
 
-  getDestroyWSPackage(): WSPackage<T> {
+  getDestroyWSPackage(): SocketRequest<T> {
     return {
       id: this.id,
       unsubscribe: true
@@ -35,9 +34,13 @@ export class Parcel<T, K extends keyof T> {
 
   getHttpPackages(): { headers: HttpHeaders, body: HttpBody }[] {
     if (!this.payload || !this.transformedPayload) return []
-    return [
-      ...transformer.diffs('__file', this.payload, this.transformedPayload).map(item => ({ headers: { 'file-id': item.to }, body: item.from })),
-      ...transformer.diffs('__cookie', this.payload, this.transformedPayload).map(item => ({ headers: { 'cookie-id': item.to, 'cookie-key': item.from.key }, body: null }))
-    ]
+
+    const diffs = transformer.diffs(this.payload as Payload, this.transformedPayload as Payload)
+
+    return diffs.map(item => {
+      if (item.from instanceof File && '__file' in item.to) return { headers: { 'file-id': item.to.__file } as HttpHeaders, body: item.from }
+      if (item.from instanceof Cookie && '__cookie' in item.to) return { headers: { 'cookie-id': item.to.__cookie, 'cookie-key': item.from.key } as HttpHeaders, body: null }
+      throw new Error('invalid item')
+    })
   }
 }

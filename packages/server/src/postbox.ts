@@ -1,27 +1,29 @@
+import { RequestMapper, Transformer } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
 import { ReplaySubject } from 'rxjs'
 import { HttpCookies, HttpHeaders, SetCookie, SubjectLike } from './http'
-import { Transformer } from './transform'
-import { Transformers, TransformHandlerPayload } from './types'
+import { HandlerPayload, RequestPayload } from './types'
 
 export class Postbox {
   buffers: Map<string, ReplaySubject<Buffer>> = new Map()
   cookies: Map<string, ReplaySubject<string>> = new Map()
   setCookies: Map<string, SetCookie[]> = new Map()
-  transformer: Transformer<Transformers>
+  transformer: Transformer<RequestMapper, 1, 2>
 
   constructor() {
-    this.transformer = new Transformer<Transformers>({
-      __file: id => {
+    this.transformer = new Transformer<RequestMapper, 1, 2>({
+      __file: args => {
+        if (typeof args !== 'object' || !('__file' in args)) return false
         const subject = new ReplaySubject<Buffer>()
 
-        this.buffers.set(id, subject)
+        this.buffers.set(args.__file, subject)
         return subject
       },
-      __cookie: id => {
+      __cookie: args => {
+        if (typeof args !== 'object' || !('__cookie' in args)) return false
         const subject = new ReplaySubject<string>(1)
 
-        this.cookies.set(id, subject)
+        this.cookies.set(args.__cookie, subject)
         return subject
       }
     })
@@ -88,7 +90,7 @@ export class Postbox {
     }
   }
 
-  acceptWSRequest = <T>(data: T): TransformHandlerPayload<T> => {
-    return this.transformer.apply(data)
+  acceptWSRequest = <T, K extends keyof T>(data: RequestPayload<T[K]>): HandlerPayload<T[K]> => {
+    return this.transformer.apply(data) as HandlerPayload<T[K]>
   }
 }
