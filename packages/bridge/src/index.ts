@@ -20,4 +20,9 @@ export type RequestMapper = {
   __cookie: [Cookie, { __cookie: string }, Observable<string>]
 }
 
+export type ResponseMapper = {
+  __cookie: [Cookie, { __cookie: string }, Cookie],
+  __error: [Error, { __error: Record<string, string> }, Error]
+}
+
 export { ObjectMapping, Transformer } from './transformer'

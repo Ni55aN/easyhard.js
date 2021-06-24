@@ -1,11 +1,10 @@
-import { ExtractPayload } from 'easyhard-bridge'
+import { Cookie, ExtractPayload, ResponseMapper, Transformer } from 'easyhard-bridge'
 import { defer, Observable, of, Subscriber } from 'rxjs'
 import { createConnection } from './connection'
 import { useHttp } from './http'
 import { Parcel } from './parcel'
 import { useSubscriptions } from './subscriptions'
 import { ConnectionArgs, SocketRequest, SocketResponse } from './types'
-import { deserializeError } from './utils'
 
 type Props = {
   reconnectDelay?: number;
@@ -13,6 +12,20 @@ type Props = {
   onError?: (error: Error) => void;
   onClose?: (event: CloseEvent) => void;
 }
+
+const responseTransformer = new Transformer<ResponseMapper, 1, 2>({
+  __cookie: arg => typeof arg === 'object' && '__cookie' in arg && new Cookie(arg.__cookie),
+  __error: arg => {
+    if (typeof arg === 'object' && '__error' in arg) {
+      const error = new Error()
+      Object.getOwnPropertyNames(arg.__error).forEach(key => {
+        Object.defineProperty(error, key, { value: arg.__error[key] })
+      })
+      return error
+    }
+    return false
+  }
+})
 
 /* eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types */
 export function easyhardClient<T>({
@@ -56,9 +69,10 @@ export function easyhardClient<T>({
       } else if ('complete' in data) {
         subscription.observer.complete()
       } else if ('error' in data) {
-        subscription.observer.error(deserializeError(data.error))
+        const deserialized = responseTransformer.apply(data)
+        subscription.observer.error(deserialized?.error)
       } else {
-        subscription.observer.next(data.payload)
+        subscription.observer.next(responseTransformer.apply(data.payload))
         if (data.cookie) {
           http.send(data.id, { 'easyhard-set-cookie': data.cookie })
         }

@@ -1,4 +1,4 @@
-import { RequestMapper, Transformer } from 'easyhard-bridge'
+import { Cookie, ObjectMapping, RequestMapper, ResponseMapper, Transformer } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
 import { ReplaySubject } from 'rxjs'
 import { HttpCookies, HttpHeaders, SetCookie, SubjectLike } from './http'
@@ -8,10 +8,11 @@ export class Postbox {
   buffers: Map<string, ReplaySubject<Buffer>> = new Map()
   cookies: Map<string, ReplaySubject<string>> = new Map()
   setCookies: Map<string, SetCookie[]> = new Map()
-  transformer: Transformer<RequestMapper, 1, 2>
+  requestTransformer: Transformer<RequestMapper, 1, 2>
+  responseTransformer: Transformer<ResponseMapper, 0, 1>
 
   constructor() {
-    this.transformer = new Transformer<RequestMapper, 1, 2>({
+    this.requestTransformer = new Transformer<RequestMapper, 1, 2>({
       __file: args => {
         if (typeof args !== 'object' || !('__file' in args)) return false
         const subject = new ReplaySubject<Buffer>()
@@ -27,23 +28,37 @@ export class Postbox {
         return subject
       }
     })
+    this.responseTransformer = new Transformer<ResponseMapper, 0, 1>({
+      __cookie: arg => arg instanceof Cookie && { __cookie: arg.key },
+      __error: arg => {
+        if (arg instanceof Error) {
+          const error: Record<string, string> = {}
+          Object.getOwnPropertyNames(arg).forEach(key => {
+            error[key] = (arg as unknown as Record<string, string>)[key]
+          })
+          return { __error: error }
+        }
+        return false
+      }
+    })
   }
 
-  acceptWSResponse<T>(sourcePayload: T): { payload: T, cookie?: string } {
-    const payload = { ...sourcePayload } as Record<string, unknown>
-    const entries = Object.keys(payload).map(key => [key, payload[key]]).filter((args): args is [string, SetCookie] => args[1] instanceof SetCookie)
+  acceptWSResponse<T>(payload: T): { payload: ObjectMapping<T, ResponseMapper, 0, 1> | undefined, cookie?: string } {
+    const payloadObj = { ...payload } as Record<string, unknown>
+    const entries = Object.keys(payload).map(key => [key, payloadObj[key]]).filter((args): args is [string, SetCookie] => args[1] instanceof SetCookie)
     const cookies = entries.map(args => args[1])
+    const jsonPayload = this.responseTransformer.apply(payload)
 
     if (entries.length > 0) {
       const id = getUID()
       this.setCookies.set(id, cookies)
       return {
         cookie: id,
-        payload: payload as T
+        payload: jsonPayload
       }
     } else {
       return {
-        payload: payload as T
+        payload: jsonPayload
       }
     }
   }
@@ -91,6 +106,6 @@ export class Postbox {
   }
 
   acceptWSRequest = <T, K extends keyof T>(data: RequestPayload<T[K]>): HandlerPayload<T[K]> => {
-    return this.transformer.apply(data) as HandlerPayload<T[K]>
+    return this.requestTransformer.apply(data) as HandlerPayload<T[K]>
   }
 }
