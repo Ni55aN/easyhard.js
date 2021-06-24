@@ -20,7 +20,8 @@
     "baseUrl": ".",
     "paths": {
       "easyhard": ["packages/core/src"],
-      "easyhard-common": ["packages/common/src"]
+      "easyhard-common": ["packages/common/src"],
+      "easyhard-bridge": ["packages/bridge/src"]
     }
   }
 }

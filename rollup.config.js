@@ -31,7 +31,7 @@ export default packages.map(({ folder, pkg }) => {
         banner: isDev ? undefined : getBanner(pkg)
       }
     }),
-    external: ['rxjs', 'rxjs/operators', 'recast', 'easyhard', 'easyhard-common'],
+    external: ['rxjs', 'rxjs/operators', 'recast', 'easyhard', 'easyhard-common', 'easyhard-bridge'],
     plugins: [
       eslint(),
       typescript({
