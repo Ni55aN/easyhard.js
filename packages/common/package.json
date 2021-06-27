@@ -1,6 +1,6 @@
 {
   "name": "easyhard-common",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "peerDependencies": {
     "rxjs": ">= 6.x <=7.x"
   }
