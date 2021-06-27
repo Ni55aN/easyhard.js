@@ -34,14 +34,13 @@ function App() {
       return Promise.resolve(null)
     }),
   )
-  setTimeout(() => num.next(222), 3000)
-  setTimeout(() => num.next(333), 6000)
-  setTimeout(() => num.next(444), 9000)
+  const count4 = client.call('getDate').pipe(map(data => data.date.toLocaleTimeString()))
 
   const el = h('div', {},
     h('div', {}, count1),
     h('div', {}, count2),
     h('div', {}, count3),
+    h('div', {}, count4),
     h('div', { style: 'color: red' },
       error.pipe(
         filter((e): e is Error => Boolean(e)),

@@ -25,5 +25,8 @@ export interface Actions {
   },
   setCookie: {
     response: { newCookie: Cookie }
+  },
+  getDate: {
+    response: { date: Date }
   }
 }

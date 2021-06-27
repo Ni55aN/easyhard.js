@@ -48,5 +48,8 @@ export default easyhardServer<Actions>({
     return of({
       newCookie: new SetCookie('test-new', new Date().toISOString(), { path: '/test' }),
       newCookie2: new SetCookie('test-new2', new Date().toISOString(), { path: '/', httpOnly: true }) })
+  },
+  getDate() {
+    return interval(500).pipe(map(() => ({ date: new Date() })))
   }
 })
