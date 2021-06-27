@@ -17,6 +17,7 @@ jobs:
           {name: 'easyhard-router', folder: 'router'},
           {name: 'easyhard-styles', folder: 'styles'},
           {name: 'easyhard-common', folder: 'common'},
+          {name: 'easyhard-bridge', folder: 'bridge'},
           {name: 'easyhard-client', folder: 'client'},
           {name: 'easyhard-server', folder: 'server'},
         ]
