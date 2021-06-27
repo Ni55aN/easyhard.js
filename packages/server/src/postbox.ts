@@ -22,6 +22,11 @@ export class Postbox {
 
       this.cookies.set(args.__cookie, subject)
       return subject
+    },
+    __date: args => {
+      if (typeof args !== 'object' || !('__date' in args)) return false
+
+      return new Date(args.__date)
     }
   })
   private responseTransformer = new Transformer<ResponseMapper, 0, 1>({
@@ -35,7 +40,8 @@ export class Postbox {
         return { __error: error }
       }
       return false
-    }
+    },
+    __date: arg => arg instanceof Date && { __date: arg.toISOString() }
   })
 
   acceptWSResponse<T>(payload: T): { payload: ObjectMapping<T, ResponseMapper, 0, 1> | undefined, cookie?: string } {

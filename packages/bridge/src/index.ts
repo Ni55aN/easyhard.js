@@ -17,12 +17,14 @@ export class Cookie {
 
 export type RequestMapper = {
   __file: [File, { __file: string }, Observable<Buffer>],
-  __cookie: [Cookie, { __cookie: string }, Observable<string>]
+  __cookie: [Cookie, { __cookie: string }, Observable<string>],
+  __date: [Date, { __date: string }, Date]
 }
 
 export type ResponseMapper = {
   __cookie: [Cookie, { __cookie: string }, Cookie],
-  __error: [Error, { __error: Record<string, string> }, Error]
+  __error: [Error, { __error: Record<string, string> }, Error],
+  __date: [Date, { __date: string }, Date]
 }
 
 export { ObjectMapping, Transformer } from './transformer'

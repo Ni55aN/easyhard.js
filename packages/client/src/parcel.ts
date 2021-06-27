@@ -8,7 +8,8 @@ export class Parcel<T, K extends keyof T> {
   private transformedPayload?: ObjectMapping<ExtractPayload<T[K], 'request'>, RequestMapper, 0, 1>
   private requestTransformer = new Transformer<RequestMapper, 0, 1>({
     __file: item => item instanceof File && { __file: getUID() },
-    __cookie: item => item instanceof Cookie && { __cookie: getUID() }
+    __cookie: item => item instanceof Cookie && { __cookie: getUID() },
+    __date: item => item instanceof Date && { __date: item.toISOString()}
   })
   private responseTransformer = new Transformer<ResponseMapper, 1, 2>({
     __cookie: arg => typeof arg === 'object' && '__cookie' in arg && new Cookie(arg.__cookie),
@@ -21,7 +22,8 @@ export class Parcel<T, K extends keyof T> {
         return error
       }
       return false
-    }
+    },
+    __date: arg => typeof arg === 'object' && '__date' in arg && new Date(arg.__date)
   })
 
   constructor(readonly action: K, private payload?: ExtractPayload<T[K], 'request'>) {
