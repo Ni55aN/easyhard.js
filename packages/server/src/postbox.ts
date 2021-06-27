@@ -5,43 +5,38 @@ import { HttpCookies, HttpHeaders, SetCookie, SubjectLike } from './http'
 import { HandlerPayload, RequestPayload } from './types'
 
 export class Postbox {
-  buffers: Map<string, ReplaySubject<Buffer>> = new Map()
-  cookies: Map<string, ReplaySubject<string>> = new Map()
-  setCookies: Map<string, SetCookie[]> = new Map()
-  requestTransformer: Transformer<RequestMapper, 1, 2>
-  responseTransformer: Transformer<ResponseMapper, 0, 1>
+  private buffers: Map<string, ReplaySubject<Buffer>> = new Map()
+  private cookies: Map<string, ReplaySubject<string>> = new Map()
+  private setCookies: Map<string, SetCookie[]> = new Map()
+  private requestTransformer = new Transformer<RequestMapper, 1, 2>({
+    __file: args => {
+      if (typeof args !== 'object' || !('__file' in args)) return false
+      const subject = new ReplaySubject<Buffer>()
 
-  constructor() {
-    this.requestTransformer = new Transformer<RequestMapper, 1, 2>({
-      __file: args => {
-        if (typeof args !== 'object' || !('__file' in args)) return false
-        const subject = new ReplaySubject<Buffer>()
+      this.buffers.set(args.__file, subject)
+      return subject
+    },
+    __cookie: args => {
+      if (typeof args !== 'object' || !('__cookie' in args)) return false
+      const subject = new ReplaySubject<string>(1)
 
-        this.buffers.set(args.__file, subject)
-        return subject
-      },
-      __cookie: args => {
-        if (typeof args !== 'object' || !('__cookie' in args)) return false
-        const subject = new ReplaySubject<string>(1)
-
-        this.cookies.set(args.__cookie, subject)
-        return subject
+      this.cookies.set(args.__cookie, subject)
+      return subject
+    }
+  })
+  private responseTransformer = new Transformer<ResponseMapper, 0, 1>({
+    __cookie: arg => arg instanceof Cookie && { __cookie: arg.key },
+    __error: arg => {
+      if (arg instanceof Error) {
+        const error: Record<string, string> = {}
+        Object.getOwnPropertyNames(arg).forEach(key => {
+          error[key] = (arg as unknown as Record<string, string>)[key]
+        })
+        return { __error: error }
       }
-    })
-    this.responseTransformer = new Transformer<ResponseMapper, 0, 1>({
-      __cookie: arg => arg instanceof Cookie && { __cookie: arg.key },
-      __error: arg => {
-        if (arg instanceof Error) {
-          const error: Record<string, string> = {}
-          Object.getOwnPropertyNames(arg).forEach(key => {
-            error[key] = (arg as unknown as Record<string, string>)[key]
-          })
-          return { __error: error }
-        }
-        return false
-      }
-    })
-  }
+      return false
+    }
+  })
 
   acceptWSResponse<T>(payload: T): { payload: ObjectMapping<T, ResponseMapper, 0, 1> | undefined, cookie?: string } {
     const payloadObj = { ...payload } as Record<string, unknown>
@@ -107,5 +102,9 @@ export class Postbox {
 
   acceptWSRequest = <T, K extends keyof T>(data: RequestPayload<T[K]>): HandlerPayload<T[K]> => {
     return this.requestTransformer.apply(data) as HandlerPayload<T[K]>
+  }
+
+  acceptError<E>(error: E): ReturnType<Transformer<ResponseMapper, 1, 2>['prop']> {
+    return this.responseTransformer.prop(error)
   }
 }

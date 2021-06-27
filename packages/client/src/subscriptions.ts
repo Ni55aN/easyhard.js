@@ -9,7 +9,7 @@ type Props<T> = {
 export function useSubscriptions<T>(props: Props<T>) {
   const subscriptions: {[key in RequestId]: T} = {}
 
-  function get(id: RequestId) {
+  function get(id: RequestId): T | undefined {
     return subscriptions[id]
   }
 

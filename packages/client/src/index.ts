@@ -1,4 +1,4 @@
-import { Cookie, ExtractPayload, ResponseMapper, Transformer } from 'easyhard-bridge'
+import { ExtractPayload } from 'easyhard-bridge'
 import { defer, Observable, of, Subscriber } from 'rxjs'
 import { createConnection } from './connection'
 import { useHttp } from './http'
@@ -13,20 +13,6 @@ type Props = {
   onClose?: (event: CloseEvent) => void;
 }
 
-const responseTransformer = new Transformer<ResponseMapper, 1, 2>({
-  __cookie: arg => typeof arg === 'object' && '__cookie' in arg && new Cookie(arg.__cookie),
-  __error: arg => {
-    if (typeof arg === 'object' && '__error' in arg) {
-      const error = new Error()
-      Object.getOwnPropertyNames(arg.__error).forEach(key => {
-        Object.defineProperty(error, key, { value: arg.__error[key] })
-      })
-      return error
-    }
-    return false
-  }
-})
-
 /* eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types */
 export function easyhardClient<T>({
   reconnectDelay = 5000,
@@ -36,17 +22,20 @@ export function easyhardClient<T>({
 }: Props = {}) {
   const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, parcel: Parcel<T, keyof T> }>({
     onSet(item) {
-      const sent = connection.send(item.parcel.getInitWSPackage())
+      const { parcel, observer } = item
+      const sent = connection.send(parcel.getInitWSPackage())
 
       if (sent) {
-        item.parcel.getHttpPackages().forEach(args => {
-          http.send(item.parcel.id, args.headers, args.body, error => item.observer.error(error))
+        parcel.getHttpPackages().forEach(args => {
+          http.send(parcel.id, args.headers, args.body, error => observer.error(error))
         })
       }
     },
     onRemove(item) {
-      http.abort(item.parcel.id)
-      connection.send(item.parcel.getDestroyWSPackage())
+      const { parcel } = item
+
+      http.abort(parcel.id)
+      connection.send(parcel.getDestroyWSPackage())
     }
   })
   const http = useHttp(() => connection.args?.http)
@@ -69,9 +58,9 @@ export function easyhardClient<T>({
       } else if ('complete' in data) {
         subscription.observer.complete()
       } else if ('error' in data) {
-        subscription.observer.error(responseTransformer.prop(data.error))
+        subscription.observer.error(subscription.parcel.acceptError(data.error))
       } else {
-        subscription.observer.next(responseTransformer.apply(data.payload))
+        subscription.observer.next(subscription.parcel.acceptResponse(data.payload))
         if (data.cookie) {
           http.send(data.id, { 'easyhard-set-cookie': data.cookie })
         }

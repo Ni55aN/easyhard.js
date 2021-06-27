@@ -33,7 +33,7 @@ export function easyhardServer<T>(actions: Handlers<T>, props?: Props): { attach
               connection.send({ id, ...args })
             },
             error<E>(error: E) {
-              connection.send({ id, error: postbox.responseTransformer.prop(error) })
+              connection.send({ id, error: postbox.acceptError(error) })
             },
             complete() {
               connection.send({ id, complete: true })
