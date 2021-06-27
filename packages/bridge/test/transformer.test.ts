@@ -46,8 +46,19 @@ const jsonToServer = new Transformer<RequestMapper, 1, 2>({
 })
 
 describe('Transformer', () => {
-  it ('main', async () => {
+  it ('prop', async () => {
+    const result1 = clientToJson.prop(source.b)
 
+    if (!result1) throw new Error('cannot be undefined')
+    expect(result1).toEqual({ __file: expect.any(String) })
+
+    const result2 = jsonToServer.prop(result1)
+
+    if (!result2) throw new Error('cannot be undefined')
+    expect(await firstValueFrom(result2 as unknown as Observable<unknown>)).toBeInstanceOf(Buffer)
+  })
+
+  it ('main', async () => {
     const result1 = clientToJson.apply(source)
 
     if (!result1) throw new Error('cannot be undefined')
