@@ -38,11 +38,13 @@ const source: RequestPayload = {
 }
 const clientToJson = new Transformer<RequestMapper, 0, 1>({
   __cookie: c => c instanceof Cookie && { __cookie: 'cook' },
-  __file: c => c instanceof File && { __file: 'file' }
+  __file: c => c instanceof File && { __file: 'file' },
+  __date: c => c instanceof Date && { __date: c.toISOString() }
 })
 const jsonToServer = new Transformer<RequestMapper, 1, 2>({
   __cookie: c => typeof c === 'object' && '__cookie' in c && of('cookie'),
-  __file: c => typeof c === 'object' && '__file' in c && of(Buffer.from('file'))
+  __file: c => typeof c === 'object' && '__file' in c && of(Buffer.from('file')),
+  __date: c => typeof c === 'object' && '__file' in c && new Date(c.__file)
 })
 
 describe('Transformer', () => {
