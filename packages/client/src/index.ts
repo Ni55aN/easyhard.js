@@ -69,8 +69,7 @@ export function easyhardClient<T>({
       } else if ('complete' in data) {
         subscription.observer.complete()
       } else if ('error' in data) {
-        const deserialized = responseTransformer.apply(data)
-        subscription.observer.error(deserialized?.error)
+        subscription.observer.error(responseTransformer.prop(data.error))
       } else {
         subscription.observer.next(responseTransformer.apply(data.payload))
         if (data.cookie) {

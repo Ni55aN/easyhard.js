@@ -3,7 +3,6 @@ import { Mapping, ObjectMapping } from './utility-types'
 
 export type TransformerSchema = {[key: string]: unknown[]}
 export { ObjectMapping } from './utility-types'
-// export type TransformedPayload<Schema extends TransformerSchema> = Record<string, Schema[string][1] | {[key in keyof Schema]: Schema[key][1]}>
 
 export class Transformer<Schema extends TransformerSchema, In extends number, Out extends number> {
   constructor(private scheme: {[key in keyof Schema]: (value: Schema[keyof Schema][In]) => Schema[key][Out] | boolean}) {}
