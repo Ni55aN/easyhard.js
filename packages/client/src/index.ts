@@ -62,7 +62,7 @@ export function easyhardClient<T>({
       } else {
         subscription.observer.next(subscription.parcel.acceptResponse(data.payload))
         if (data.cookie) {
-          http.send(data.id, { 'easyhard-set-cookie': data.cookie })
+          http.send(data.id, { 'easyhard-set-cookie': data.cookie }, null, error => subscription.observer.next(error))
         }
       }
     },
