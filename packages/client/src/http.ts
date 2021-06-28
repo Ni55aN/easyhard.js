@@ -25,18 +25,17 @@ export function useHttp(getUrl: () => string | undefined): HTTP {
       xhr.addEventListener('timeout', e => {
         onError && onError(new Error((e.target as XMLHttpRequest)?.statusText))
       })
-      xhr.addEventListener('load', e => {
+
+      xhr.addEventListener('loadend', e => {
         const target = e.target as XMLHttpRequest
 
-        if (target.status !== 200) {
-          onError && onError(new Error(target?.statusText))
-        }
-      })
-
-      xhr.addEventListener('loadend', () => {
         requestsMap.get(id)?.delete(xhr)
         if (requestsMap.get(id)?.size === 0) {
           requestsMap.delete(id)
+        }
+
+        if (target.status !== 200) {
+          onError && onError(new Error(target?.statusText))
         }
       })
 
