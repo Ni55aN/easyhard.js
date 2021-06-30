@@ -52,9 +52,15 @@ export class Parcel<T, K extends keyof T> {
     const diffs = this.requestTransformer.diffs(this.payload as Payload, this.transformedPayload as Payload)
 
     return diffs.map(item => {
-      if (item.from instanceof File && '__file' in item.to) return { headers: { 'file-id': item.to.__file } as HttpHeaders, body: item.from }
-      if (item.from instanceof Cookie && '__cookie' in item.to) return { headers: { 'cookie-id': item.to.__cookie, 'cookie-key': item.from.key } as HttpHeaders, body: null }
-      throw new Error('invalid item')
+      if (item.from instanceof File && '__file' in item.to) {
+        return { headers: { 'file-id': item.to.__file } as HttpHeaders, body: item.from }
+      }
+      if (item.from instanceof Cookie && '__cookie' in item.to) {
+        return { headers: { 'cookie-id': item.to.__cookie, 'cookie-key': item.from.key } as HttpHeaders, body: null }
+      }
+      return null
+    }).filter((item): item is Exclude<typeof item, null> => {
+      return Boolean(item)
     })
   }
 
