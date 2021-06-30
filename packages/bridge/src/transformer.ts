@@ -4,6 +4,10 @@ import { Mapping, ObjectMapping } from './utility-types'
 export type TransformerSchema = {[key: string]: unknown[]}
 export { ObjectMapping } from './utility-types'
 
+type Diffs<Schema extends TransformerSchema, In extends number, Out extends number> = {
+  [K in keyof Schema]: { from: Schema[K][In], to: Schema[K][Out] }
+} extends Record<string, infer DD> ? DD : never
+
 export class Transformer<Schema extends TransformerSchema, In extends number, Out extends number> {
   constructor(private scheme: {[key in keyof Schema]: (value: Schema[keyof Schema][In]) => Schema[key][Out] | boolean}) {}
 
@@ -27,7 +31,7 @@ export class Transformer<Schema extends TransformerSchema, In extends number, Ou
     return transformedPayload
   }
 
-  diffs<A extends Payload, B extends Payload>(from: A, to: B) {
+  diffs<A extends Payload, B extends Payload>(from: A, to: B): Diffs<Schema, In, Out>[] {
     const keys = Object.keys(to)
 
     return keys
@@ -36,9 +40,7 @@ export class Transformer<Schema extends TransformerSchema, In extends number, Ou
         return {
           from: from[key],
           to: to[key]
-        } as {
-          [K in keyof Schema]: { from: Schema[K][In], to: Schema[K][Out] }
-        } extends Record<string, infer DD> ? DD : never
+        } as Diffs<Schema, In, Out>
       })
   }
 }

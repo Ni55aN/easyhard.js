@@ -7,7 +7,15 @@ type Props<In> = {
   onClose: (event: CloseEvent) => void;
 }
 
-export function createConnection<Args, Out, In>(props: Props<In>) {
+type Return<Args, Out> = {
+  connect: (url: string, args: Args) => void
+  readyState: number | null
+  args: Args | null
+  send: (data: Out) => boolean | void
+  close: () => void
+}
+
+export function createConnection<Args, Out, In>(props: Props<In>): Return<Args, Out> {
   let connection: null | { socket: WebSocket, args: Args } = null
 
   function connect(url: string, args: Args) {

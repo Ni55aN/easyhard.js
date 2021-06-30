@@ -4,7 +4,9 @@ export type InsertReturn<T> = { insert: true, item: T, batch?: boolean }
 export type RemoveReturn<T> = { remove: true, item: T }
 export type Return<T> = { idle: true } | { initial: true } |  InsertReturn<T> | RemoveReturn<T>
 
-export const getCollectionItemId = <T>(item: T): T | unknown => typeof item === 'object' && 'id' in item ? (item as any).id : item
+export function getCollectionItemId<T>(item: T): T | unknown {
+  return typeof item === 'object' && 'id' in item ? (item as unknown as { id: string }).id : item
+}
 
 export class CollectionSubject<T> extends Subject<Return<T>> {
   constructor(private _value: T[]) {

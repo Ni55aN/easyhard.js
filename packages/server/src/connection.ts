@@ -5,7 +5,7 @@ type Props<In> = {
   onClose: () => void
 }
 
-export function useConnection<In, Out>(ws: ws, props: Props<In>) {
+export function useConnection<In, Out>(ws: ws, props: Props<In>): { send: (data: Out) => void} {
   ws.on('message', data => {
     const request: In = JSON.parse(data.toString('utf-8'))
 
