@@ -1,14 +1,15 @@
 import { Cookie, ObjectMapping, RequestMapper, ResponseMapper, Transformer } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
-import { ReplaySubject } from 'rxjs'
+import { Observable, ReplaySubject, Subject } from 'rxjs'
 import { HttpCookies, HttpHeaders, SetCookie, SubjectLike } from './http'
 import { HandlerPayload, RequestPayload } from './types'
 
 export class Postbox {
   private buffers: Map<string, ReplaySubject<Buffer>> = new Map()
   private cookies: Map<string, ReplaySubject<string>> = new Map()
+  subjects: Map<string, Subject<unknown>> = new Map()
   private setCookies: Map<string, SetCookie[]> = new Map()
-  private requestTransformer = new Transformer<RequestMapper, 1, 2>({
+  requestTransformer = new Transformer<RequestMapper, 1, 2>({
     __file: args => {
       if (typeof args !== 'object' || !('__file' in args)) return false
       const subject = new ReplaySubject<Buffer>()
@@ -27,6 +28,13 @@ export class Postbox {
       if (typeof args !== 'object' || !('__date' in args)) return false
 
       return new Date(args.__date)
+    },
+    __observable: args => {
+      if (typeof args !== 'object' || !('__observable' in args)) return false
+      const subject = new Subject()
+
+      this.subjects.set(args.__observable, subject)
+      return subject
     }
   })
   private responseTransformer = new Transformer<ResponseMapper, 0, 1>({
@@ -106,8 +114,16 @@ export class Postbox {
     }
   }
 
-  acceptWSRequest = <T, K extends keyof T>(data: RequestPayload<T[K]>): HandlerPayload<T[K]> => {
-    return this.requestTransformer.apply(data) as HandlerPayload<T[K]>
+  acceptWSRequest = <T, K extends keyof T>(data: RequestPayload<T[K]>, events: { onSubscribe: (id: string) => void }): HandlerPayload<T[K]> => {
+    const result = this.requestTransformer.apply(data, ({ from, to }) => {
+      if ('__observable' in from && to instanceof Subject) return new Observable(subscriber => {
+        events.onSubscribe(from.__observable)
+        return to.subscribe(subscriber)
+      })
+      return to
+    }) as HandlerPayload<T[K]>
+
+    return result
   }
 
   acceptError<E>(error: E): ReturnType<Transformer<ResponseMapper, 1, 2>['prop']> {

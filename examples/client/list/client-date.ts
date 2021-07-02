@@ -1,4 +1,4 @@
-import { h, onMount } from 'easyhard'
+import { h, $, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
 import { map } from 'rxjs/operators'
 import { Actions } from '../../shared'
@@ -16,7 +16,7 @@ const client = easyhardClient<Actions>({
 })
 
 function App() {
-  const result = client.call('getDate', { date: new Date() }).pipe(map(data => data.date.toLocaleTimeString()))
+  const result = client.call('getDate', { date: $(new Date()) }).pipe(map(data => data.date.toLocaleTimeString()))
 
   const el = h('div', {},
     result

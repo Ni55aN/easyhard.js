@@ -26,7 +26,12 @@ export function easyhardServer<T>(actions: Handlers<T>, props?: Props): { attach
           subscriptions.remove(id)
         } else if ('action' in data) {
           const handler = actions[data.action]
-          const observable = handler(postbox.acceptWSRequest(data.payload))
+          const params = postbox.acceptWSRequest(data.payload, {
+            onSubscribe(observableId) {
+              connection.send({ id, observable: observableId, subscribe: true })
+            }
+          })
+          const observable = handler(params)
           const subscription = observable.subscribe({
             next(payload) {
               const args = postbox.acceptWSResponse(payload)
@@ -41,6 +46,8 @@ export function easyhardServer<T>(actions: Handlers<T>, props?: Props): { attach
           })
 
           subscriptions.add(id, subscription)
+        } else if ('next' in data) {
+          postbox.subjects.get(data.id)?.next(postbox.requestTransformer.prop(data.next))
         } else {
           throw new Error('WS message isn\'t recognized')
         }

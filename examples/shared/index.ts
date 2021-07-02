@@ -1,5 +1,6 @@
 import { Cookie } from 'easyhard-bridge'
 import { $$Return } from 'easyhard-common'
+import { Observable } from 'rxjs'
 
 export interface Actions {
   getData: {
@@ -27,7 +28,7 @@ export interface Actions {
     response: { newCookie: Cookie }
   },
   getDate: {
-    request: { date: Date }
+    request: { date: Observable<Date> }
     response: { date: Date }
   }
 }

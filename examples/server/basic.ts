@@ -2,7 +2,7 @@ import { $$ } from 'easyhard-common'
 import fs from 'fs'
 import { easyhardServer, SetCookie, writeFile } from 'easyhard-server'
 import { interval, of, throwError } from 'rxjs'
-import { concatMap, map, scan, take } from 'rxjs/operators'
+import { concatMap, map, mergeMap, scan, startWith, take } from 'rxjs/operators'
 import { Actions } from '../shared'
 
 export default easyhardServer<Actions>({
@@ -50,6 +50,7 @@ export default easyhardServer<Actions>({
       newCookie2: new SetCookie('test-new2', new Date().toISOString(), { path: '/', httpOnly: true }) })
   },
   getDate(params) {
-    return interval(500).pipe(map(() => ({ date: params.date })))
+    // console.log(params.date)
+    return params.date.pipe(startWith(new Date('1-1-2000')), map(date => ({ date: date as any })))
   }
 })

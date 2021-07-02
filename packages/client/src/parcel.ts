@@ -1,5 +1,6 @@
 import { Cookie, ExtractPayload, RequestMapper, Transformer, ObjectMapping, Payload, ResponseMapper } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
+import { Observable } from 'rxjs'
 import { HttpBody, HttpHeaders } from './http'
 import { SocketRequest } from './types'
 
@@ -9,7 +10,8 @@ export class Parcel<T, K extends keyof T> {
   private requestTransformer = new Transformer<RequestMapper, 0, 1>({
     __file: item => item instanceof File && { __file: getUID() },
     __cookie: item => item instanceof Cookie && { __cookie: getUID() },
-    __date: item => item instanceof Date && { __date: item.toISOString()}
+    __date: item => item instanceof Date && { __date: item.toISOString()},
+    __observable: item => item instanceof Observable && { __observable: getUID() }
   })
   private responseTransformer = new Transformer<ResponseMapper, 1, 2>({
     __cookie: arg => typeof arg === 'object' && '__cookie' in arg && new Cookie(arg.__cookie),
@@ -62,6 +64,14 @@ export class Parcel<T, K extends keyof T> {
     }).filter((item): item is Exclude<typeof item, null> => {
       return Boolean(item)
     })
+  }
+
+  findObservable(id: string): Observable<unknown> | undefined {
+    const diffs = this.requestTransformer.diffs(this.payload as Payload, this.transformedPayload as Payload)
+
+    return diffs.find(({ from, to }) => {
+      return from instanceof Observable && '__observable' in to && to.__observable === id
+    })?.from as Observable<unknown>
   }
 
   acceptError<E>(error: E): ReturnType<Transformer<ResponseMapper, 1, 2>['prop']> {

@@ -59,6 +59,8 @@ export function easyhardClient<T>({
         subscription.observer.complete()
       } else if ('error' in data) {
         subscription.observer.error(subscription.parcel.acceptError(data.error))
+      } else if ('subscribe' in data) {
+        subscription.parcel.findObservable(data.observable)?.subscribe(console.log)
       } else {
         subscription.observer.next(subscription.parcel.acceptResponse(data.payload))
         if (data.cookie) {

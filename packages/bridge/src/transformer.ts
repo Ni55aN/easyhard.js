@@ -19,13 +19,16 @@ export class Transformer<Schema extends TransformerSchema, In extends number, Ou
     return arg as Mapping<T, Schema, In, Out>
   }
 
-  apply<T extends unknown | undefined>(payload: T): ObjectMapping<T, Schema, In, Out> | undefined {
+  apply<T extends unknown | undefined>(payload: T, middleware?: (args: Diffs<Schema, In, Out>) => any): ObjectMapping<T, Schema, In, Out> | undefined {
     if (!payload) return
     if (typeof payload !== 'object') throw new Error('payload should be an object')
     const payloadObj = payload as Payload
     const payloadKeys = Object.keys(payloadObj)
     const transformedPayload = payloadKeys.reduce((obj, key) => {
-      return { ...obj, [key]: this.prop(payloadObj[key]) }
+      const value = payloadObj[key]
+      const next = this.prop(value)
+
+      return { ...obj, [key]: middleware ? middleware({ from: value, to: next } as Diffs<Schema, In, Out>) : next }
     }, {} as ObjectMapping<T, Schema, In, Out>)
 
     return transformedPayload
