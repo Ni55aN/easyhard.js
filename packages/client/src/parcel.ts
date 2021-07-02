@@ -68,7 +68,7 @@ export class Parcel<T, K extends keyof T> {
     return this.responseTransformer.prop(error)
   }
 
-  acceptResponse<E>(error: E): ReturnType<Transformer<ResponseMapper, 1, 2>['apply']>  {
-    return this.responseTransformer.apply(error)
+  acceptResponse<P>(payload: P): ReturnType<Transformer<ResponseMapper, 1, 2>['apply']>  {
+    return this.responseTransformer.apply(payload)
   }
 }
