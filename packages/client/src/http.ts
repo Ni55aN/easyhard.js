@@ -51,7 +51,7 @@ export function useHttp(getUrl: () => string | undefined): HTTP {
       requestsMap.set(id, set)
     },
     async abort(id: string) {
-      await delay(500)
+      await delay(100)
       const requestsSet = requestsMap.get(id)
 
       if (requestsSet) {
