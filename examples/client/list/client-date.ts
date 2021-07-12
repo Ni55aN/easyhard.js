@@ -16,10 +16,11 @@ const client = easyhardClient<Actions>({
 })
 
 function App() {
-  const result = client.call('getDate', { date: new Date() }).pipe(map(data => data.date.toLocaleTimeString()))
+  const response = client.call('getDate', { date: new Date() })
 
   const el = h('div', {},
-    result
+    h('div', {}, response.pipe(map(data => data.date.toLocaleTimeString()))),
+    h('div', {}, response.pipe(map(data => data.date2.toLocaleTimeString())))
   )
 
   onMount(el, () => client.connect(`ws://${location.host}/api/basic/`, { http: `http://${location.host}/api/basic/` }))

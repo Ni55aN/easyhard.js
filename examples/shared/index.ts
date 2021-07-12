@@ -28,6 +28,6 @@ export interface Actions {
   },
   getDate: {
     request: { date: Date }
-    response: { date: Date }
+    response: { date: Date, date2: Date }
   }
 }
