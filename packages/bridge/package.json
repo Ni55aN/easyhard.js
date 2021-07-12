@@ -2,6 +2,7 @@
   "name": "easyhard-bridge",
   "version": "0.1.1",
   "peerDependencies": {
-    "rxjs": ">= 6.x <=7.x"
+    "rxjs": ">= 6.x <=7.x",
+    "easyhard-common": "^0.3.0"
   }
 }
