@@ -34,6 +34,12 @@ export function easyhardClient<T>({
     const jsonParams = Parcel.requestTransformer.apply(params, null)
 
     const paramObservables = Parcel.requestTransformer.diffs(params as any, jsonParams).map(item => {
+      if (item.from instanceof Observable && '__ob' in item.to) {
+        const observable = item.from
+        const key = item.to.__ob
+
+        return registerObservable(key, observable, connection)
+      }
       if (item.from instanceof File && '__file' in item.to) {
         const file = item.from
         const key = item.to.__file

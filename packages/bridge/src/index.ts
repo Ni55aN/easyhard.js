@@ -16,6 +16,7 @@ export class Cookie {
 }
 
 export type RequestMapper = {
+  __ob: [Observable<any>, { __ob: string }, Observable<any>],
   __file: [File, { __file: string }, Observable<Buffer>],
   __cookie: [Cookie, { __cookie: string }, Observable<string>],
   __date: [Date, { __date: string }, Date]

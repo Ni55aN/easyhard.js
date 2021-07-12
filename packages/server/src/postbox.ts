@@ -5,6 +5,11 @@ import { BodyListeners, CookieSetters, HttpRequest, ReqListeners, SetCookie } fr
 
 export class Postbox {
   requestTransformer = new Transformer<RequestMapper, 1, 2, { ws: ws, reqListeners: ReqListeners, bodyListeners: BodyListeners }>({
+    __ob: (args, { ws }) => {
+      if (typeof args !== 'object' || !('__ob' in args)) return false
+
+      return bindObservable(args.__ob, {}, ws)
+    },
     __file: (args, { ws, bodyListeners }) => {
       if (typeof args !== 'object' || !('__file' in args)) return false
 

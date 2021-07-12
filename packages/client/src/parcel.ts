@@ -1,8 +1,10 @@
 import { Cookie, RequestMapper, Transformer, ResponseMapper } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
+import { Observable } from 'rxjs'
 
 export class Parcel {
   static requestTransformer = new Transformer<RequestMapper, 0, 1, null>({
+    __ob:  item => item instanceof Observable && { __ob: getUID() },
     __file: item => item instanceof File && { __file: `file-${getUID()}` },
     __cookie: item => item instanceof Cookie && { __cookie: `cookie-${getUID()}` },
     __date: item => item instanceof Date && { __date: item.toISOString()}
