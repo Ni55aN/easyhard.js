@@ -36,12 +36,14 @@ const source: RequestPayload = {
   b: new File([], 'file'),
   c: new Cookie('cookie')
 }
-const clientToJson = new Transformer<RequestMapper, 0, 1>({
+const clientToJson = new Transformer<RequestMapper, 0, 1, null>({
+  __ob: c => c instanceof Observable && { __ob: 'ob' },
   __cookie: c => c instanceof Cookie && { __cookie: 'cook' },
   __file: c => c instanceof File && { __file: 'file' },
   __date: c => c instanceof Date && { __date: c.toISOString() }
 })
-const jsonToServer = new Transformer<RequestMapper, 1, 2>({
+const jsonToServer = new Transformer<RequestMapper, 1, 2, null>({
+  __ob: c => typeof c === 'object' && '__ob' in c && of(true),
   __cookie: c => typeof c === 'object' && '__cookie' in c && of('cookie'),
   __file: c => typeof c === 'object' && '__file' in c && of(Buffer.from('file')),
   __date: c => typeof c === 'object' && '__file' in c && new Date(c.__file)
@@ -49,26 +51,26 @@ const jsonToServer = new Transformer<RequestMapper, 1, 2>({
 
 describe('Transformer', () => {
   it ('prop', async () => {
-    const result1 = clientToJson.prop(source.b)
+    const result1 = clientToJson.prop(source.b, null)
 
     if (!result1) throw new Error('cannot be undefined')
     expect(result1).toEqual({ __file: expect.any(String) })
 
-    const result2 = jsonToServer.prop(result1)
+    const result2 = jsonToServer.prop(result1, null)
 
     if (!result2) throw new Error('cannot be undefined')
     expect(await firstValueFrom(result2 as unknown as Observable<unknown>)).toBeInstanceOf(Buffer)
   })
 
   it ('main', async () => {
-    const result1 = clientToJson.apply(source)
+    const result1 = clientToJson.apply(source, null)
 
     if (!result1) throw new Error('cannot be undefined')
     expect(result1.a).toEqual(123)
     expect(result1.b).toEqual({ __file: expect.any(String) })
     expect(result1.c).toEqual({ __cookie: expect.any(String) })
 
-    const result2 = jsonToServer.apply(result1)
+    const result2 = jsonToServer.apply(result1, null)
 
     if (!result2) throw new Error('cannot be undefined')
     expect(result2.a).toEqual(123)
@@ -80,7 +82,7 @@ describe('Transformer', () => {
   })
 
   it ('diffs', () => {
-    const result1 = clientToJson.apply(source)
+    const result1 = clientToJson.apply(source, null)
 
     if (!result1) throw new Error('cannot be undefined')
     clientToJson.diffs(source, result1).forEach(item => {
