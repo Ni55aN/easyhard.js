@@ -1,9 +1,15 @@
 import { Observable, of, OperatorFunction, Subscriber, Subscription } from 'rxjs'
 import { getUID } from 'easyhard-common'
 
+export type RequestId = string
+type UnsubscribeRequest = { id: RequestId, unsubscribe: true }
+
+type CompleteResponse = { id: RequestId, complete: true }
+type ErrorResponse<T> = { id: RequestId, error: T }
+
 type Key = string | number | symbol
-type ClientToServer = { id: string, key: Key, params: any, subscribe: true } | { id: string, unsubscribe: true }
-type ServerToClient<T> = { id: string, value: T } | { id: string, error: Error } | { id: string, complete: true }
+type ClientToServer<K, P> = { key: K, id: RequestId, params: P, subscribe: true } | UnsubscribeRequest
+type ServerToClient<T> = { id: RequestId, value: T } | ErrorResponse<Error> | CompleteResponse
 
 export enum WebSocketState {
   CONNECTING = 0,
@@ -11,7 +17,6 @@ export enum WebSocketState {
   CLOSING = 2,
   CLOSED = 3,
 }
-
 
 export type WsConnection = {
   readyState: number
@@ -26,7 +31,7 @@ type BindProps = {
 }
 
 export function bindObservable<P, T>(key: Key, params: P, client: WsConnection, props?: BindProps): Observable<T> {
-  const send = <T extends ClientToServer>(data: T) => {
+  const send = <T extends ClientToServer<Key, P>>(data: T) => {
     if (client.readyState === WebSocketState.OPEN) {
       client.send(JSON.stringify(data))
     } else if (client.readyState === WebSocketState.CONNECTING) {
@@ -97,7 +102,7 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
     Array.from(subscriptions.keys()).forEach(unsubscribe)
   }
   const onMessage = (event: { data: any }) => {
-    const data: ClientToServer = JSON.parse(event.data)
+    const data: ClientToServer<Key, P> = JSON.parse(event.data)
 
     if ('subscribe' in data && data.key === key) {
       const subscription = (stream instanceof Observable ? stream : of(data.params).pipe(stream)).subscribe({

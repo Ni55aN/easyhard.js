@@ -3,7 +3,7 @@ import { defer, NEVER, Observable, of, throwError } from 'rxjs'
 import { catchError, finalize, map, tap } from 'rxjs/operators'
 import { createConnection } from './connection'
 import { useHttp } from './http'
-import { Parcel } from './parcel'
+import { requestTransformer, responseTransformer } from './transformers'
 import { ConnectionArgs, JSONPayload } from './types'
 
 type Props = {
@@ -28,12 +28,12 @@ export function easyhardClient<T>({
     const key = args[0]
     const params = args[1] || {} as Params
 
-    const transformError = catchError<Return, Observable<Return>>(err => throwError(Parcel.responseTransformer.prop(err, null)))
-    const transformValue = map<Return, ObjectMapping<Return, ResponseMapper, 1, 2>>(value => Parcel.responseTransformer.apply(value, null))
+    const transformError = catchError<Return, Observable<Return>>(err => throwError(responseTransformer.prop(err, null)))
+    const transformValue = map<Return, ObjectMapping<Return, ResponseMapper, 1, 2>>(value => responseTransformer.apply(value, null))
 
-    const jsonParams = Parcel.requestTransformer.apply(params, null)
+    const jsonParams = requestTransformer.apply(params, null)
 
-    const paramObservables = Parcel.requestTransformer.diffs(params as any, jsonParams).map(item => {
+    const paramObservables = requestTransformer.diffs(params as any, jsonParams).map(item => {
       if (item.from instanceof Observable && '__ob' in item.to) {
         const observable = item.from
         const key = item.to.__ob

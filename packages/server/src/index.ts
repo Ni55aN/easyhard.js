@@ -1,13 +1,12 @@
 import * as ws from 'ws'
 import { HandlerPayload, Handlers, PipeHandler, ResponsePayload } from './types'
 import { HttpTunnel, useHttp } from './http'
-import { Postbox } from './postbox'
+import { requestTransformer, responseTransformer } from './transformers'
 import { ExtractPayload, registerObservable } from 'easyhard-bridge'
 import { Observable, pipe, throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void , httpTunnel: HttpTunnel } {
-  const postbox = new Postbox()
   const http = useHttp()
   const keys = Object.keys(actions).map(key => key as keyof T)
 
@@ -17,9 +16,9 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
 
     keys.forEach(key => {
       const stream = actions[key]
-      const transformError = catchError<Return, Observable<Return>>(error => throwError(postbox.responseTransformer.prop(error, { ws, cookieSetters: http.cookieSetters })))
-      const transformParams = map<Request, HandlerPayload<T[keyof T]>>(v => postbox.requestTransformer.apply(v, { ws, reqListeners: http.reqListeners, bodyListeners: http.bodyListeners }))
-      const transformValue = map<Return, ResponsePayload<T[keyof T]>>(v => postbox.responseTransformer.apply(v, { ws, cookieSetters: http.cookieSetters }))
+      const transformError = catchError<Return, Observable<Return>>(error => throwError(responseTransformer.prop(error, { ws, cookieSetters: http.cookieSetters })))
+      const transformParams = map<Request, HandlerPayload<T[keyof T]>>(v => requestTransformer.apply(v, { ws, reqListeners: http.reqListeners, bodyListeners: http.bodyListeners }))
+      const transformValue = map<Return, ResponsePayload<T[keyof T]>>(v => responseTransformer.apply(v, { ws, cookieSetters: http.cookieSetters }))
       const preMap = pipe(transformParams)
       const postMap = pipe(transformError, transformValue)
 
