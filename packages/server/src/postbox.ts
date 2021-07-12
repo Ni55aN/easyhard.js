@@ -1,27 +1,28 @@
-import { Cookie, ObjectMapping, RequestMapper, ResponseMapper, Transformer } from 'easyhard-bridge'
-import { getUID } from 'easyhard-common'
-import { ReplaySubject } from 'rxjs'
-import { HttpCookies, HttpHeaders, SetCookie, SubjectLike } from './http'
-import { HandlerPayload, RequestPayload } from './types'
+import { bindObservable, Cookie, RequestMapper, ResponseMapper, Transformer } from 'easyhard-bridge'
+import { map } from 'rxjs/operators'
+import * as ws from 'ws'
+import { BodyListeners, CookieSetters, HttpRequest, ReqListeners, SetCookie } from './http'
 
 export class Postbox {
-  private buffers: Map<string, ReplaySubject<Buffer>> = new Map()
-  private cookies: Map<string, ReplaySubject<string>> = new Map()
-  private setCookies: Map<string, SetCookie[]> = new Map()
-  private requestTransformer = new Transformer<RequestMapper, 1, 2>({
-    __file: args => {
+  requestTransformer = new Transformer<RequestMapper, 1, 2, { ws: ws, reqListeners: ReqListeners, bodyListeners: BodyListeners }>({
+    __file: (args, { ws, bodyListeners }) => {
       if (typeof args !== 'object' || !('__file' in args)) return false
-      const subject = new ReplaySubject<Buffer>()
 
-      this.buffers.set(args.__file, subject)
-      return subject
+      return bindObservable(args.__file, {}, ws, {
+        subscribe(id, subscriber) { bodyListeners.set(id, subscriber) },
+        unsubscribe(id) { bodyListeners.delete(id) }
+      })
     },
-    __cookie: args => {
+    __cookie: (args, { ws, reqListeners }) => {
       if (typeof args !== 'object' || !('__cookie' in args)) return false
-      const subject = new ReplaySubject<string>(1)
 
-      this.cookies.set(args.__cookie, subject)
-      return subject
+      return bindObservable<Record<string, unknown>, HttpRequest>(args.__cookie, {}, ws, {
+        subscribe(id, subscriber) { reqListeners.set(id, subscriber) },
+        unsubscribe(id) { reqListeners.delete(id) }
+      }).pipe(map(args => {
+        const key = String(args.headers['easyhard-cookie-key'])
+        return key && args.cookies[key] || ''
+      }))
     },
     __date: args => {
       if (typeof args !== 'object' || !('__date' in args)) return false
@@ -29,8 +30,15 @@ export class Postbox {
       return new Date(args.__date)
     }
   })
-  private responseTransformer = new Transformer<ResponseMapper, 0, 1>({
-    __cookie: arg => arg instanceof Cookie && { __cookie: arg.key },
+  responseTransformer = new Transformer<ResponseMapper, 0, 1, { ws: ws, cookieSetters: CookieSetters }>({
+    __cookie: (arg, { cookieSetters }) => {
+      if (arg instanceof Cookie) {
+        arg instanceof SetCookie && cookieSetters.set(arg.key, { value: arg.value, options: arg.options })
+
+        return { __cookie: arg.key }
+      }
+      return false
+    },
     __error: arg => {
       if (arg instanceof Error) {
         const error: Record<string, string> = {}
@@ -43,74 +51,4 @@ export class Postbox {
     },
     __date: arg => arg instanceof Date && { __date: arg.toISOString() }
   })
-
-  acceptWSResponse<T>(payload: T): { payload: ObjectMapping<T, ResponseMapper, 0, 1> | undefined, cookie?: string } {
-    const payloadObj = { ...payload } as Record<string, unknown>
-    const entries = Object.keys(payload).map(key => [key, payloadObj[key]]).filter((args): args is [string, SetCookie] => args[1] instanceof SetCookie)
-    const cookies = entries.map(args => args[1])
-    const jsonPayload = this.responseTransformer.apply(payload)
-
-    if (entries.length > 0) {
-      const id = getUID()
-      this.setCookies.set(id, cookies)
-      return {
-        cookie: id,
-        payload: jsonPayload
-      }
-    } else {
-      return {
-        payload: jsonPayload
-      }
-    }
-  }
-
-  acceptHttp = ({ headers, cookies }: { headers: HttpHeaders, cookies: HttpCookies }): SubjectLike<Buffer> | { cookies?: SetCookie[] } | undefined => {
-    if (headers['file-id']) {
-      const fileId = headers['file-id']
-      const { buffers } = this
-
-      return {
-        next: value => {
-          buffers.get(fileId)?.next(value)
-        },
-        error: error => {
-          buffers.get(fileId)?.error(error)
-          buffers.delete(fileId)
-        },
-        complete: () => {
-          buffers.get(fileId)?.complete()
-          buffers.delete(fileId)
-        }
-      }
-    }
-
-    if (headers['cookie-id'] && headers['cookie-key']) {
-      const cookieId = headers['cookie-id']
-      const cookieKey = headers['cookie-key']
-
-      this.cookies.get(cookieId)?.next(cookies[cookieKey] || '')
-      this.cookies.get(cookieId)?.complete()
-      this.cookies.delete(cookieId)
-    }
-
-    if (headers['easyhard-set-cookie']) {
-      const cookieId = headers['easyhard-set-cookie']
-      const cookies = this.setCookies.get(cookieId)
-
-      this.setCookies.delete(cookieId)
-      if (cookies) {
-        return {
-          cookies
-        }
-      }
-    }
-  }
-
-  acceptWSRequest = <T, K extends keyof T>(data: RequestPayload<T[K]>): HandlerPayload<T[K]> => {
-    return this.requestTransformer.apply(data) as HandlerPayload<T[K]>
-  }
-
-  acceptError<E>(error: E): ReturnType<Transformer<ResponseMapper, 1, 2>['prop']> {
-    return this.responseTransformer.prop(error)
-  }
 }

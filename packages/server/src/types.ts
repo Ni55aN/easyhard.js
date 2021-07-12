@@ -1,9 +1,9 @@
 import { CompleteResponse, ErrorResponse, Request, Response, ExtractPayload, UnsubscribeRequest, ObjectMapping, RequestMapper, ResponseMapper } from 'easyhard-bridge'
-import { Observable } from 'rxjs'
+import { Observable, OperatorFunction } from 'rxjs'
 
-export type Handler<T> = (
- payload: HandlerPayload<T>
-) => Observable<ExtractPayload<T, 'response'>>
+export type ObservableHandler<T> = Observable<ExtractPayload<T, 'response'>>
+export type PipeHandler<T> = OperatorFunction<HandlerPayload<T>, ExtractPayload<T, 'response'>>
+export type Handler<T> = ObservableHandler<T> | PipeHandler<T>
 
 export type Handlers<T> = {
   [K in keyof T]: Handler<T[K]>

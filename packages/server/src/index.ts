@@ -1,52 +1,32 @@
 import * as ws from 'ws'
-import { useSubscriptions } from './subscriptions'
-import { Handlers, SocketRequest, SocketResponse } from './types'
+import { HandlerPayload, Handlers, PipeHandler, ResponsePayload } from './types'
 import { HttpTunnel, useHttp } from './http'
-import { useConnection } from './connection'
 import { Postbox } from './postbox'
+import { ExtractPayload, registerObservable } from 'easyhard-bridge'
+import { Observable, pipe, throwError } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
 
-type Props = {
-  onError: (error: Error) => void
-}
-
-export function easyhardServer<T>(actions: Handlers<T>, props?: Props): { attachClient: (connection: ws) => void , httpTunnel: HttpTunnel } {
+export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws) => void , httpTunnel: HttpTunnel } {
   const postbox = new Postbox()
-  const http = useHttp({
-    onRequest: postbox.acceptHttp,
-    onError: props?.onError
-  })
+  const http = useHttp()
+  const keys = Object.keys(actions).map(key => key as keyof T)
 
   function attachClient(ws: ws) {
-    const subscriptions = useSubscriptions()
-    const connection = useConnection<SocketRequest<T>, SocketResponse<T>>(ws, {
-      onMessage(data) {
-        const id = data.id
+    type Request = ExtractPayload<T[keyof T], 'request'>
+    type Return = ExtractPayload<T[keyof T], 'response'>
 
-        if ('unsubscribe' in data) {
-          subscriptions.remove(id)
-        } else if ('action' in data) {
-          const handler = actions[data.action]
-          const observable = handler(postbox.acceptWSRequest(data.payload))
-          const subscription = observable.subscribe({
-            next(payload) {
-              const args = postbox.acceptWSResponse(payload)
-              connection.send({ id, ...args })
-            },
-            error<E>(error: E) {
-              connection.send({ id, error: postbox.acceptError(error) })
-            },
-            complete() {
-              connection.send({ id, complete: true })
-            }
-          })
+    keys.forEach(key => {
+      const stream = actions[key]
+      const transformError = catchError<Return, Observable<Return>>(error => throwError(postbox.responseTransformer.prop(error, { ws, cookieSetters: http.cookieSetters })))
+      const transformParams = map<Request, HandlerPayload<T[keyof T]>>(v => postbox.requestTransformer.apply(v, { ws, reqListeners: http.reqListeners, bodyListeners: http.bodyListeners }))
+      const transformValue = map<Return, ResponsePayload<T[keyof T]>>(v => postbox.responseTransformer.apply(v, { ws, cookieSetters: http.cookieSetters }))
+      const preMap = pipe(transformParams)
+      const postMap = pipe(transformError, transformValue)
 
-          subscriptions.add(id, subscription)
-        } else {
-          throw new Error('WS message isn\'t recognized')
-        }
-      },
-      onClose() {
-        subscriptions.clear()
+      if (stream instanceof Observable) {
+        registerObservable(key, stream.pipe(postMap), ws)
+      } else {
+        registerObservable(key, pipe(preMap, stream as PipeHandler<T[keyof T]>, postMap), ws)
       }
     })
   }

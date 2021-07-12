@@ -28,3 +28,4 @@ export type ResponseMapper = {
 }
 
 export { ObjectMapping, Transformer } from './transformer'
+export * from './binder'

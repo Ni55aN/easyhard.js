@@ -1,10 +1,10 @@
-import { ExtractPayload } from 'easyhard-bridge'
-import { defer, Observable, of, Subscriber } from 'rxjs'
+import { bindObservable, Cookie, ExtractPayload, ObjectMapping, registerObservable, ResponseMapper } from 'easyhard-bridge'
+import { defer, NEVER, Observable, of, throwError } from 'rxjs'
+import { catchError, finalize, map, tap } from 'rxjs/operators'
 import { createConnection } from './connection'
 import { useHttp } from './http'
 import { Parcel } from './parcel'
-import { useSubscriptions } from './subscriptions'
-import { ConnectionArgs, SocketRequest, SocketResponse } from './types'
+import { ConnectionArgs, JSONPayload } from './types'
 
 type Props = {
   reconnectDelay?: number;
@@ -15,72 +15,57 @@ type Props = {
 
 /* eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types */
 export function easyhardClient<T>({
-  reconnectDelay = 5000,
-  onConnect,
-  onError,
-  onClose
+  reconnectDelay = 5000
 }: Props = {}) {
-  const subscriptions = useSubscriptions<{ observer: Subscriber<unknown>, parcel: Parcel<T, keyof T> }>({
-    onSet(item) {
-      const { parcel, observer } = item
-      const sent = connection.send(parcel.getInitWSPackage())
-
-      if (sent) {
-        parcel.getHttpPackages().forEach(args => {
-          http.send(parcel.id, args.headers, args.body, error => observer.error(error))
-        })
-      }
-    },
-    onRemove(item) {
-      const { parcel } = item
-
-      http.abort(parcel.id)
-      connection.send(parcel.getDestroyWSPackage())
-    }
-  })
   const http = useHttp(() => connection.args?.http)
-  const connection = createConnection<ConnectionArgs, SocketRequest<T>, SocketResponse<T>>({
-    onClose(event) {
-      onClose && onClose(event)
-    },
-    onConnect() {
-      subscriptions.refresh()
-      onConnect && onConnect()
-    },
-    onError(error) {
-      onError && onError(error)
-    },
-    onMessage(data) {
-      const subscription = subscriptions.get(data.id)
-
-      if (!subscription) {
-        return
-      } else if ('complete' in data) {
-        subscription.observer.complete()
-      } else if ('error' in data) {
-        subscription.observer.error(subscription.parcel.acceptError(data.error))
-      } else {
-        subscription.observer.next(subscription.parcel.acceptResponse(data.payload))
-        if (data.cookie) {
-          http.send(data.id, { 'easyhard-set-cookie': data.cookie }, null, error => subscription.observer.next(error))
-        }
-      }
-    },
+  const connection = createConnection<ConnectionArgs>({
     reconnectDelay
   })
 
   function call<K extends keyof T>(...args: ExtractPayload<T[K], 'request'> extends undefined ? [K] : [K, ExtractPayload<T[K], 'request'>]) {
-    return new Observable<ExtractPayload<T[K], 'response'>>(observer => {
-      const action = args[0]
-      const payload = args[1]
-      const parcel = new Parcel(action, payload)
+    type Params = ExtractPayload<T[K], 'request'>
+    type Return = ExtractPayload<T[K], 'response'>
+    const key = args[0]
+    const params = args[1] || {} as Params
 
-      subscriptions.set(parcel.id, { observer, parcel })
+    const transformError = catchError<Return, Observable<Return>>(err => throwError(Parcel.responseTransformer.prop(err, null)))
+    const transformValue = map<Return, ObjectMapping<Return, ResponseMapper, 1, 2>>(value => Parcel.responseTransformer.apply(value, null))
 
-      return () => {
-        subscriptions.remove(parcel.id)
+    const jsonParams = Parcel.requestTransformer.apply(params, null)
+
+    const paramObservables = Parcel.requestTransformer.diffs(params as any, jsonParams).map(item => {
+      if (item.from instanceof File && '__file' in item.to) {
+        const file = item.from
+        const key = item.to.__file
+
+        return registerObservable(key, NEVER, connection, {
+          subscribe(id) { http.send(id, { 'easyhard-subscription-id': id }, file) },
+          unsubscribe(id) { http.abort(id) }
+        })
+      }
+      if (item.from instanceof Cookie && '__cookie' in item.to) {
+        const cookie = item.from
+        const key = item.to.__cookie
+
+        return registerObservable(key, NEVER, connection, {
+          subscribe(id) { http.send(id, { 'easyhard-subscription-id': id, 'easyhard-cookie-key': cookie.key }) },
+          unsubscribe(id) { http.abort(id) }
+        })
       }
     })
+    return bindObservable<JSONPayload<T[K]>, Return>(key, jsonParams, connection).pipe(
+      transformError,
+      transformValue,
+      tap(value => {
+        Object.values(value).forEach(item => {
+          // TODO
+          if (item instanceof Cookie) http.send(item.key, { 'easyhard-set-cookie-key': item.key })
+        })
+      }),
+      finalize(() => {
+        paramObservables.forEach(destroy => destroy && destroy())
+      })
+    )
   }
 
   return {
