@@ -8,24 +8,23 @@ type Diffs<Schema extends TransformerSchema, In extends number, Out extends numb
   [K in keyof Schema]: { from: Schema[K][In], to: Schema[K][Out] }
 } extends Record<string, infer DD> ? DD : never
 
-export class Transformer<Schema extends TransformerSchema, In extends number, Out extends number> {
-  constructor(private scheme: {[key in keyof Schema]: (value: Schema[keyof Schema][In]) => Schema[key][Out] | boolean}) {}
+export class Transformer<Schema extends TransformerSchema, In extends number, Out extends number, Args> {
+  constructor(private scheme: {[key in keyof Schema]: (value: Schema[keyof Schema][In], args: Args) => Schema[key][Out] | boolean}) {}
 
-  prop<T>(arg: T): Mapping<T, Schema, In, Out> {
+  prop<T>(arg: T, args: Args): Mapping<T, Schema, In, Out> {
     for (const transformerKey in this.scheme) {
-      const res = this.scheme[transformerKey](arg)
+      const res = this.scheme[transformerKey](arg, args)
       if (res) return res as Mapping<T, Schema, In, Out>
     }
     return arg as Mapping<T, Schema, In, Out>
   }
 
-  apply<T extends unknown | undefined>(payload: T): ObjectMapping<T, Schema, In, Out> | undefined {
-    if (!payload) return
+  apply<T extends unknown | undefined>(payload: T, args: Args): ObjectMapping<T, Schema, In, Out> {
     if (typeof payload !== 'object') throw new Error('payload should be an object')
     const payloadObj = payload as Payload
     const payloadKeys = Object.keys(payloadObj)
     const transformedPayload = payloadKeys.reduce((obj, key) => {
-      return { ...obj, [key]: this.prop(payloadObj[key]) }
+      return { ...obj, [key]: this.prop(payloadObj[key], args) }
     }, {} as ObjectMapping<T, Schema, In, Out>)
 
     return transformedPayload
