@@ -5,7 +5,7 @@ type Props = {
 }
 
 type Return<Args> = {
-  connect: (url: string, args: Args) => void
+  connect: (url: string, args: Args) => WebSocket
   readyState: number
   args: Args | null
   send: (data: any) => boolean | void
