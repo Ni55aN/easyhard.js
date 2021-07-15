@@ -1,13 +1,14 @@
 import { bindObservable, Cookie, ExtractPayload, ObjectMapping, registerObservable, ResponseMapper } from 'easyhard-bridge'
 import { defer, NEVER, Observable, of, throwError } from 'rxjs'
 import { catchError, finalize, map, tap } from 'rxjs/operators'
-import { createConnection } from './connection'
+import { createConnection, WebSocket as ConnectionWS } from './connection'
 import { useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
 import { ConnectionArgs, JSONPayload } from './types'
 
 type Props = {
   reconnectDelay?: number;
+  ws?: (url: string) => ConnectionWS
   onConnect?: () => void;
   onError?: (error: Error) => void;
   onClose?: (event: CloseEvent) => void;
@@ -15,11 +16,13 @@ type Props = {
 
 /* eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types */
 export function easyhardClient<T>({
-  reconnectDelay = 5000
+  reconnectDelay = 5000,
+  ws = (url) => new WebSocket(url) as ConnectionWS
 }: Props = {}) {
   const http = useHttp(() => connection.args?.http)
-  const connection = createConnection<ConnectionArgs>({
-    reconnectDelay
+  const connection = createConnection<ConnectionArgs, ConnectionWS>({
+    reconnectDelay,
+    ws
   })
 
   function call<K extends keyof T>(...args: ExtractPayload<T[K], 'request'> extends undefined ? [K] : [K, ExtractPayload<T[K], 'request'>]) {

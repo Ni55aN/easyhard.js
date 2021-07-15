@@ -1,11 +1,12 @@
 import { WebSocketState } from 'easyhard-bridge'
 
-type Props = {
+type Props<WS> = {
   reconnectDelay?: number;
+  ws: (url: string) => WS
 }
 
-type Return<Args> = {
-  connect: (url: string, args: Args) => WebSocket
+type Return<Args, WS> = {
+  connect: (url: string, args: Args) => WS
   readyState: number
   args: Args | null
   send: (data: any) => boolean | void
@@ -14,8 +15,40 @@ type Return<Args> = {
   close: () => void
 }
 
-export function createConnection<Args>(props: Props): Return<Args> {
-  let connection: null | { socket: WebSocket, args: Args } = null
+interface CloseEvent {
+  wasClean: boolean;
+  code: number;
+  reason: string;
+  target: any;
+}
+interface ErrorEvent {
+    error: any;
+    message: string;
+    type: string;
+    target: any;
+}
+type Data = string | Buffer | ArrayBuffer | Buffer[];
+interface MessageEvent {
+    data: Data;
+    type: string;
+    target: any;
+}
+interface OpenEvent {
+    target: any;
+}
+export type WebSocket = {
+  url: string
+  readyState: WebSocketState
+  onclose: ((this: WebSocket, ev: CloseEvent) => any) | null;
+  onerror: ((this: WebSocket, ev: ErrorEvent) => any) | null;
+  onmessage: ((this: WebSocket, ev: MessageEvent) => any) | null;
+  onopen: ((this: WebSocket, ev: OpenEvent) => any) | null;
+  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void;
+  close(code?: number, reason?: string): void;
+}
+
+export function createConnection<Args, WS extends WebSocket>(props: Props<WS>): Return<Args, WS> {
+  let connection: null | { socket: WS, args: Args } = null
   const listeners: {[key: string]: any[]} = {
     open: [],
     close: [],
@@ -24,7 +57,7 @@ export function createConnection<Args>(props: Props): Return<Args> {
   }
 
   function connect(url: string, args: Args) {
-    const socket = new WebSocket(url)
+    const socket = props.ws(url)
 
     connection = { socket, args }
     connection.socket.onopen = () => {
