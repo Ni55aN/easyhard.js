@@ -31,14 +31,16 @@ type BindProps = {
 }
 
 export function bindObservable<P, T>(key: Key, params: P, client: WsConnection, props?: BindProps): Observable<T> {
-  const send = <T extends ClientToServer<Key, P>>(data: T) => {
-    if (client.readyState === WebSocketState.OPEN) {
-      client.send(JSON.stringify(data))
-    } else if (client.readyState === WebSocketState.CONNECTING) {
-      client.addEventListener('open', () => client.send(JSON.stringify(data)))
-    }
-  }
   return new Observable<T>(subscriber => {
+    const nextData: unknown[] = []
+    const send = <T extends ClientToServer<Key, P>>(data: T) => {
+      if (client.readyState === WebSocketState.OPEN) {
+        client.send(JSON.stringify(data))
+      } else {
+        nextData.push(data)
+      }
+    }
+
     const id = getUID()
     const onClose = (event: CloseEvent) => {
       try {
@@ -47,9 +49,13 @@ export function bindObservable<P, T>(key: Key, params: P, client: WsConnection, 
         console.log('onClose:', e)
       }
     }
+    const onOpen = () => {
+      while(nextData.length > 0) client.send(JSON.stringify(nextData.shift()))
+    }
     const onError = (error: Error) => {
       subscriber.error(error)
     }
+    client.addEventListener('open', onOpen)
     client.addEventListener('close', onClose)
     client.addEventListener('error', onError)
     send({ key, id, params, subscribe: true })
@@ -64,6 +70,7 @@ export function bindObservable<P, T>(key: Key, params: P, client: WsConnection, 
     client.addEventListener('message', handler)
     return () => {
       client.removeEventListener('message', handler)
+      client.removeEventListener('open', onOpen)
       client.removeEventListener('close', onClose)
       client.removeEventListener('error', onError)
       subscriber.unsubscribe()
