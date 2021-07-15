@@ -1,7 +1,7 @@
 const { pathsToModuleNameMapper } = require('ts-jest/utils');
 const { compilerOptions } = require('./tsconfig.json');
 
-module.exports = {
+const getConfig = (args) => ({
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   setupFiles: ['core-js'],
@@ -10,5 +10,26 @@ module.exports = {
     'packages/*/src/**/*.ts'
   ],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
-  modulePathIgnorePatterns: ['build']
-};
+  modulePathIgnorePatterns: ['build'],
+  ...args
+})
+
+
+module.exports = {
+  projects: [
+    {
+      ...getConfig({
+        testMatch: [
+          '<rootDir>/packages/**/*.test.ts'
+        ]
+      })
+    },
+    {
+      ...getConfig({
+        testMatch: [
+          '<rootDir>/test/**/*.test.ts'
+        ]
+      })
+    }
+  ]
+}
