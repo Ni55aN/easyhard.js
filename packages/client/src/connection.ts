@@ -1,12 +1,11 @@
 import { WebSocketState } from 'easyhard-bridge'
 
-type Props<WS> = {
-  reconnectDelay?: number;
-  ws: (url: string) => WS
+type Props = {
+  reconnectDelay?: number
 }
 
-type Return<Args, WS> = {
-  connect: (url: string, args: Args) => WS
+type Return<Args> = {
+  connect: <T extends WebSocketConnection>(ws: () => T, args: Args) => T
   readyState: number
   args: Args | null
   send: (data: any) => boolean | void
@@ -16,39 +15,37 @@ type Return<Args, WS> = {
 }
 
 interface CloseEvent {
-  wasClean: boolean;
-  code: number;
-  reason: string;
-  target: any;
+  readonly code: number;
+  readonly reason: string;
+  readonly wasClean: boolean;
+  target: any
 }
 interface ErrorEvent {
-    error: any;
-    message: string;
-    type: string;
-    target: any;
+  readonly error: any;
+  readonly message: string;
+  readonly type: string;
+  target: any;
 }
-type Data = string | Buffer | ArrayBuffer | Buffer[];
+
 interface MessageEvent {
-    data: Data;
+    data: any;
     type: string;
     target: any;
 }
-interface OpenEvent {
-    target: any;
-}
-export type WebSocket = {
+
+export type WebSocketConnection = {
   url: string
   readyState: WebSocketState
-  onclose: ((this: WebSocket, ev: CloseEvent) => any) | null;
-  onerror: ((this: WebSocket, ev: ErrorEvent) => any) | null;
-  onmessage: ((this: WebSocket, ev: MessageEvent) => any) | null;
-  onopen: ((this: WebSocket, ev: OpenEvent) => any) | null;
+  onclose: ((ev: any) => any) | null;
+  onerror: ((ev: any) => any) | null;
+  onmessage: ((ev: any) => any) | null;
+  onopen: ((ev: any) => any) | null;
   send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void;
   close(code?: number, reason?: string): void;
 }
 
-export function createConnection<Args, WS extends WebSocket>(props: Props<WS>): Return<Args, WS> {
-  let connection: null | { socket: WS, args: Args } = null
+export function createConnection<Args>(props: Props): Return<Args> {
+  let connection: null | { socket: WebSocketConnection | WebSocket, args: Args } = null
   const listeners: {[key: string]: any[]} = {
     open: [],
     close: [],
@@ -56,28 +53,28 @@ export function createConnection<Args, WS extends WebSocket>(props: Props<WS>): 
     message: []
   }
 
-  function connect(url: string, args: Args) {
-    const socket = props.ws(url)
+  function connect<Socket extends WebSocketConnection | WebSocket>(ws: () => Socket, args: Args): Socket {
+    const socket = ws()
 
     connection = { socket, args }
     connection.socket.onopen = () => {
       listeners.open.forEach(h => h())
     }
 
-    connection.socket.onclose = (event) => {
-      if (!event.wasClean) setTimeout(() => connection && connect(connection.socket.url, connection.args), props.reconnectDelay)
+    connection.socket.onclose = (event: CloseEvent) => {
+      if (!event.wasClean) setTimeout(() => connection && connect(ws, connection.args), props.reconnectDelay)
       listeners.close.forEach(h => h(event))
     }
 
-    connection.socket.onmessage = (event) => {
+    connection.socket.onmessage = (event: MessageEvent) => {
       listeners.message.forEach(h => h(event))
     }
 
-    connection.socket.onerror = function(...args) {
-      listeners.error.forEach(h => h(...args))
+    connection.socket.onerror = function(error: ErrorEvent) {
+      listeners.error.forEach(h => h(error))
     }
 
-    return connection.socket
+    return connection.socket as Socket
   }
 
   return {
