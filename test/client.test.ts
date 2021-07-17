@@ -1,7 +1,7 @@
 import { interval } from 'rxjs'
 import { Server, default as WebSocket, AddressInfo } from 'ws'
 import { registerObservable, bindObservable } from '../packages/bridge/src/binder'
-import { createConnection, WebSocket as ConnectionWS } from '../packages/client/src/connection'
+import { createConnection } from '../packages/client/src/connection'
 import express from 'express'
 import { retryWhen, switchMap, take, tap } from 'rxjs/operators'
 
@@ -12,9 +12,9 @@ describe('client', () => {
 
   beforeEach((done) => {
     server = new Server({ port: 0 })
-    client = createConnection<unknown, ConnectionWS>({ reconnectDelay: 100, ws(url) { return new WebSocket(url) }})
+    client = createConnection({ reconnectDelay: 100 })
 
-    client.connect(`http://localhost:${(server.address() as AddressInfo).port}`, {})
+    client.connect(() => new WebSocket(`http://localhost:${(server.address() as AddressInfo).port}`), {})
 
     const app = express()
     appServer = app.listen(0, () => done())
