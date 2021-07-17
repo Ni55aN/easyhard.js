@@ -4,17 +4,7 @@ import { Cookie } from 'easyhard-bridge'
 import { mapTo, mergeMap, tap } from 'rxjs/operators'
 import { Actions } from '../../shared'
 
-const client = easyhardClient<Actions>({
-  onClose(event) {
-    console.log('onClose', event)
-  },
-  onConnect() {
-    console.log('onConnect')
-  },
-  onError(err) {
-    console.log(err)
-  }
-})
+const client = easyhardClient<Actions>()
 
 function App() {
   const passCookie = client.call('sendCookie', { value: new Cookie('test-cookie') }).pipe(mapTo(null))
@@ -26,7 +16,7 @@ function App() {
     h('button', { click: mergeMap(() => acceptCookie) }, 'accept cookie')
   )
 
-  onMount(el, () => client.connect(`ws://${location.host}/api/basic/`, { http: `http://${location.host}/api/basic/` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/`), { http: `http://${location.host}/api/basic/` }))
 
   return el
 }

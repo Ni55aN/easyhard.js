@@ -4,17 +4,7 @@ import { Subject, throwError } from 'rxjs'
 import { catchError, map, mergeMap, pluck, takeUntil, tap } from 'rxjs/operators'
 import { Actions } from '../../shared'
 
-const client = easyhardClient<Actions>({
-  onClose(event) {
-    console.log('onClose', event)
-  },
-  onConnect() {
-    console.log('onConnect')
-  },
-  onError(err) {
-    console.log(err)
-  }
-})
+const client = easyhardClient<Actions>()
 
 function App() {
   const file$ = new Subject<File>()
@@ -38,7 +28,7 @@ function App() {
     h('button', { click: abort$ }, 'Abort')
   )
 
-  onMount(el, () => client.connect(`ws://${location.host}/api/basic/`, { http: `http://${location.host}/api/basic/` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/`), { http: `http://${location.host}/api/basic/` }))
 
   return el
 }

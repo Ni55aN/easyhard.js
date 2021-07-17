@@ -3,17 +3,7 @@ import { easyhardClient } from 'easyhard-client'
 import { catchError, filter, map, switchMap, take } from 'rxjs/operators'
 import { Actions } from '../../shared'
 
-const client = easyhardClient<Actions>({
-  onClose(event) {
-    console.log('onClose', event)
-  },
-  onConnect() {
-    console.log('onConnect')
-  },
-  onError(err) {
-    console.log(err)
-  }
-})
+const client = easyhardClient<Actions>()
 
 function App() {
   const count1 = client.call('getData').pipe(
@@ -50,7 +40,7 @@ function App() {
     )
   )
 
-  onMount(el, () => client.connect(`ws://${location.host}/api/basic/`, { http: `http://${location.host}/api/basic/` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/`), { http: `http://${location.host}/api/basic/` }))
 
   return el
 }
