@@ -15,7 +15,15 @@ router.get('/api', (req, res) => {
 })
 
 router.post('/api/basic', basic.httpTunnel)
-router.ws('/api/basic', basic.attachClient as any)
+router.ws('/api/basic', ws => {
+  basic.attachClient(ws)
+})
+
+router.post('/api/basic/v2', basic.httpTunnel)
+router.ws('/api/basic/v2', ws => {
+  basic.attachClient(ws)
+  setTimeout(() => ws.terminate(), 5000)
+})
 
 app.listen(3000, () => {
   console.log('Listen port 3000')
