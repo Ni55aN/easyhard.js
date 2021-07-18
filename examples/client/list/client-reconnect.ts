@@ -1,6 +1,6 @@
 import { h,onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
-import { defer } from 'rxjs'
+import { defer, interval } from 'rxjs'
 import { retry } from 'rxjs/operators'
 import { map } from 'rxjs/operators'
 import { Actions } from '../../shared'
@@ -24,10 +24,28 @@ function App() {
     }),
     retry()
   )
+  const withOb1 = client.call('passObservable', { value: interval(1000).pipe(map(v => v * 2)) }).pipe(
+    map(value => value.value),
+    source => defer(() => {
+      console.log('subscribed 3')
+      return source
+    }),
+    retry()
+  )
+  const withOb2 = client.call('passObservable', { value: interval(1000).pipe(map(v => v * 2)) }).pipe(
+    map(value => value.value),
+    source => defer(() => {
+      console.log('subscribed 4')
+      return source
+    }),
+    retry()
+  )
 
   const el = h('div', {},
     h('div', {}, count1),
     h('div', {}, count2),
+    h('div', {}, withOb1),
+    h('div', {}, withOb2),
   )
 
   onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/v2`), { http: `http://${location.host}/api/basic/v2` }))
