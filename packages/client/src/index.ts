@@ -1,10 +1,11 @@
 import { bindObservable, Cookie, ExtractPayload, ObjectMapping, registerObservable, ResponseMapper } from 'easyhard-bridge'
 import { defer, NEVER, Observable, of, throwError } from 'rxjs'
-import { catchError, finalize, map, tap } from 'rxjs/operators'
+import { catchError, map, tap } from 'rxjs/operators'
 import { createConnection } from './connection'
 import { useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
 import { ConnectionArgs, JSONPayload } from './types'
+import { mount } from './utils'
 
 type Props = {
   reconnectDelay?: number
@@ -29,8 +30,8 @@ export function easyhardClient<T>({
     const transformValue = map<Return, ObjectMapping<Return, ResponseMapper, 1, 2>>(value => responseTransformer.apply(value, null))
 
     const jsonParams = requestTransformer.apply(params, null)
-
-    const paramObservables = requestTransformer.diffs(params as any, jsonParams).map(item => {
+    const paramsDiffs = requestTransformer.diffs(params as any, jsonParams)
+    const mountParams = () => paramsDiffs.map(item => {
       if (item.from instanceof Observable && '__ob' in item.to) {
         const observable = item.from
         const key = item.to.__ob
@@ -56,6 +57,7 @@ export function easyhardClient<T>({
         })
       }
     })
+
     return bindObservable<JSONPayload<T[K]>, Return>(key, jsonParams, connection).pipe(
       transformError,
       transformValue,
@@ -64,15 +66,15 @@ export function easyhardClient<T>({
           if (item instanceof Cookie) http.send(item.key, { 'easyhard-set-cookie-key': item.key })
         })
       }),
-      finalize(() => {
-        paramObservables.forEach(destroy => destroy && destroy())
+      mount(() => {
+        const paramObservables = mountParams()
+        return () => paramObservables.forEach(destroy => destroy && destroy())
       })
     )
   }
 
   return {
     connect: connection.connect,
-    close,
     call,
     state: defer(() => of(connection.readyState))
   }
