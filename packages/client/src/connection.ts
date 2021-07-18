@@ -58,20 +58,20 @@ export function createConnection<Args>(props: Props): Return<Args> {
 
     connection = { socket, args }
     connection.socket.onopen = () => {
-      listeners.open.forEach(h => h())
+      listeners.open.slice().forEach(h => h())
     }
 
     connection.socket.onclose = (event: CloseEvent) => {
       if (!event.wasClean) setTimeout(() => connection && connect(ws, connection.args), props.reconnectDelay)
-      listeners.close.forEach(h => h(event))
+      listeners.close.slice().forEach(h => h(event))
     }
 
     connection.socket.onmessage = (event: MessageEvent) => {
-      listeners.message.forEach(h => h(event))
+      listeners.message.slice().forEach(h => h(event))
     }
 
     connection.socket.onerror = function(error: ErrorEvent) {
-      listeners.error.forEach(h => h(error))
+      listeners.error.slice().forEach(h => h(error))
     }
 
     return connection.socket as Socket
