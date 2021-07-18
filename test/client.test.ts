@@ -3,7 +3,7 @@ import { Server, default as WebSocket, AddressInfo } from 'ws'
 import { registerObservable, bindObservable } from '../packages/bridge/src/binder'
 import { createConnection } from '../packages/client/src/connection'
 import express from 'express'
-import { retryWhen, switchMap, take, tap } from 'rxjs/operators'
+import { retry, retryWhen, switchMap, take, tap } from 'rxjs/operators'
 
 describe('client', () => {
   let server: Server
@@ -61,5 +61,36 @@ describe('client', () => {
       expect(result).toMatchObject([0, 1, errors[0], 0, 1])
       done()
     }, 750)
+  }, 8000)
+
+
+  it ('reconnects on multiple subscriptions', (done) => {
+    const result: number[] = []
+    server.addListener('connection', connection => {
+      registerObservable<void, number>('getFromServer', switchMap(() => interval(100).pipe(
+        tap(value => value === 3 && connection.terminate())
+      )), connection)
+    })
+    const sub1 = bindObservable<Record<string, unknown>, number>('getFromServer', {}, client).pipe(
+      tap({
+        error: () => result.push(-1)
+      }),
+      retry()
+    ).subscribe(value => result.push(value))
+    const sub2 = bindObservable<Record<string, unknown>, number>('getFromServer', {}, client).pipe(
+      tap({
+        error: () => result.push(-1)
+      }),
+      retry()
+    ).subscribe(value => result.push(value))
+
+    setTimeout(() => {
+      sub1.unsubscribe()
+      sub2.unsubscribe()
+    }, 750)
+    setTimeout(() => {
+      expect(result).toMatchObject([0,0,1,1,2,2,-1,-1,0,0,1,1])
+      done()
+    }, 850)
   }, 8000)
 })
