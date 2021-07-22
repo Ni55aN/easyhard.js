@@ -77,8 +77,8 @@ describe('Transformer', () => {
     expect(result2.b).toBeInstanceOf(Observable)
     expect(result2.c).toBeInstanceOf(Observable)
 
-    expect(await firstValueFrom(result2.b)).toBeInstanceOf(Buffer)
-    expect(await firstValueFrom(result2.c)).toEqual('cookie')
+    expect(await firstValueFrom(result2.b as unknown as Observable<unknown>)).toBeInstanceOf(Buffer)
+    expect(await firstValueFrom(result2.c as unknown as Observable<unknown>)).toEqual('cookie')
   })
 
   it ('diffs', () => {
