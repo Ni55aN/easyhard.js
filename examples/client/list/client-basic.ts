@@ -29,6 +29,7 @@ function App() {
     h('div', {}, count1),
     h('div', {}, count2),
     h('div', {}, count3),
+    client.call('emptyResponse', { value: 123 }),
     h('div', { style: 'color: red' },
       error.pipe(
         filter((e): e is Error => Boolean(e)),

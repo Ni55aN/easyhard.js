@@ -11,7 +11,7 @@ export default easyhardServer<Actions>({
     map(count => ({ count }))
   ),
   getArray: defer(() => {
-    const array = $$([1,2,3])
+    const array = $$([1, 2, 3])
 
     setTimeout(() => array.insert(4), 3000)
     setTimeout(() => array.remove(2), 4000)
@@ -39,16 +39,19 @@ export default easyhardServer<Actions>({
     )
   }),
   sendCookie: mergeMap((params) => {
-    return params.value.pipe( map(value => ({ value, ok: true,  })))
+    return params.value.pipe(map(value => ({ value, ok: true, })))
   }),
   setCookie: of(null).pipe(map(() => ({
-      newCookie: new SetCookie('test-new', new Date().toISOString(), { path: '/test' }),
-      newCookie2: new SetCookie('test-new2', new Date().toISOString(), { path: '/', httpOnly: true })
+    newCookie: new SetCookie('test-new', new Date().toISOString(), { path: '/test' }),
+    newCookie2: new SetCookie('test-new2', new Date().toISOString(), { path: '/', httpOnly: true })
   }))),
   getDate: mergeMap((params) => {
     return interval(500).pipe(map(() => ({ date: params.date, date2: new Date() })))
   }),
   passObservable: mergeMap((params) => {
     return params.value.pipe(map(value => ({ value })))
+  }),
+  emptyResponse: map((params) => {
+    console.log(params)
   })
 })

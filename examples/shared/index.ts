@@ -34,5 +34,8 @@ export interface Actions {
   passObservable: {
     request: { value: Observable<number> }
     response: { value: number }
+  },
+  emptyResponse: {
+    request: { value: number }
   }
 }
