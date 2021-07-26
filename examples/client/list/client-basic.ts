@@ -1,6 +1,7 @@
-import { h, $, onMount, $for } from 'easyhard'
+import { $, $for, h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
-import { catchError, filter, map, switchMap, take } from 'rxjs/operators'
+import { of } from 'rxjs'
+import { catchError, filter, map, take } from 'rxjs/operators'
 import { Actions } from '../../shared'
 
 const client = easyhardClient<Actions>()
@@ -13,7 +14,8 @@ function App() {
   const array = client.call('getArray')
   const num = $(111)
   const count2 = num.pipe(
-    switchMap(num => client.call('getDataWithParams', { num })),
+    map(num => ({ num })),
+    client.pipe('getDataWithParams'),
     map(data => String(data.count))
   )
   const error = $<Error | null>(null)
@@ -29,7 +31,8 @@ function App() {
     h('div', {}, count1),
     h('div', {}, count2),
     h('div', {}, count3),
-    client.call('emptyResponse', { value: 123 }),
+    of({ value: 123 }).pipe(client.pipe('emptyResponse')),
+    of({ value: 456 }).pipe(client.pipe('emptyResponse2')),
     h('div', { style: 'color: red' },
       error.pipe(
         filter((e): e is Error => Boolean(e)),

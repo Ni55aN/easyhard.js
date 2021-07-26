@@ -53,5 +53,9 @@ export default easyhardServer<Actions>({
   }),
   emptyResponse: map((params) => {
     console.log(params)
+  }),
+  emptyResponse2: mergeMap(async (params) => {
+    await Promise.resolve()
+    console.log(params)
   })
 })
