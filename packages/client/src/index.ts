@@ -1,6 +1,6 @@
 import { bindObservable, Cookie, ExtractPayload, ObjectMapping, registerObservable, ResponseMapper } from 'easyhard-bridge'
-import { defer, NEVER, Observable, of, throwError } from 'rxjs'
-import { catchError, map, tap } from 'rxjs/operators'
+import { defer, NEVER, Observable, of, OperatorFunction, throwError } from 'rxjs'
+import { catchError, map, mergeMap, tap } from 'rxjs/operators'
 import { createConnection } from './connection'
 import { useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
@@ -20,17 +20,16 @@ export function easyhardClient<T>({
     reconnectDelay
   })
 
-  function call<K extends keyof T>(...args: ExtractPayload<T[K], 'request'> extends undefined ? [K] : [K, ExtractPayload<T[K], 'request'>]) {
-    type Params = ExtractPayload<T[K], 'request'>
-    type Return = ExtractPayload<T[K], 'response'>
-    const key = args[0]
-    const params = args[1] || {} as Params
+  function apply<K extends keyof T>(key: K, params?: ExtractPayload<T[K], 'request'>) {
+    type Type = T[K] extends Observable<infer U> ? U : (T[K] extends OperatorFunction<unknown, infer B> ? B : never)
+    type ObType = T[K] extends Observable<infer U> ? Observable<U> : never
+    type JSONResponse = ObjectMapping<Type, ResponseMapper, 0, 1>
 
-    const transformError = catchError<Return, Observable<Return>>(err => throwError(responseTransformer.prop(err, null)))
-    const transformValue = map<Return, ObjectMapping<Return, ResponseMapper, 1, 2>>(value => responseTransformer.apply(value, null))
+    const transformError = catchError<JSONResponse, Observable<Type>>(err => throwError(responseTransformer.prop(err, null)))
+    const transformValue = map<JSONResponse, Type>(value => responseTransformer.apply(value, null) as Type)
 
-    const jsonParams = requestTransformer.apply(params, null)
-    const paramsDiffs = requestTransformer.diffs(params as any, jsonParams)
+    const jsonParams = (params ? requestTransformer.apply(params, null) : {}) as JSONPayload<Type>
+    const paramsDiffs = requestTransformer.diffs(params as any, jsonParams || {})
     const mountParams = () => paramsDiffs.map(item => {
       if (item.from instanceof Observable && '__ob' in item.to) {
         const observable = item.from
@@ -58,11 +57,11 @@ export function easyhardClient<T>({
       }
     })
 
-    return bindObservable<JSONPayload<T[K]>, Return>(key, jsonParams, connection).pipe(
-      transformError,
+    return bindObservable<JSONPayload<Type>, Type>(key, jsonParams, connection).pipe(
+      transformError as any,
       transformValue,
       tap(value => {
-        Object.values(value).forEach(item => {
+        Object.values(value as Record<string, unknown>).forEach(item => {
           if (item instanceof Cookie) http.send(item.key, { 'easyhard-set-cookie-key': item.key })
         })
       }),
@@ -70,12 +69,21 @@ export function easyhardClient<T>({
         const paramObservables = mountParams()
         return () => paramObservables.forEach(destroy => destroy && destroy())
       })
-    )
+    ) as unknown as ObType
+  }
+
+  function call<K extends keyof T>(key: K): T[K] extends Observable<infer U> ? Observable<U> : never {
+    return apply(key)
+  }
+
+  function pipe<K extends keyof T>(key: K): T[K] extends OperatorFunction<infer A, infer B> ? OperatorFunction<A, B> : never {
+    return mergeMap(params => apply(key, params as any)) as any
   }
 
   return {
     connect: connection.connect,
     call,
+    pipe,
     state: defer(() => of(connection.readyState))
   }
 }

@@ -1,7 +1,11 @@
-import { Observable } from 'rxjs'
+import { Observable, OperatorFunction } from 'rxjs'
 import { RequestId } from './binder'
 
-export type ExtractPayload<T, K extends 'request' | 'response'> = T extends { [key in K]: unknown } ? T[K] : (T extends { [key in K]?: unknown } ? T[K] : undefined | void)
+export type ExtractPayload<T, K extends 'request' | 'response'> =
+  K extends 'response'
+    ? (T extends Observable<infer U> ? U : (T extends OperatorFunction<any, infer U> ? U : never))
+    : (T extends OperatorFunction<infer U, any> ? U : never)
+
 export type Payload = Record<string, unknown>
 
 export type Request<T, K extends keyof T> = { key: K, id: RequestId, params: ExtractPayload<T[K], 'request'>, subscribe: true }

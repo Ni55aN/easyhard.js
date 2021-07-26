@@ -1,5 +1,5 @@
 import * as ws from 'ws'
-import { HandlerPayload, Handlers, PipeHandler, ResponsePayload } from './types'
+import { HandlerPayload, Handlers, ObservableHandler, PipeHandler, ResponsePayload } from './types'
 import { HttpTunnel, useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
 import { ExtractPayload, registerObservable } from 'easyhard-bridge'
@@ -23,9 +23,11 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
       const postMap = pipe(transformError, transformValue)
 
       if (stream instanceof Observable) {
-        registerObservable(key, stream.pipe(postMap), ws)
+        const s = stream as ObservableHandler<T[keyof T]>
+        registerObservable(key, s.pipe(postMap as any), ws)
       } else {
-        registerObservable(key, pipe(preMap, stream as PipeHandler<T[keyof T]>, postMap), ws)
+        const s =  stream as PipeHandler<T[keyof T]>
+        registerObservable(key, pipe(preMap, s as any, postMap), ws)
       }
     })
   }

@@ -1,8 +1,8 @@
 import {ExtractPayload, ObjectMapping, RequestMapper, ResponseMapper } from 'easyhard-bridge'
 import { Observable, OperatorFunction } from 'rxjs'
 
-export type ObservableHandler<T> = Observable<ExtractPayload<T, 'response'>>
-export type PipeHandler<T> = OperatorFunction<HandlerPayload<T>, ExtractPayload<T, 'response'>>
+export type ObservableHandler<T> = T extends Observable<infer U> ? Observable<U> : never
+export type PipeHandler<T> = T extends OperatorFunction<infer A, infer B> ? OperatorFunction<ObjectMapping<A, RequestMapper, 0, 2>, B> : never
 export type Handler<T> = ObservableHandler<T> | PipeHandler<T>
 
 export type Handlers<T> = {
