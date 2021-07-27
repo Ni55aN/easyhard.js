@@ -1,4 +1,4 @@
-import { Observable, of, OperatorFunction, Subscriber, Subscription } from 'rxjs'
+import { Observable, OperatorFunction, Subscriber, Subscription } from 'rxjs'
 import { getUID } from 'easyhard-common'
 
 export type RequestId = string
@@ -8,7 +8,7 @@ type CompleteResponse = { id: RequestId, complete: true }
 type ErrorResponse<T> = { id: RequestId, error: T }
 
 type Key = string | number | symbol
-type ClientToServer<K, P> = { key: K, id: RequestId, params: P, subscribe: true } | UnsubscribeRequest
+type ClientToServer<K> = { key: K, id: RequestId, source: RequestId | null, subscribe: true } | UnsubscribeRequest
 type ServerToClient<T> = { id: RequestId, value: T } | ErrorResponse<Error> | CompleteResponse
 
 export enum WebSocketState {
@@ -30,10 +30,10 @@ type BindProps = {
   unsubscribe?: (id: string, subscriber: Subscriber<unknown>) => void
 }
 
-export function bindObservable<P, T>(key: Key, params: P, client: WsConnection, props?: BindProps): Observable<T> {
+export function bindObservable<T>(key: Key, source: RequestId | null, client: WsConnection, props?: BindProps): Observable<T> {
   return new Observable<T>(subscriber => {
     const nextData: unknown[] = []
-    const send = <T extends ClientToServer<Key, P>>(data: T) => {
+    const send = <T extends ClientToServer<Key>>(data: T) => {
       if (client.readyState === WebSocketState.OPEN) {
         client.send(JSON.stringify(data))
       } else {
@@ -58,7 +58,7 @@ export function bindObservable<P, T>(key: Key, params: P, client: WsConnection, 
     client.addEventListener('open', onOpen)
     client.addEventListener('close', onClose)
     client.addEventListener('error', onError)
-    send({ key, id, params, subscribe: true })
+    send({ key, id, source, subscribe: true })
     props?.subscribe && props?.subscribe(id, subscriber)
 
     const handler = (event: { data: string }) => {
@@ -109,10 +109,16 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
     Array.from(subscriptions.keys()).forEach(unsubscribe)
   }
   const onMessage = (event: { data: any }) => {
-    const data: ClientToServer<Key, P> = JSON.parse(event.data)
+    const data: ClientToServer<Key> = JSON.parse(event.data)
 
     if ('subscribe' in data && data.key === key) {
-      const subscription = (stream instanceof Observable ? stream : of(data.params).pipe(stream)).subscribe({
+      const observable = stream instanceof Observable
+        ? stream
+        : (data.source ? bindObservable<P>(data.source, null, connection).pipe(stream) : null)
+
+      if (!observable) throw new Error('stream should be Observable or operator')
+
+      const subscription = observable.subscribe({
         next(value) {
           send({ id: data.id, value })
         },
