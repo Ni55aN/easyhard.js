@@ -1,8 +1,8 @@
-import { interval } from 'rxjs'
+import { defer, interval } from 'rxjs'
 import { Server, default as WebSocket, AddressInfo } from 'ws'
 import { registerObservable, bindObservable } from '../packages/bridge/src/binder'
 import { createConnection } from '../packages/client/src/connection'
-import { retry, retryWhen, switchMap, take, tap } from 'rxjs/operators'
+import { retry, retryWhen, take, tap } from 'rxjs/operators'
 
 describe('client', () => {
   let server: Server
@@ -24,7 +24,7 @@ describe('client', () => {
     const result: (Error | number)[] = []
     const errors: Error[] = []
     server.addListener('connection', connection => {
-      registerObservable<void, number>('getFromServer', switchMap(() => interval(100).pipe(
+      registerObservable<void, number>('getFromServer', defer(() => interval(100).pipe(
         take(5),
         tap(value => {
           if (value === 2) {
@@ -33,7 +33,7 @@ describe('client', () => {
         })
       )), connection)
     })
-    const sub = bindObservable<Record<string, unknown>, number>('getFromServer', {}, client).pipe(
+    const sub = bindObservable<number>('getFromServer', null, client).pipe(
       retryWhen(error => error.pipe(
         tap(error => {
           errors.push(error)
@@ -61,17 +61,17 @@ describe('client', () => {
   it ('reconnects on multiple subscriptions', (done) => {
     const result: number[] = []
     server.addListener('connection', connection => {
-      registerObservable<void, number>('getFromServer', switchMap(() => interval(100).pipe(
+      registerObservable<void, number>('getFromServer', defer(() => interval(100).pipe(
         tap(value => value === 3 && connection.terminate())
       )), connection)
     })
-    const sub1 = bindObservable<Record<string, unknown>, number>('getFromServer', {}, client).pipe(
+    const sub1 = bindObservable<number>('getFromServer', null, client).pipe(
       tap({
         error: () => result.push(-1)
       }),
       retry()
     ).subscribe(value => result.push(value))
-    const sub2 = bindObservable<Record<string, unknown>, number>('getFromServer', {}, client).pipe(
+    const sub2 = bindObservable<number>('getFromServer', null, client).pipe(
       tap({
         error: () => result.push(-1)
       }),

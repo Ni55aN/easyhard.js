@@ -1,19 +1,16 @@
-import { firstValueFrom, Observable, of } from 'rxjs'
+import { firstValueFrom, Observable, of, OperatorFunction } from 'rxjs'
 import { ObjectMapping } from '../src/utility-types'
 import { Cookie, RequestMapper, ExtractPayload } from '../src'
 import { Transformer } from '../src/transformer'
 
 type Actions = {
-  test: {
-    request: {
+  test: OperatorFunction<{
       a: number,
       b: File,
       c: Cookie
-    },
-    response: {
+    }, {
       c: number
-    }
-  }
+    }>
 }
 
 type RequestPayload = ExtractPayload<Actions['test'], 'request'>

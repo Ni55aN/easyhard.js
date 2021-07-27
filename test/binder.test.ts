@@ -1,11 +1,11 @@
-import { interval, NEVER, Subscriber } from 'rxjs'
+import { defer, interval, NEVER, Subscriber } from 'rxjs'
 import { IncomingMessage, ServerResponse } from 'http'
 import { Server, default as WebSocket, AddressInfo } from 'ws'
 import { Readable } from 'stream'
 import { registerObservable, bindObservable } from '../packages/bridge/src/binder'
 import express from 'express'
 import fetch from 'node-fetch'
-import { switchMap, take, tap } from 'rxjs/operators'
+import { take, tap } from 'rxjs/operators'
 
 async function sendFile(id: string | number | symbol, port: number, stream: Readable) {
   const res = await fetch(`http://localhost:${port}/api`, {
@@ -66,10 +66,10 @@ describe('binder', () => {
 
   it ('client subscribes to server', (done) => {
     server.addListener('connection', connection => {
-      registerObservable<void, number>('getFromServer', switchMap(() => interval(100).pipe(take(5))), connection)
+      registerObservable<void, number>('getFromServer', defer(() => interval(100).pipe(take(5))), connection)
     })
     const results: number[] = []
-    bindObservable<Record<string, unknown>, number>('getFromServer', {}, client).subscribe({
+    bindObservable<number>('getFromServer', null, client).subscribe({
       next: value => results.push(value),
       complete: () => results.push(999)
     })
@@ -85,7 +85,7 @@ describe('binder', () => {
   it ('server subscribes to client', (done) => {
     const results: number[] = []
     server.addListener('connection', connection => {
-      bindObservable<Record<string, unknown>, number>('getFromClient', {}, connection).subscribe({
+      bindObservable<number>('getFromClient', null, connection).subscribe({
         next: value => results.push(value),
         complete: () => results.push(999)
       })
@@ -104,12 +104,12 @@ describe('binder', () => {
   it ('client unsubscribes before servers observable completes', (done) => {
     const serverEmits: number[] = []
     server.addListener('connection', connection => {
-      registerObservable<void, number>('getFromServer', switchMap(() => interval(100).pipe(
+      registerObservable<void, number>('getFromServer', defer(() => interval(100).pipe(
         take(5),
         tap(value => serverEmits.push(value))
       )), connection)
     })
-    bindObservable<Record<string, unknown>, number>('getFromServer', {}, client).pipe(take(3)).subscribe()
+    bindObservable<number>('getFromServer', null, client).pipe(take(3)).subscribe()
     setTimeout(() => {
       expect(serverEmits).toEqual([0,1,2])
       done()
@@ -120,7 +120,7 @@ describe('binder', () => {
     const result: Buffer[] = []
 
     server.addListener('connection', connection => {
-      bindObservable<Record<string, unknown>, Buffer>(FILE_ID, {}, connection, {
+      bindObservable<Buffer>(FILE_ID, null, connection, {
         subscribe(id, subscriber) { listeners.set(id, subscriber) },
         unsubscribe(id) { listeners.delete(id) }
       }).subscribe({
