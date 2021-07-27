@@ -7,12 +7,12 @@ export const requestTransformer = new Transformer<RequestMapper, 1, 2, { ws: ws,
   __ob: (args, { ws }) => {
     if (typeof args !== 'object' || !('__ob' in args)) return false
 
-    return bindObservable(args.__ob, {}, ws)
+    return bindObservable(args.__ob, null, ws)
   },
   __file: (args, { ws, bodyListeners }) => {
     if (typeof args !== 'object' || !('__file' in args)) return false
 
-    return bindObservable(args.__file, {}, ws, {
+    return bindObservable(args.__file, null, ws, {
       subscribe(id, subscriber) { bodyListeners.set(id, subscriber) },
       unsubscribe(id) { bodyListeners.delete(id) }
     })
@@ -20,7 +20,7 @@ export const requestTransformer = new Transformer<RequestMapper, 1, 2, { ws: ws,
   __cookie: (args, { ws, reqListeners }) => {
     if (typeof args !== 'object' || !('__cookie' in args)) return false
 
-    return bindObservable<Record<string, unknown>, HttpRequest>(args.__cookie, {}, ws, {
+    return bindObservable<HttpRequest>(args.__cookie, null, ws, {
       subscribe(id, subscriber) { reqListeners.set(id, subscriber) },
       unsubscribe(id) { reqListeners.delete(id) }
     }).pipe(map(args => {
