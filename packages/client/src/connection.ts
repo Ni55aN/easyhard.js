@@ -56,6 +56,7 @@ export function createConnection<Args>(props: Props): Return<Args> {
   function connect<Socket extends WebSocketConnection | WebSocket>(ws: () => Socket, args: Args): Socket {
     const socket = ws()
 
+    connection && connection.socket.close()
     connection = { socket, args }
     connection.socket.onopen = () => {
       listeners.open.slice().forEach(h => h())
