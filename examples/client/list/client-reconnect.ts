@@ -1,6 +1,6 @@
 import { h,onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
-import { defer, interval } from 'rxjs'
+import { defer, interval, of } from 'rxjs'
 import { retry } from 'rxjs/operators'
 import { map } from 'rxjs/operators'
 import { Actions } from '../../shared'
@@ -24,7 +24,8 @@ function App() {
     }),
     retry()
   )
-  const withOb1 = client.call('passObservable', { value: interval(1000).pipe(map(v => v * 2)) }).pipe(
+  const withOb1 = of({ value: interval(1000).pipe(map(v => v * 2)) }).pipe(
+    client.pipe('passObservable'),
     map(value => value.value),
     source => defer(() => {
       console.log('subscribed 3')
@@ -32,7 +33,8 @@ function App() {
     }),
     retry()
   )
-  const withOb2 = client.call('passObservable', { value: interval(1000).pipe(map(v => v * 2)) }).pipe(
+  const withOb2 = of({ value: interval(1000).pipe(map(v => v * 2)) }).pipe(
+    client.pipe('passObservable'),
     map(value => value.value),
     source => defer(() => {
       console.log('subscribed 4')
