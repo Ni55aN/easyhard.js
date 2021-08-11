@@ -32,7 +32,7 @@ type BindProps = {
 
 export function bindObservable<T>(key: Key, source: RequestId | null, client: WsConnection, props?: BindProps): Observable<T> {
   return new Observable<T>(subscriber => {
-    const nextData: unknown[] = []
+    const nextData: ClientToServer<Key>[] = []
     const send = <T extends ClientToServer<Key>>(data: T) => {
       if (client.readyState === WebSocketState.OPEN) {
         client.send(JSON.stringify(data))
@@ -50,7 +50,10 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Ws
       }
     }
     const onOpen = () => {
-      while(nextData.length > 0) client.send(JSON.stringify(nextData.shift()))
+      while(nextData.length > 0) {
+        const data = nextData.shift()
+        data && send(data)
+      }
     }
     const onError = (error: Error) => {
       subscriber.error(error)
