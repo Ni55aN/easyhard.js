@@ -1,7 +1,8 @@
 import { h,onMount } from 'easyhard'
+import { WebSocketState } from 'easyhard-bridge'
 import { easyhardClient } from 'easyhard-client'
 import { defer, interval, of } from 'rxjs'
-import { retry } from 'rxjs/operators'
+import { retry, scan } from 'rxjs/operators'
 import { map } from 'rxjs/operators'
 import { Actions } from '../../shared'
 
@@ -48,6 +49,10 @@ function App() {
     h('div', {}, count2),
     h('div', {}, withOb1),
     h('div', {}, withOb2),
+    'State: ', client.state.pipe(
+      scan((acc, item) => ([...acc, item]), [] as WebSocketState[]),
+      map(items => items.map(item => WebSocketState[item]).filter(item => item).map(item => item.toLowerCase()).join('; '))
+    )
   )
 
   onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/v2`), { http: `http://${location.host}/api/basic/v2` }))

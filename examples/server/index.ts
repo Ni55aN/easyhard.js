@@ -1,6 +1,7 @@
 
 import express from 'express'
 import expressWs from 'express-ws'
+import * as http from 'http'
 import basic from './basic'
 
 const app = express()
@@ -25,6 +26,26 @@ router.ws('/api/basic/v2', ws => {
   setTimeout(() => ws.terminate(), 5000)
 })
 
-app.listen(3000, () => {
-  console.log('Listen port 3000')
+router.post('/api/basic/v3', basic.httpTunnel)
+router.ws('/api/basic/v3', ws => {
+  basic.attachClient(ws)
+  setTimeout(() => {
+    close()
+    ws.terminate()
+  }, 5000)
+  setTimeout(listen, 7000)
 })
+
+let listener: http.Server
+function close() {
+  console.log('close')
+  if (listener) listener.close()
+}
+function listen() {
+  console.log('Listening..')
+  listener = app.listen(3000, () => {
+    console.log('Listen port 3000')
+  })
+}
+
+listen()
