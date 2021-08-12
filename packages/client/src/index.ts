@@ -108,6 +108,7 @@ export function easyhardClient<T>({
 
   return {
     connect: connection.connect,
+    close: connection.close,
     call,
     pipe,
     state: connection.state
