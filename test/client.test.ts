@@ -1,6 +1,6 @@
-import { defer, interval } from 'rxjs'
+import { defer, firstValueFrom, interval } from 'rxjs'
 import { Server, default as WebSocket, AddressInfo } from 'ws'
-import { registerObservable, bindObservable } from '../packages/bridge/src/binder'
+import { registerObservable, bindObservable, WebSocketState } from '../packages/bridge/src/binder'
 import { createConnection } from '../packages/client/src/connection'
 import { retry, retryWhen, take, tap } from 'rxjs/operators'
 
@@ -18,6 +18,21 @@ describe('client', () => {
   afterEach(() => {
     client.readyState === WebSocket.OPEN && client.close()
     server.close()
+  })
+
+  it ('state', (done) => {
+    server.addListener('connection', connection => {
+      setTimeout(() => connection.terminate(), 1100)
+    })
+    setTimeout(async () => {
+      const state = await firstValueFrom(client.state)
+      expect(state).toBe(WebSocketState.OPEN)
+    }, 1000)
+    setTimeout(async () => {
+      const state = await firstValueFrom(client.state)
+      expect(state).toBe(WebSocketState.CLOSED)
+      done()
+    }, 1150)
   })
 
   it ('reconnects on terminate', (done) => {
