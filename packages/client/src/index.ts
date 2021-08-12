@@ -1,6 +1,6 @@
 import { bindObservable, Cookie, ObjectMapping, registerObservable, ResponseMapper } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
-import { defer, NEVER, Observable, of, OperatorFunction, throwError } from 'rxjs'
+import { NEVER, Observable, OperatorFunction, throwError } from 'rxjs'
 import { catchError, map, tap } from 'rxjs/operators'
 import { createConnection } from './connection'
 import { useHttp } from './http'
@@ -110,6 +110,6 @@ export function easyhardClient<T>({
     connect: connection.connect,
     call,
     pipe,
-    state: defer(() => of(connection.readyState))
+    state: connection.state
   }
 }

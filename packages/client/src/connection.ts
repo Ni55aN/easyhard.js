@@ -1,4 +1,6 @@
 import { WebSocketState } from 'easyhard-bridge'
+import { $ } from 'easyhard-common'
+import { Observable } from 'rxjs'
 
 type Props = {
   reconnectDelay?: number
@@ -6,6 +8,7 @@ type Props = {
 
 type Return<Args> = {
   connect: <T extends WebSocketConnection>(ws: () => T, args: Args) => T
+  state: Observable<WebSocketState | null>
   readyState: number
   args: Args | null
   send: (data: any) => boolean | void
@@ -46,6 +49,7 @@ export type WebSocketConnection = {
 
 export function createConnection<Args>(props: Props): Return<Args> {
   let connection: null | { socket: WebSocketConnection | WebSocket, args: Args } = null
+  const state = $<WebSocketState | null>(null)
   const listeners: {[key: string]: any[]} = {
     open: [],
     close: [],
@@ -56,13 +60,16 @@ export function createConnection<Args>(props: Props): Return<Args> {
   function connect<Socket extends WebSocketConnection | WebSocket>(ws: () => Socket, args: Args): Socket {
     const socket = ws()
 
+    state.next(WebSocketState.CONNECTING)
     connection && connection.socket.close()
     connection = { socket, args }
     connection.socket.onopen = () => {
+      state.next(WebSocketState.OPEN)
       listeners.open.slice().forEach(h => h())
     }
 
     connection.socket.onclose = (event: CloseEvent) => {
+      state.next(WebSocketState.CLOSED)
       if (!event.wasClean) setTimeout(() => connection && connect(ws, connection.args), props.reconnectDelay)
       listeners.close.slice().forEach(h => h(event))
     }
@@ -80,6 +87,7 @@ export function createConnection<Args>(props: Props): Return<Args> {
 
   return {
     connect,
+    state: state.asObservable(),
     get readyState() {
       return connection?.socket.readyState || WebSocketState.CONNECTING
     },
@@ -97,6 +105,7 @@ export function createConnection<Args>(props: Props): Return<Args> {
       if (index >= 0) listeners[event].splice(index, 1)
     },
     close() {
+      state.next(WebSocketState.CLOSING)
       connection && connection.socket.close()
     }
   }
