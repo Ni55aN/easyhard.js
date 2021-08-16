@@ -33,7 +33,7 @@ export function easyhardClient<T>({
       transformError,
       transformValue,
       tap(value => {
-        Object.values(value as Record<string, unknown>).forEach(item => {
+        Object.values(value as Record<string, unknown> || {}).forEach(item => {
           if (item instanceof Cookie) http.send(item.key, { 'easyhard-set-cookie-key': item.key })
         })
       })
@@ -90,7 +90,7 @@ export function easyhardClient<T>({
         transformError,
         transformValue,
         tap(value => {
-          Object.values(value as Record<string, unknown>).forEach(item => {
+          Object.values(value as Record<string, unknown> || {}).forEach(item => {
             if (item instanceof Cookie) http.send(item.key, { 'easyhard-set-cookie-key': item.key })
           })
         }),
