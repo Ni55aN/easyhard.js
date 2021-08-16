@@ -66,9 +66,11 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Ws
 
     const handler = (event: { data: string }) => {
       const data: ServerToClient<T> = JSON.parse(event.data)
-      if ('value' in data && data.id === id) subscriber.next(data.value)
-      if ('error' in data && data.id === id) subscriber.error(data.error)
-      if ('complete' in data && data.id === id) subscriber.complete()
+
+      if (data.id !== id) return
+      else if ('error' in data) subscriber.error(data.error)
+      else if ('complete' in data) subscriber.complete()
+      else subscriber.next(data.value)
     }
     client.addEventListener('message', handler)
     return () => {
