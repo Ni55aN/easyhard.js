@@ -27,7 +27,7 @@ export function easyhardClient<T>({
     type JSONResponse = ObjectMapping<Type, ResponseMapper, 0, 1>
 
     const transformError = catchError<JSONResponse, Observable<JSONResponse>>(err => throwError(responseTransformer.prop(err, null)))
-    const transformValue = map<JSONResponse, Type>(value => responseTransformer.apply(value, null) as Type)
+    const transformValue = map<JSONResponse, Type>(value => value && responseTransformer.apply(value, null) as Type)
 
     return bindObservable<JSONResponse>(key, null, connection).pipe(
       transformError,
@@ -46,7 +46,7 @@ export function easyhardClient<T>({
     type JSONResponse = ObjectMapping<Output, ResponseMapper, 0, 1>
 
     const transformError = catchError<JSONResponse, Observable<JSONResponse>>(err => throwError(responseTransformer.prop(err, null)))
-    const transformValue = map<JSONResponse, Output>(value => responseTransformer.apply(value, null) as Output)
+    const transformValue = map<JSONResponse, Output>(value => value && responseTransformer.apply(value, null) as Output)
 
     return ((source: Observable<Input>) => {
       const sourceId = getUID()
