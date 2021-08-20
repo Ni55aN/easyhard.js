@@ -1,7 +1,7 @@
 import { bindObservable, Cookie, ObjectMapping, registerObservable, ResponseMapper } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
 import { NEVER, Observable, OperatorFunction, throwError } from 'rxjs'
-import { catchError, map, tap } from 'rxjs/operators'
+import { catchError, map, mergeMap } from 'rxjs/operators'
 import { createConnection } from './connection'
 import { useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
@@ -21,6 +21,13 @@ export function easyhardClient<T>({
     reconnectDelay
   })
 
+  async function setCookies<T>(value: T) {
+    const cookies = Object.values(value as Record<string, unknown> || {}).filter((item): item is Cookie => item instanceof Cookie)
+
+    await Promise.all(cookies.map(item => http.send(item.key, { 'easyhard-set-cookie-key': item.key })))
+    return value
+  }
+
   function call<K extends keyof T>(key: K): T[K] extends Observable<infer U> ? Observable<U> : never {
     type Type = T[K] extends Observable<infer U> ? U : (T[K] extends OperatorFunction<unknown, infer B> ? B : never)
     type ObType = T[K] extends Observable<infer U> ? Observable<U> : never
@@ -32,11 +39,7 @@ export function easyhardClient<T>({
     return bindObservable<JSONResponse>(key, null, connection).pipe(
       transformError,
       transformValue,
-      tap(value => {
-        Object.values(value as Record<string, unknown> || {}).forEach(item => {
-          if (item instanceof Cookie) http.send(item.key, { 'easyhard-set-cookie-key': item.key })
-        })
-      })
+      mergeMap(setCookies)
     ) as unknown as ObType
   }
 
@@ -89,11 +92,7 @@ export function easyhardClient<T>({
       return bindObservable<JSONResponse>(key, sourceId, connection).pipe(
         transformError,
         transformValue,
-        tap(value => {
-          Object.values(value as Record<string, unknown> || {}).forEach(item => {
-            if (item instanceof Cookie) http.send(item.key, { 'easyhard-set-cookie-key': item.key })
-          })
-        }),
+        mergeMap(setCookies),
         mount(() => {
           const destroy = registerObservable(sourceId, jsonSource, connection)
 
