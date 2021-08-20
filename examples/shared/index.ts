@@ -9,7 +9,7 @@ export interface Actions {
   getDataError: Observable<{ count: number }>
   uploadFile: OperatorFunction<{ name: string, file: File, size: number }, { progress: number }>
   sendCookie: OperatorFunction<{ value: Cookie }, { value: string | null, ok?: boolean }>
-  setCookie: Observable<{ newCookie: Cookie }>
+  setCookie: OperatorFunction<void, { newCookie: Cookie, newCookie2: Cookie }>
   getDate: OperatorFunction<{ date: Date }, { date: Date, date2: Date }>
   passObservable: OperatorFunction<{ value: Observable<number> }, { value: number }>
   emptyResponse: OperatorFunction<{ value: number }, void>,
