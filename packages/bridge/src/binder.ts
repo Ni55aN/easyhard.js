@@ -1,5 +1,6 @@
 import { Observable, OperatorFunction, Subscriber, Subscription } from 'rxjs'
 import { getUID } from 'easyhard-common'
+import { NOT_FOUND_STREAM_ERROR } from './constants'
 
 export type RequestId = string
 type UnsubscribeRequest = { id: RequestId, unsubscribe: true }
@@ -9,7 +10,7 @@ type ErrorResponse<T> = { id: RequestId, error: T }
 
 type Key = string | number | symbol
 type ClientToServer<K> = { key: K, id: RequestId, source: RequestId | null, subscribe: true } | UnsubscribeRequest
-type ServerToClient<T> = { id: RequestId, value: T } | ErrorResponse<Error> | CompleteResponse
+type ServerToClient<T> = { id: RequestId, value: T } | ErrorResponse<string> | CompleteResponse
 
 export enum WebSocketState {
   CONNECTING = 0,
@@ -121,7 +122,9 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
         ? stream
         : (data.source ? bindObservable<P>(data.source, null, connection).pipe(stream) : null)
 
-      if (!observable) throw new Error('stream should be Observable or operator')
+      if (!observable) {
+        return send({ id: data.id, error: NOT_FOUND_STREAM_ERROR })
+      }
 
       const subscription = observable.subscribe({
         next(value) {
