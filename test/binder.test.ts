@@ -5,7 +5,8 @@ import { Readable } from 'stream'
 import { registerObservable, bindObservable } from '../packages/bridge/src/binder'
 import express from 'express'
 import fetch from 'node-fetch'
-import { take, tap } from 'rxjs/operators'
+import { mapTo, take, tap } from 'rxjs/operators'
+import { NOT_FOUND_STREAM_ERROR } from '../packages/bridge/src/constants'
 
 async function sendFile(id: string | number | symbol, port: number, stream: Readable) {
   const res = await fetch(`http://localhost:${port}/api`, {
@@ -133,6 +134,23 @@ describe('binder', () => {
     })
     setTimeout(() => {
       expect(result).toEqual([Buffer.from('test1'), Buffer.from('test2'), Buffer.from('test3')])
+      done()
+    }, 1000)
+  })
+
+  it ('throws error if source not found for pipe', (done) => {
+    const result: string[] = []
+
+    server.addListener('connection', connection => {
+      bindObservable<Buffer>('throwsError', null, connection).subscribe({
+        error: value => result.push(value),
+        next: console.log
+      })
+
+      registerObservable('throwsError', mapTo('test'), client)
+    })
+    setTimeout(() => {
+      expect(result).toEqual([NOT_FOUND_STREAM_ERROR])
       done()
     }, 1000)
   })
