@@ -6,7 +6,7 @@ import { createConnection } from './connection'
 import { useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
 import { ConnectionArgs, JSONPayload } from './types'
-import { mount } from './utils'
+import { mapWithSubscriber, mount } from './utils'
 
 type Props = {
   reconnectDelay?: number
@@ -55,10 +55,11 @@ export function easyhardClient<T>({
       const sourceId = getUID()
       const paramsDestroy: ((() => void) | undefined)[] = []
       const jsonSource = source.pipe(
-        map(params => {
+        mapWithSubscriber((params, subscriber) => {
           const jsonParams = (params ? requestTransformer.apply(params, null) : {}) as JSONPayload<Input>
           const paramsDiffs = requestTransformer.diffs(params as any, jsonParams || {})
-          const mountParams = () => paramsDiffs.map(item => {
+
+          paramsDestroy.push(...paramsDiffs.map(item => {
             if (item.from instanceof Observable && '__ob' in item.to) {
               const observable = item.from
               const key = item.to.__ob
@@ -70,8 +71,14 @@ export function easyhardClient<T>({
               const key = item.to.__file
 
               return registerObservable(key, NEVER, connection, {
-                subscribe(id) { http.send(id, { 'easyhard-subscription-id': id }, file) },
-                unsubscribe(id) { http.abort(id) }
+                subscribe(id) {
+                  http
+                    .send(id, { 'easyhard-subscription-id': id }, file)
+                    .catch(e => subscriber.error(e.message || e))
+                },
+                unsubscribe(id) {
+                  http.abort(id)
+                }
               })
             }
             if (item.from instanceof Cookie && '__cookie' in item.to) {
@@ -79,12 +86,18 @@ export function easyhardClient<T>({
               const key = item.to.__cookie
 
               return registerObservable(key, NEVER, connection, {
-                subscribe(id) { http.send(id, { 'easyhard-subscription-id': id, 'easyhard-cookie-key': cookie.key }) },
-                unsubscribe(id) { http.abort(id) }
+                subscribe(id) {
+                  http
+                    .send(id, { 'easyhard-subscription-id': id, 'easyhard-cookie-key': cookie.key })
+                    .catch(e => subscriber.error(e.message || e))
+                },
+                unsubscribe(id) {
+                  http.abort(id)
+                }
               })
             }
-          })
-          paramsDestroy.push(...mountParams())
+          }))
+
           return jsonParams
         })
       )

@@ -1,4 +1,4 @@
-import { defer, Observable } from 'rxjs'
+import { defer, Observable, Subscriber } from 'rxjs'
 import { finalize } from 'rxjs/operators'
 
 export async function delay(ms: number): Promise<void> {
@@ -11,5 +11,15 @@ export function mount<T>(onMount: () => () => void) {
     return source.pipe(
       finalize(() => destroy())
     )
+  })
+}
+
+export function mapWithSubscriber<T, R>(project: (value: T, subscriber: Subscriber<R>) => R) {
+  return (source: Observable<T>): Observable<unknown> => new Observable<R>(observer => {
+    return source.subscribe({
+      error: error => observer.next(error),
+      complete: () => observer.complete(),
+      next: value => observer.next(project(value, observer))
+    })
   })
 }
