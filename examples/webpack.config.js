@@ -24,6 +24,7 @@ module.exports = {
   devServer: {
     contentBase: './dist/client',
     hot: true,
+    disableHostCheck: true,
     proxy: {
       '/api': {
          target: 'ws://localhost:3000',
