@@ -1,5 +1,6 @@
 {
     "scripts": {
+        "start": "concurrently --kill-others 'npm run start:client' 'npm run start:server'",
         "start:client": "webpack serve",
         "start:server": "nodemon server/index.ts",
         "build": "webpack && tsc --project tsconfig.server.json",
@@ -32,6 +33,7 @@
     },
     "devDependencies": {
         "babel-plugin-overload": "0.0.2",
+        "concurrently": "^6.2.1",
         "css-loader": "^5.2.6",
         "eslint-loader": "^4.0.2",
         "html-webpack-plugin": "4.5.0",
