@@ -57,7 +57,7 @@ module.exports = {
         test: /\.tsx?$/,
         loader: 'ts-loader',
         options:{
-          transpileOnly: true	// prevent bug with HMR
+          // transpileOnly: true	// WIP prevent bug with HMR
         },
         exclude: /node_modules/,
       },

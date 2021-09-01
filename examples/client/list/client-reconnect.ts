@@ -50,7 +50,7 @@ function App() {
     h('div', {}, withOb1),
     h('div', {}, withOb2),
     'State: ', client.state.pipe(
-      scan((acc, item) => ([...acc, item]), [] as WebSocketState[]),
+      scan((acc, item) => item === null ? acc : ([...acc, item]), [] as WebSocketState[]),
       map(items => items.map(item => WebSocketState[item]).filter(item => item).map(item => item.toLowerCase()).join('; '))
     )
   )
