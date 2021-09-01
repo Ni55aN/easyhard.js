@@ -1,11 +1,8 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
 import { Observable, Subject } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
-import { DomElement, Attrs, Child, PropAttrs, TagName, EventAttrs, EventHandler, EventName, ElementType } from './types'
+import { DomElement, Attrs, Child, PropAttrs, TagName, EventAttrs, EventHandler, EventName, ElementType, NestedChild } from './types'
 import { insertNode, createAnchor } from './utils'
 import { untilExist } from './operators/until-exist'
-
-type NestedChild = Child | NestedChild[];
 
 export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: NestedChild[]): ElementType<K> {
   const element = document.createElement(tag)
