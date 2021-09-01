@@ -7,6 +7,7 @@ export type Child = DomElement | SimpleType | Observable<SimpleType | DomElement
 
 export type TagName = keyof HTMLElementTagNameMap;
 export type EventName = keyof HTMLElementEventMap;
+export type ElementType<T extends TagName> = HTMLElementTagNameMap[T];
 
 export type EventHandler<K extends EventName> = OperatorFunction<HTMLElementEventMap[K], unknown> | Subject<HTMLElementEventMap[K]>
 export type EventAttrs = { [key in EventName]?: EventHandler<key> };
