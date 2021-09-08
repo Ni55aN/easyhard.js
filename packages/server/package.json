@@ -1,6 +1,6 @@
 {
   "name": "easyhard-server",
-  "version": "0.5.2-rc1",
+  "version": "0.6.0",
   "peerDependencies": {
     "easyhard-common": "^0.3.0",
     "ws": ">6.x",
