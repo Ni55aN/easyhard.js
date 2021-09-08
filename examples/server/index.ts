@@ -16,19 +16,19 @@ router.get('/api', (req, res) => {
 })
 
 router.post('/api/basic', basic.httpTunnel)
-router.ws('/api/basic', ws => {
-  basic.attachClient(ws)
+router.ws('/api/basic', (ws, req) => {
+  basic.attachClient(ws, req)
 })
 
 router.post('/api/basic/v2', basic.httpTunnel)
-router.ws('/api/basic/v2', ws => {
-  basic.attachClient(ws)
+router.ws('/api/basic/v2', (ws, req) => {
+  basic.attachClient(ws, req)
   setTimeout(() => ws.terminate(), 5000)
 })
 
 router.post('/api/basic/v3', basic.httpTunnel)
-router.ws('/api/basic/v3', ws => {
-  basic.attachClient(ws)
+router.ws('/api/basic/v3', (ws, req) => {
+  basic.attachClient(ws, req)
   setTimeout(() => {
     close()
     ws.terminate()
