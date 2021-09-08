@@ -57,5 +57,8 @@ export default easyhardServer<Actions>({
   emptyResponse2: mergeMap(async (params) => {
     await Promise.resolve()
     console.log(params)
+  }),
+  requestData: map(params => {
+    return { ip: params.$request.socket.remoteAddress || '' }
   })
 })

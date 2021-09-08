@@ -13,5 +13,6 @@ export interface Actions {
   getDate: OperatorFunction<{ date: Date }, { date: Date, date2: Date }>
   passObservable: OperatorFunction<{ value: Observable<number> }, { value: number }>
   emptyResponse: OperatorFunction<{ value: number }, void>,
-  emptyResponse2: OperatorFunction<{ value: number }, void>
+  emptyResponse2: OperatorFunction<{ value: number }, void>,
+  requestData: OperatorFunction<void, { ip: string }>,
 }
