@@ -4,6 +4,7 @@ import { Subject, Subscriber } from 'rxjs'
 import { parse, serialize, CookieSerializeOptions } from 'cookie'
 
 export type HttpTunnel = (req: IncomingMessage, res: ServerResponse) => void
+export type Request = IncomingMessage
 export type SubjectLike<T> = Pick<Subject<T>, 'next' | 'error' | 'complete'>
 export type HttpHeaders = Record<string, string | string[] | undefined>
 export type HttpCookies = Record<string, string | undefined>
