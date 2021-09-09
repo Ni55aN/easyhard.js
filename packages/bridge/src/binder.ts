@@ -1,6 +1,7 @@
 import { Observable, OperatorFunction, Subscriber, Subscription } from 'rxjs'
 import { getUID } from 'easyhard-common'
 import { NOT_FOUND_STREAM_ERROR } from './constants'
+import { sanitize } from './utils'
 
 export type RequestId = string
 type UnsubscribeRequest = { id: RequestId, unsubscribe: true }
@@ -36,7 +37,11 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Ws
     const nextData: ClientToServer<Key>[] = []
     const send = <T extends ClientToServer<Key>>(data: T) => {
       if (client.readyState === WebSocketState.OPEN) {
-        client.send(JSON.stringify(data))
+        try {
+          client.send(JSON.stringify(data))
+        } catch (error) {
+          subscriber.error(error)
+        }
       } else {
         nextData.push(data)
       }
@@ -95,7 +100,11 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
   const subscriptions = new Map<string, Subscription>()
   function send<D extends ServerToClient<T>>(data: D) {
     if (connection.readyState === WebSocketState.OPEN) {
-      connection.send(JSON.stringify(data))
+      try {
+        connection.send(JSON.stringify(data))
+      } catch (error) {
+        send({ id: data.id, error: sanitize(error) })
+      }
     }
   }
   function unsubscribe(id: string) {
