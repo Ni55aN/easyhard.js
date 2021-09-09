@@ -20,7 +20,7 @@ export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connec
       const transformParams = map<Request, HandlerPayload<T[keyof T]>>(v => v && requestTransformer.apply(v, { ws, reqListeners: http.reqListeners, bodyListeners: http.bodyListeners }))
       const transformValue = map<Return, ResponsePayload<T[keyof T]>>(v => v && responseTransformer.apply(v, { ws, cookieSetters: http.cookieSetters }))
       const preMap = pipe(transformParams, map(params => ({ ...params, $request: req })))
-      const postMap = pipe(transformError, transformValue)
+      const postMap = pipe(transformError, transformValue, map(params => ({ ...params, $request: undefined })))
 
       if (stream instanceof Observable) {
         const s = stream as ObservableHandler<T[keyof T]>
