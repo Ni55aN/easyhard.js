@@ -1,15 +1,12 @@
 import { $$ } from 'easyhard-common'
-import fs from 'fs'
-import { easyhardServer, SetCookie, writeFile } from 'easyhard-server'
+import { easyhardServer } from 'easyhard-server'
 import { defer, interval, throwError } from 'rxjs'
-import { concatMap, map, mergeMap, scan, take } from 'rxjs/operators'
-import { Actions } from '../shared'
+import { concatMap, map, mergeMap, take } from 'rxjs/operators'
+import { BasicActions } from '../shared'
+import { getInterval } from './shared'
 
-export default easyhardServer<Actions>({
-  getData: interval(1000).pipe(
-    take(10),
-    map(count => ({ count }))
-  ),
+export default easyhardServer<BasicActions>({
+  getData: getInterval(),
   getArray: defer(() => {
     const array = $$([1, 2, 3])
 
@@ -30,35 +27,11 @@ export default easyhardServer<Actions>({
     }),
     map(count => ({ count }))
   ),
-  uploadFile: mergeMap((params) => {
-    params.file.pipe(scan((acc, item: Buffer) => acc + item.length, 0)).subscribe(value => console.log(`Loaded ${value} bytes of second stream`))
-    return params.file.pipe(
-      writeFile(() => fs.createWriteStream(params.name)),
-      scan((acc, buffer) => acc + buffer.length, 0),
-      map(loaded => ({ progress: loaded / params.size }))
-    )
+  emptyResponse: map(() => {
+    // console.log(params)
   }),
-  sendCookie: mergeMap((params) => {
-    return params.value.pipe(map(value => ({ value, ok: true, })))
-  }),
-  setCookie: map(() => ({
-    newCookie: new SetCookie('test-new', new Date().toISOString(), { path: '/test' }),
-    newCookie2: new SetCookie('test-new2', new Date().toISOString(), { path: '/', httpOnly: true })
-  })),
-  getDate: mergeMap((params) => {
-    return interval(500).pipe(map(() => ({ date: params.date, date2: new Date() })))
-  }),
-  passObservable: mergeMap((params) => {
-    return params.value.pipe(map(value => ({ value })))
-  }),
-  emptyResponse: map((params) => {
-    console.log(params)
-  }),
-  emptyResponse2: mergeMap(async (params) => {
+  emptyResponse2: mergeMap(async () => {
     await Promise.resolve()
-    console.log(params)
-  }),
-  requestData: map(params => {
-    return { ip: params.$request.socket.remoteAddress || '' }
+    // console.log(params)
   })
 })

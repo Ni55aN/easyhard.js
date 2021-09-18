@@ -1,9 +1,9 @@
 import { $, h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
 import { map } from 'rxjs/operators'
-import { Actions } from '../../shared'
+import { RequestActions } from '../../shared'
 
-const client = easyhardClient<Actions>()
+const client = easyhardClient<RequestActions>()
 
 function App() {
 
@@ -11,7 +11,7 @@ function App() {
     h('div', {}, 'My IP:', $(undefined).pipe(client.pipe('requestData'), map(params => params.ip)))
   )
 
-  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/`), { http: `http://${location.host}/api/basic/` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/request/`), { http: `http://${location.host}/api/request/` }))
 
   return el
 }

@@ -2,9 +2,9 @@ import { $, $for, h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
 import { of } from 'rxjs'
 import { catchError, filter, map, take } from 'rxjs/operators'
-import { Actions } from '../../shared'
+import { BasicActions } from '../../shared'
 
-const client = easyhardClient<Actions>()
+const client = easyhardClient<BasicActions>()
 
 function App() {
   const count1 = client.call('getData').pipe(

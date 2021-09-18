@@ -4,9 +4,9 @@ import { easyhardClient } from 'easyhard-client'
 import { defer, interval, of } from 'rxjs'
 import { retry, scan } from 'rxjs/operators'
 import { map } from 'rxjs/operators'
-import { Actions } from '../../shared'
+import { ReconnectActions } from '../../shared'
 
-const client = easyhardClient<Actions>({ reconnectDelay: 100 })
+const client = easyhardClient<ReconnectActions>({ reconnectDelay: 100 })
 
 function App() {
   const count1 = client.call('getData').pipe(
@@ -55,7 +55,7 @@ function App() {
     )
   )
 
-  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/v2`), { http: `http://${location.host}/api/basic/v2` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/reconnect`), { http: `http://${location.host}/api/reconnect` }))
 
   return el
 }

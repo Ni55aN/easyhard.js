@@ -3,9 +3,9 @@ import { easyhardClient } from 'easyhard-client'
 import { defer, interval, of } from 'rxjs'
 import { retry } from 'rxjs/operators'
 import { map } from 'rxjs/operators'
-import { Actions } from '../../shared'
+import { UnstableActions } from '../../shared'
 
-const client = easyhardClient<Actions>({ reconnectDelay: 100 })
+const client = easyhardClient<UnstableActions>({ reconnectDelay: 100 })
 
 function App() {
   const a = of({ value: interval(100).pipe(map(v => v * 2)) }).pipe(
@@ -32,7 +32,7 @@ function App() {
     h('div', {}, b),
   )
 
-  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/v3`), { http: `http://${location.host}/api/basic/v3` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/unstable`), { http: `http://${location.host}/api/unstable` }))
 
   return el
 }

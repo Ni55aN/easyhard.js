@@ -2,10 +2,10 @@ import { h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
 import { Cookie } from 'easyhard-bridge'
 import { mapTo, tap } from 'rxjs/operators'
-import { Actions } from '../../shared'
+import { CookieActions } from '../../shared'
 import { of, pipe } from 'rxjs'
 
-const client = easyhardClient<Actions>()
+const client = easyhardClient<CookieActions>()
 
 function App() {
   const passCookie = pipe(mapTo({ value: new Cookie('test-cookie') }), client.pipe('sendCookie'), mapTo(null))
@@ -17,7 +17,7 @@ function App() {
     h('button', { click: acceptCookie }, 'accept cookie')
   )
 
-  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/`), { http: `http://${location.host}/api/basic/` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/cookie/`), { http: `http://${location.host}/api/cookie/` }))
 
   return el
 }

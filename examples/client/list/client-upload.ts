@@ -2,9 +2,9 @@ import { h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
 import { Subject, throwError } from 'rxjs'
 import { catchError, map, pluck, takeUntil, tap } from 'rxjs/operators'
-import { Actions } from '../../shared'
+import { UploadActions } from '../../shared'
 
-const client = easyhardClient<Actions>()
+const client = easyhardClient<UploadActions>()
 
 function App() {
   const file$ = new Subject<File>()
@@ -28,7 +28,7 @@ function App() {
     h('button', { click: abort$ }, 'Abort')
   )
 
-  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/`), { http: `http://${location.host}/api/basic/` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/upload/`), { http: `http://${location.host}/api/upload/` }))
 
   return el
 }

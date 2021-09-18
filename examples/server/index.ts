@@ -3,6 +3,13 @@ import express from 'express'
 import expressWs from 'express-ws'
 import * as http from 'http'
 import basic from './basic'
+import cookie from './cookie'
+import date from './date'
+import observable from './observable'
+import reconnect from './reconnect'
+import request from './request'
+import unstable from './unstable'
+import upload from './upload'
 
 const app = express()
 expressWs(app)
@@ -16,25 +23,38 @@ router.get('/api', (req, res) => {
 })
 
 router.post('/api/basic', basic.httpTunnel)
-router.ws('/api/basic', (ws, req) => {
-  basic.attachClient(ws, req)
-})
+router.ws('/api/basic', basic.attachClient)
 
-router.post('/api/basic/v2', basic.httpTunnel)
-router.ws('/api/basic/v2', (ws, req) => {
-  basic.attachClient(ws, req)
+router.post('/api/cookie', cookie.httpTunnel)
+router.ws('/api/cookie', cookie.attachClient)
+
+router.post('/api/date', date.httpTunnel)
+router.ws('/api/date', date.attachClient)
+
+router.post('/api/observable', observable.httpTunnel)
+router.ws('/api/observable', observable.attachClient)
+
+router.post('/api/reconnect', reconnect.httpTunnel)
+router.ws('/api/reconnect', (ws, req) => {
+  reconnect.attachClient(ws, req)
   setTimeout(() => ws.terminate(), 5000)
 })
 
-router.post('/api/basic/v3', basic.httpTunnel)
-router.ws('/api/basic/v3', (ws, req) => {
-  basic.attachClient(ws, req)
+router.post('/api/request', request.httpTunnel)
+router.ws('/api/request', request.attachClient)
+
+router.post('/api/unstable', unstable.httpTunnel)
+router.ws('/api/unstable', (ws, req) => {
+  unstable.attachClient(ws, req)
   setTimeout(() => {
     close()
     ws.terminate()
   }, 5000)
   setTimeout(listen, 7000)
 })
+
+router.post('/api/upload', upload.httpTunnel)
+router.ws('/api/upload', upload.attachClient)
 
 let listener: http.Server
 function close() {

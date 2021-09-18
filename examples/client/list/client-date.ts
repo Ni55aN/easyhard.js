@@ -1,9 +1,9 @@
 import { $, h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
 import { map } from 'rxjs/operators'
-import { Actions } from '../../shared'
+import { DateActions } from '../../shared'
 
-const client = easyhardClient<Actions>()
+const client = easyhardClient<DateActions>()
 
 function App() {
   const response = $({ date: new Date() })
@@ -13,7 +13,7 @@ function App() {
     h('div', {}, response.pipe(client.pipe('getDate'), map(data => data.date2.toLocaleTimeString())))
   )
 
-  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/basic/`), { http: `http://${location.host}/api/basic/` }))
+  onMount(el, () => client.connect(() => new WebSocket(`ws://${location.host}/api/date/`), { http: `http://${location.host}/api/date/` }))
 
   return el
 }
