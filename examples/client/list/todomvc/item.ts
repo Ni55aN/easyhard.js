@@ -9,7 +9,7 @@ export function TodoItem({ todo }: { todo: Todo }): HTMLElement {
   const editing = $(false)
 
   function onSave(e: Event) {
-    const value = (e.target as any)?.value.trim()
+    const value = (e.target as HTMLInputElement)?.value.trim()
 
     if (value) { setLabel(todo.id, value) }
     editing.next(false)

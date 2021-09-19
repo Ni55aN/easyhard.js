@@ -1,6 +1,6 @@
 import { Observable, MonoTypeOperatorFunction } from 'rxjs'
 
-export function takeUntilChanged<T>(notifier: Observable<any>, offset = 0): MonoTypeOperatorFunction<T> {
+export function takeUntilChanged<T>(notifier: Observable<unknown>, offset = 0): MonoTypeOperatorFunction<T> {
   return (source: Observable<T>) => new Observable(observer => {
     const sub1 = notifier.subscribe({
       next() { if (--offset < 0) observer.complete() }

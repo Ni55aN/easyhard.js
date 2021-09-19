@@ -3,7 +3,7 @@ import { Observable, interval, Subject } from 'rxjs'
 import { map, tap, startWith, scan } from 'rxjs/operators'
 
 function Child(text: Observable<string>) {
-  const mountInfo = new Observable<any>(() =>{
+  const mountInfo = new Observable<void>(() =>{
     console.info('onMount (legacy)')
     return () => console.info('onDestroy (legacy)')
   })

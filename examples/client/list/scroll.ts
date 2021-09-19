@@ -78,7 +78,7 @@ function ListView<T>(source: $$<T>, props: { height: $<number> }, render: Operat
 
 function App() {
   const arr = $$(new Array(10000).fill(0).map((_, i) => i))
-  const renderItem = map<number, any>(item => {
+  const renderItem = map<number, HTMLElement>(item => {
     for(let i = 0; i < 10000; i += Math.random()) i += Math.random()
     return h('div', {}, item)
   })

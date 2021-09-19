@@ -44,7 +44,7 @@ function TodoList({ todos, filter: todosFilter }: { todos: Observable<$$Return<T
     mapTo(null)
   )
 
-  const clearCompleted$ = new Subject<any>()
+  const clearCompleted$ = new Subject<MouseEvent>()
   const onClearCompleted$ = doneTodos.pipe(
     forEachCollection(item => {
       return clearCompleted$.pipe(mapTo(item))
@@ -75,7 +75,7 @@ function TodoList({ todos, filter: todosFilter }: { todos: Observable<$$Return<T
           placeholder:'What needs to be done?',
           keypress: tap(onAddTodo),
           value: input,
-          input: tap(e => input.next((e.target as any).value || ''))
+          input: tap(e => input.next((e.target as HTMLInputElement).value || ''))
         })
       ),
       $if(hasTodos, map(() =>

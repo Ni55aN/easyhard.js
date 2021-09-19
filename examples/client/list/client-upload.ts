@@ -8,7 +8,7 @@ const client = easyhardClient<UploadActions>()
 
 function App() {
   const file$ = new Subject<File>()
-  const abort$ = new Subject<any>()
+  const abort$ = new Subject<MouseEvent>()
   const upload$ = file$.pipe(
     map(file => ({ name: file.name, file, size: file.size })),
     client.pipe('uploadFile'),
