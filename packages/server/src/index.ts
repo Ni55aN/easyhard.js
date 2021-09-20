@@ -1,16 +1,15 @@
-import * as ws from 'ws'
 import { HandlerPayload, Handlers, ObservableHandler, PipeHandler, ResponsePayload } from './types'
 import { HttpTunnel, Request, useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
-import { ExtractPayload, registerObservable } from 'easyhard-bridge'
+import { ExtractPayload, registerObservable, WsConnection } from 'easyhard-bridge'
 import { Observable, pipe, throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: ws, request: Request) => void , httpTunnel: HttpTunnel } {
+export function easyhardServer<T>(actions: Handlers<T>): { attachClient: (connection: WsConnection, request: Request) => void , httpTunnel: HttpTunnel } {
   const http = useHttp()
   const keys = Object.keys(actions).map(key => key as keyof T)
 
-  function attachClient(ws: ws, req: Request) {
+  function attachClient(ws: WsConnection, req: Request) {
     type Request = ExtractPayload<T[keyof T], 'request'>
     type Return = ExtractPayload<T[keyof T], 'response'>
 

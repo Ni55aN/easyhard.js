@@ -1,9 +1,8 @@
-import { bindObservable, Cookie, RequestMapper, ResponseMapper, Transformer } from 'easyhard-bridge'
+import { bindObservable, Cookie, RequestMapper, ResponseMapper, Transformer, WsConnection } from 'easyhard-bridge'
 import { map } from 'rxjs/operators'
-import * as ws from 'ws'
 import { BodyListeners, CookieSetters, HttpRequest, ReqListeners, SetCookie } from './http'
 
-export const requestTransformer = new Transformer<RequestMapper, 1, 2, { ws: ws, reqListeners: ReqListeners, bodyListeners: BodyListeners }>({
+export const requestTransformer = new Transformer<RequestMapper, 1, 2, { ws: WsConnection, reqListeners: ReqListeners, bodyListeners: BodyListeners }>({
   __ob: (args, { ws }) => {
     if (typeof args !== 'object' || !('__ob' in args)) return false
 
@@ -34,7 +33,7 @@ export const requestTransformer = new Transformer<RequestMapper, 1, 2, { ws: ws,
     return new Date(args.__date)
   }
 })
-export const responseTransformer = new Transformer<ResponseMapper, 0, 1, { ws: ws, cookieSetters: CookieSetters }>({
+export const responseTransformer = new Transformer<ResponseMapper, 0, 1, { ws: WsConnection, cookieSetters: CookieSetters }>({
   __cookie: (arg, { cookieSetters }) => {
     if (arg instanceof Cookie) {
       arg instanceof SetCookie && cookieSetters.set(arg.key, { value: arg.value, options: arg.options })
