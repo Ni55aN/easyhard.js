@@ -12,3 +12,5 @@ export type Handlers<T> = {
 
 export type HandlerPayload<T> = ObjectMapping<ExtractPayload<T, 'request'>, RequestMapper, 0, 2>
 export type ResponsePayload<T> = ObjectMapping<ExtractPayload<T, 'response'>, ResponseMapper, 0, 1>
+
+export type Attachment = { detach: () => void }
