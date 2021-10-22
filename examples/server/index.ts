@@ -10,6 +10,7 @@ import reconnect from './reconnect'
 import request from './request'
 import unstable from './unstable'
 import upload from './upload'
+import './uws'
 
 const app = express()
 expressWs(app)

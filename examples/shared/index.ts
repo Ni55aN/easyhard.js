@@ -14,6 +14,11 @@ export interface BasicActions {
   emptyResponse2: OperatorFunction<{ value: number }, void>
 }
 
+export interface BasicActionsUWS {
+  getData: GetData
+  getIP: OperatorFunction<void, { ip: string }>
+}
+
 export interface CookieActions {
   sendCookie: OperatorFunction<{ value: Cookie }, { value: string | null, ok?: boolean }>
   setCookie: OperatorFunction<void, { newCookie: Cookie, newCookie2: Cookie }>

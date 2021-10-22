@@ -28,7 +28,8 @@
         "module-alias": "^2.2.2",
         "rxjs": "^7.1.0",
         "todomvc-app-css": "^2.4.1",
-        "tsconfig-paths": "^3.9.0"
+        "tsconfig-paths": "^3.9.0",
+        "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.0.0"
     },
     "devDependencies": {
         "babel-plugin-overload": "0.0.2",

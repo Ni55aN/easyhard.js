@@ -30,6 +30,10 @@ module.exports = {
          target: 'ws://localhost:3000',
          ws: true
       },
+      '/uws': {
+         target: 'ws://localhost:9001',
+         ws: true
+      },
     },
   },
   module: {
