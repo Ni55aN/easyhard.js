@@ -34,4 +34,5 @@ export function attach<T, R>(actions: Handlers<T, R>, ws: WsConnection, req: R, 
 
 export * from './default'
 export * from './operators'
-export { SetCookie } from './http'
+export * from './types'
+export * from './http'
