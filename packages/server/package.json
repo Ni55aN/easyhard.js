@@ -6,5 +6,8 @@
     "cookie": "0.4.1",
     "rxjs": ">= 6.x <=7.x",
     "easyhard-bridge": "^0.2.4-rc1"
+  },
+  "rollup": {
+    "node": true
   }
 }

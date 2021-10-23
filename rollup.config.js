@@ -1,6 +1,7 @@
 import typescript from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
 import { terser } from 'rollup-plugin-terser';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import fromEntries from 'fromentries';
 import fs from 'fs-extra';
 import path from 'path';
@@ -33,6 +34,11 @@ export default packages.map(({ folder, pkg }) => {
     }),
     external: ['rxjs', 'rxjs/operators', 'recast', 'cookie', 'easyhard', 'easyhard-common', 'easyhard-bridge'],
     plugins: [
+      pkg.rollup?.node ? (
+        nodeResolve({
+          preferBuiltins: true
+        })
+      ) : null,
       eslint(),
       typescript({
         tsconfig: `packages/${folder}/tsconfig.json`,
