@@ -1,4 +1,4 @@
-import { easyhardServer } from './easyhard-server';
+import { easyhardServer } from 'easyhard-server-uws';
 import { BasicActionsUWS } from '../../shared'
 import { getInterval } from '../shared';
 import { map, mergeMap, take } from 'rxjs/operators';

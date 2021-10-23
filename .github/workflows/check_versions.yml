@@ -20,6 +20,7 @@ jobs:
           {name: 'easyhard-bridge', folder: 'bridge'},
           {name: 'easyhard-client', folder: 'client'},
           {name: 'easyhard-server', folder: 'server'},
+          {name: 'easyhard-server-uws', folder: 'server-uws'},
         ]
     steps:
       - uses: actions/checkout@v2

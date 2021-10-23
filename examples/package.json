@@ -20,6 +20,7 @@
         "easyhard-loader": "file:../build/loader",
         "easyhard-router": "file:../build/router",
         "easyhard-server": "file:../build/server",
+        "easyhard-server-uws": "file:../build/server-uws",
         "easyhard-styles": "file:../build/styles",
         "express": "^4.17.1",
         "express-ws": "^4.0.0",

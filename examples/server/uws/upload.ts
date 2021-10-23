@@ -2,7 +2,7 @@ import fs from 'fs'
 import { writeFile } from 'easyhard-server'
 import { map, mergeMap, scan } from 'rxjs/operators'
 import { UploadActions } from '../../shared'
-import { easyhardServer } from './easyhard-server'
+import { easyhardServer } from 'easyhard-server-uws'
 
 // TODO copypaste
 export default easyhardServer<UploadActions>({

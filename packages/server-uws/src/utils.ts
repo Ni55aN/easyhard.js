@@ -7,10 +7,10 @@ export function arrayBufferToString(data: ArrayBuffer) {
 }
 
 export function arrayBufferToBuffer(data: ArrayBuffer) {
-    var buf = Buffer.alloc(data.byteLength);
-    var view = new Uint8Array(data);
-    for (var i = 0; i < buf.length; ++i) {
-        buf[i] = view[i];
+    const buf = Buffer.alloc(data.byteLength)
+    const view = new Uint8Array(data)
+    for (let i = 0; i < buf.length; ++i) {
+        buf[i] = view[i]
     }
-    return buf;
+    return buf
 }
