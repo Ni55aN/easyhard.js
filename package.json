@@ -6,7 +6,8 @@
     "lint": "eslint packages/*/src/**",
     "lint:examples": "eslint examples/src/**",
     "test": "jest --verbose",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "postinstall": "for d in packages/*; do (cd \"$d\" && npm i); done"
   },
   "repository": {
     "type": "git",
