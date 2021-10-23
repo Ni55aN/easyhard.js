@@ -1,18 +1,17 @@
-import { WebSocketState, WsConnection } from 'easyhard-bridge'
+import { WebSocketState } from 'easyhard-bridge'
 import { getUID } from 'easyhard-common'
 import { attach, Attachment, Handlers } from 'easyhard-server'
 import { WebSocketBehavior, WebSocket, HttpRequest } from 'uWebSockets.js'
+import { ConnectionAdapter } from './connection-adapter'
 import { HttpTunnel, useHttp } from './http'
 import { arrayBufferToString } from './utils'
 
 type Request = HttpRequest & { socket: { ip: string }}
 type Props = { open: (ws: WebSocket, attachment: Attachment) => void }
-type Listener = [string, (...args: any[]) => any]
-type Connection = WsConnection & { listeners: Listener[], emit: <T>(event: string, payload: T) => void }
 
 export function easyhardServer<T>(actions: Handlers<T, Request>): { attachClient: (props: Props) => WebSocketBehavior, httpTunnel: HttpTunnel } {
     const http = useHttp()
-    const connections = new Map<string, Connection>()
+    const connections = new Map<string, ConnectionAdapter>()
 
     function attachClient(props: Props): WebSocketBehavior {
         return {
@@ -32,33 +31,10 @@ export function easyhardServer<T>(actions: Handlers<T, Request>): { attachClient
             },
             open: (ws: WebSocket) => {
                 const { id, req } = ws
-                const listeners: Listener[] = []
-                const connection: Connection = {
-                    listeners,
-                    emit(event, payload) {
-                        listeners
-                            .filter(e => e[0] === event)
-                            .forEach(e => e[1](payload))
-                    },
-                    addEventListener(event, handler) {
-                        listeners.push([event, handler])
-                    },
-                    removeEventListener(event, handler) {
-                        const listenersToRemove = [...listeners].filter(e => e[0] === event && e[1] === handler)
-
-                        listenersToRemove.forEach(item => {
-                            const index = listeners.indexOf(item)
-
-                            if (index >= 0) listeners.splice(index, 1)
-                        })
-                    },
-                    readyState: WebSocketState.OPEN,
-                    send(data) {
-                        ws.send(data)
-                    }
-                }
+                const connection = new ConnectionAdapter(ws)
                 const attachment = attach(actions, connection, req, http)
 
+                connection.readyState = WebSocketState.OPEN
                 connections.set(id, connection)
                 props.open(ws, attachment)
             },
