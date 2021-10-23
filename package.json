@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "MODE=prod rollup -c",
+    "postbuild": "node ./scripts/link.mjs",
     "build:dev": "MODE=dev rollup -cw",
     "lint": "eslint packages/*/src/**",
     "lint:examples": "eslint examples/src/**",

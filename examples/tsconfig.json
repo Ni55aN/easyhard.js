@@ -20,10 +20,6 @@
         "sourceMap": true,
         "resolveJsonModule": true,
         "strictNullChecks": true,
-        "baseUrl": ".",
-        "paths": {
-            "easyhard-common": ["../build/common"],
-            "easyhard-bridge": ["../build/bridge"]
-        }
+        "baseUrl": "."
     }
 }
