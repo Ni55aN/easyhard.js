@@ -5,13 +5,9 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import fromEntries from 'fromentries';
 import fs from 'fs-extra';
 import path from 'path';
+import { mainPkg, packages } from './scripts/shared/index.mjs'
 
 const isDev = process.env.MODE === 'dev'
-const mainPkg = require('./package.json')
-const packages = ['common', 'core', 'styles', 'router', 'loader', 'api', 'bridge', 'client', 'server'].map(folder => ({
-  folder,
-  pkg: require(`./packages/${folder}/package.json`)
-}))
 
 const getBanner = (pkg) => `/*!
  * ${pkg.name} v${pkg.version}
