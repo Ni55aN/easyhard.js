@@ -4,7 +4,9 @@
   "peerDependencies": {
     "easyhard-common": "^0.3.0",
     "easyhard-bridge": "^0.2.6",
-    "easyhard-server": "^0.6.0",
+    "easyhard-server": "^0.6.0"
+  },
+  "dependencies": {
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.0.0"
   },
   "rollup": {
