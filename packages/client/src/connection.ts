@@ -31,9 +31,9 @@ interface ErrorEvent {
 }
 
 interface MessageEvent {
-    data: any;
-    type: string;
-    target: any;
+  data: any;
+  type: string;
+  target: any;
 }
 
 export type WebSocketConnection = {

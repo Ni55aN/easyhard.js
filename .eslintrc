@@ -26,6 +26,7 @@
     "semi": ["error", "never"],
     "quotes": ["error", "single"],
     "no-prototype-builtins": "off",
+    "@typescript-eslint/indent": ["error", 2],
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-unsafe-assignment": "off",
     "@typescript-eslint/no-unsafe-call": "off",

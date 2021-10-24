@@ -20,6 +20,6 @@ export function writeFile(getStream: () => fs.WriteStream): MonoTypeOperatorFunc
       }),
       tap({
         complete: () => stream.close()
-    }))
+      }))
   })
 }
