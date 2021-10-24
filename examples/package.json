@@ -17,6 +17,7 @@
         "easyhard-bridge": "file:../build/bridge",
         "easyhard-client": "file:../build/client",
         "easyhard-common": "file:../build/common",
+        "easyhard-forms": "file:../build/forms",
         "easyhard-loader": "file:../build/loader",
         "easyhard-router": "file:../build/router",
         "easyhard-server": "file:../build/server",
