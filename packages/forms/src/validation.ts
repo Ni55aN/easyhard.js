@@ -1,7 +1,7 @@
 import { $ } from 'easyhard'
 import { combineLatest, Observable, OperatorFunction } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { FormValue, Group } from './types'
+import { FormValue } from './types'
 
 export type Validator<T> = OperatorFunction<T, string | boolean>;
 
@@ -17,12 +17,16 @@ export function required(message?: string): Validator<string | number | boolean>
   return map(v => Boolean(v) || message || 'Field required')
 }
 
-export function useValidation(form: Group) {
-  const validatorsMap = new WeakMap<FormValue<unknown>, Validator<unknown>[]>()
+export function useValidation() {
+  const validatorsMap = new Map<FormValue<unknown>, Validator<unknown>[]>()
   const validators$ = $(null)
 
   function setValidators<T>(value: FormValue<T>, validators: Validator<T>[]) {
-    validatorsMap.set(value as FormValue<unknown>, validators as Validator<unknown>[])
+    if (validators.length) {
+      validatorsMap.set(value as FormValue<unknown>, validators as Validator<unknown>[])
+    } else {
+      validatorsMap.delete(value as FormValue<unknown>)
+    }
     validators$.next(null)
 
     return {
@@ -32,7 +36,7 @@ export function useValidation(form: Group) {
 
   return {
     isValid: validators$.pipe(switchMap(() => {
-      const fields = Object.keys(form).filter(key => form[key] instanceof Observable).map(key => form[key]) as FormValue<unknown>[]
+      const fields = Array.from(validatorsMap.keys())
       const validations = fields.reduce((acc, field) => {
         const rules = validatorsMap.get(field) || []
 

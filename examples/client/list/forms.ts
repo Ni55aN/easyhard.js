@@ -29,7 +29,7 @@ function App() {
       }
     }
   })
-  const { isValid, setValidators } = useValidation(form)
+  const { isValid, setValidators } = useValidation()
   const { validations: textValidations } = setValidators(form.text, [required(), minLength(3), maxLength(8)])
   const { validations: nestedValidations } = setValidators(form.group.nested.test, [map(v => !v)])
 
