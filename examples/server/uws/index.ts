@@ -5,10 +5,10 @@ import unstable from './unstable'
 
 const app = uWS.App()
 
-app.ws('/uws/basic/', basic.attachClient({ open() {}}))
+app.ws('/uws/basic/', basic.attachClient({ open() { 111 }}))
 app.any('/uws/basic/', basic.httpTunnel)
 
-app.ws('/uws/upload/', upload.attachClient({ open() {}}))
+app.ws('/uws/upload/', upload.attachClient({ open() { 111 }}))
 app.any('/uws/upload/', upload.httpTunnel)
 
 app.ws('/uws/unstable/', unstable.attachClient({ open(ws) {
@@ -22,7 +22,7 @@ app.ws('/uws/unstable/', unstable.attachClient({ open(ws) {
 }}))
 app.any('/uws/unstable/', unstable.httpTunnel)
 
-const port = 9001;
+const port = 9001
 let listenToken: null | string = null
 
 function close() {
@@ -37,9 +37,9 @@ function listen() {
   app.listen(port, (token) => {
     if (token) {
       listenToken = token
-      console.log('Listening to port ' + port);
+      console.log(`Listening to port ${port}`)
     } else {
-      console.log('Failed to listen to port ' + port);
+      console.log(`Failed to listen to port ${port}`)
     }
   })
 }

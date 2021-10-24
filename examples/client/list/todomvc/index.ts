@@ -122,7 +122,7 @@ function TodoList({ todos, filter: todosFilter }: { todos: Observable<$$Return<T
               className: 'clear-completed',
               click: clearCompleted$
             },
-              'Clear completed'
+            'Clear completed'
             )
           )))
         )

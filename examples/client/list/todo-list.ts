@@ -16,22 +16,22 @@ function Editable(el: (toggle: () => void) => HTMLElement, input: (toggle: () =>
 }
 
 function TodoItem({ item, remove }: { item: Task, remove: (task: Task) => void }) {
-    const { done, text } = item
+  const { done, text } = item
 
-    return h('div', {},
-      Editable(
-        (toggle) => h('b', {
-          style: done.pipe(map(done => done ? 'text-decoration: line-through;' : '' )),
-          click: tap(() => done.next(!done.value)),
-          contextmenu: tap((e: Event) => { e.preventDefault(); toggle() })
-        }, text),
-        (toggle) => Input({
-          model: text,
-          autofocus: true,
-          events: { blur: tap(toggle) }
-        })
-      ),
-      h('button', { click: tap(() => remove(item)) }, 'x')
+  return h('div', {},
+    Editable(
+      (toggle) => h('b', {
+        style: done.pipe(map(done => done ? 'text-decoration: line-through;' : '' )),
+        click: tap(() => done.next(!done.value)),
+        contextmenu: tap((e: Event) => { e.preventDefault(); toggle() })
+      }, text),
+      (toggle) => Input({
+        model: text,
+        autofocus: true,
+        events: { blur: tap(toggle) }
+      })
+    ),
+    h('button', { click: tap(() => remove(item)) }, 'x')
   )
 }
 

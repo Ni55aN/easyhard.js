@@ -54,18 +54,18 @@ function ListView<T>(source: $$<T>, props: { height: $<number> }, render: Operat
   const { inject, list, sourceHeight, offset } = createVirtualList<T>(source, scrollTop, containerHeight, props.height)
 
   const container: HTMLElement = h('div', {
-      style: 'height: 100%; overflow: auto',
-      scroll: pipe(
-        debounceTime(16),
-        map(e => scrollTop.next((e.srcElement as HTMLElement).scrollTop))
-      )
-    },
-    inject,
-    h('div', { style: sourceHeight.pipe(map(h => `height: ${h}px; overflow: hidden;`)) },
-      h('div', { style: offset.pipe(map((offset) => `transform: translateY(${offset}px)`)) },
-        $for(list, render, { comparator: (a, b) => a <= b }),
-      )
+    style: 'height: 100%; overflow: auto',
+    scroll: pipe(
+      debounceTime(16),
+      map(e => scrollTop.next((e.srcElement as HTMLElement).scrollTop))
     )
+  },
+  inject,
+  h('div', { style: sourceHeight.pipe(map(h => `height: ${h}px; overflow: hidden;`)) },
+    h('div', { style: offset.pipe(map((offset) => `transform: translateY(${offset}px)`)) },
+      $for(list, render, { comparator: (a, b) => a <= b }),
+    )
+  )
   )
 
   appendChild(observeResize().pipe(

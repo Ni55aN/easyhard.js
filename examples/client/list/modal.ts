@@ -9,10 +9,10 @@ type ModalComponent = (title: Observable<string>, content?: Observable<string | 
 
 const Modal: ModalComponent = (title: Observable<string>, content?: Observable<string | null>) => {
   return h('div', {
-      style: 'background: #ddd; position: absolute; z-index: 5; border: 1px solid red; padding: 0 1em; width: 20em; left: 0; right: 0; top: 25%; margin: auto'
-    },
-    h('h3', {}, title),
-    h('p', {}, content)
+    style: 'background: #ddd; position: absolute; z-index: 5; border: 1px solid red; padding: 0 1em; width: 20em; left: 0; right: 0; top: 25%; margin: auto'
+  },
+  h('h3', {}, title),
+  h('p', {}, content)
   )
 }
 
@@ -46,10 +46,10 @@ function useModal(component: ModalComponent = Modal) {
 
 const MainModal: ModalComponent = (title: Observable<string>, content?: Observable<string | null>) => {
   return h('div', {
-      style: 'background: #d66; position: absolute; z-index: 5; border: 1px solid red; padding: 0 1em; width: 20em; left: 0; right: 0; top: 25%; margin: auto'
-    },
-    h('h3', {}, title),
-    h('p', {}, content)
+    style: 'background: #d66; position: absolute; z-index: 5; border: 1px solid red; padding: 0 1em; width: 20em; left: 0; right: 0; top: 25%; margin: auto'
+  },
+  h('h3', {}, title),
+  h('p', {}, content)
   )
 }
 

@@ -41,8 +41,8 @@ function App() {
   return h('div', {},
     $for(list, map(v => container(v, h('div', {
       click: pipe(mapTo(v), remove) },
-      injectStyles(itemStyles),
-      v.value
+    injectStyles(itemStyles),
+    v.value
     ))))
   )
 }
