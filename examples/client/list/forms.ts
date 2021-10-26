@@ -1,18 +1,19 @@
 import { h, $, $$, $if } from 'easyhard'
-import { Field, SelectOption, useForm, components, formatter, validation } from 'easyhard-forms'
+import { useForm, components, formatter, validation } from 'easyhard-forms'
+import { SelectOption } from 'easyhard-forms/components'
 import { Observable, pipe } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 
-const { Checkbox, Numbox, Select, Textbox } = components
+const { Checkbox, Numbox, Select, Textbox, Field } = components
 const { max, min } = formatter
-const { maxLength, minLength, required, useValidation } = validation
+const { maxLength, minLength, required } = validation
 
 function Button(text: string | Observable<string>, click: () => void) {
   return h('button', { click: tap(click) }, text)
 }
 
 function App() {
-  const { form } = useForm({
+  const { form, isValid, setValidators } = useForm({
     text: $('1'),
     text2: $('1'),
     checkbox: $<boolean>(false),
@@ -29,7 +30,6 @@ function App() {
       }
     }
   })
-  const { isValid, setValidators } = useValidation()
   const { validations: textValidations } = setValidators(form.text, [required(), minLength(3), maxLength(8)])
   const { validations: nestedValidations } = setValidators(form.group.nested.test, [map(v => !v)])
 
