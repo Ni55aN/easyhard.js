@@ -1,6 +1,6 @@
 {
   "name": "easyhard-forms",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "peerDependencies": {
     "easyhard": "^0.8.0",
     "easyhard-common": "^0.3.0",
