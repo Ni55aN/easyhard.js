@@ -13,7 +13,13 @@ function Button(text: string | Observable<string>, click: () => void) {
 }
 
 function App() {
+  const { form: formNested, isValid: isValidNested, setValidators: setValidatorsNested } = useForm({
+    hello: $('hello')
+  })
+  const { validations: nestedHelloValidations } = setValidatorsNested(formNested.hello, [required()])
+
   const { form, isValid, setValidators } = useForm({
+    formNested,
     text: $('1'),
     text2: $('1'),
     checkbox: $<boolean>(false),
@@ -42,6 +48,8 @@ function App() {
   const disabled = form.checkbox.pipe(map(act => !act))
 
   return h('div', {},
+    Field('Text nested', form.formNested.hello, { type: Textbox, validations: nestedHelloValidations }),
+    h('p', {}, 'Is valid nested:', isValidNested),
     Field('Text Validation', form.text, { type: Textbox, disabled, validations: textValidations }),
     Field('Text Formatter (max length: 5)', form.text2, {
       type: Textbox, disabled, formatters: {
