@@ -3,6 +3,7 @@ import { useForm, components, formatter, validation } from 'easyhard-forms'
 import { SelectOption } from 'easyhard-forms/components'
 import { Observable, pipe } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
+import IMask from 'imask'
 
 const { Checkbox, Numbox, Select, Textbox, Field } = components
 const { max, min } = formatter
@@ -28,6 +29,7 @@ function App() {
     text2: $('1'),
     checkbox: $<boolean>(false),
     number: $(3),
+    phone: $(''),
     select: $('first'),
     items,
     group: {
@@ -68,6 +70,12 @@ function App() {
       type: Numbox(), formatters: {
         input: pipe(min(5), max(8))
       }
+    }),
+    Field('Imask (phone)', form.phone, {
+      type: Textbox(),
+      init: tap(el => IMask(el, {
+        mask: '+38 (000) 000-00-00'
+      }))
     }),
     h('div', { style: 'border: 1px solid green; padding: 1em' },
       $for(form.items, map(value => Field('Item', value, { type: Textbox(), validations: value === itemWithValidation ? itemValidation : undefined  }))),
