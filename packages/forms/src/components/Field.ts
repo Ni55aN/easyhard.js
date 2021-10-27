@@ -1,4 +1,4 @@
-import { h, $, Child } from 'easyhard'
+import { h, $, DomElement } from 'easyhard'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { FieldInput, InputParams } from './types'
@@ -8,7 +8,7 @@ export interface FieldParams<T> extends InputParams<T>  {
   validations?: Observable<(string | boolean)[]>
 }
 
-export function Field<T>(label: string | Observable<string>, value: $<T>, props: FieldParams<T>): Child {
+export function Field<T>(label: string | Observable<string>, value: $<T>, props: FieldParams<T>): DomElement {
   const { type, validations, ...params } = props
 
   return h('p', {},
