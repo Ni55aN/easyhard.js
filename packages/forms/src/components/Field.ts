@@ -16,7 +16,7 @@ export function Field<T>(label: string | Observable<string>, value: $<T>, props:
   return h('p', {},
     h('div', {}, label),
     element,
-    init && of(element).pipe(init, mapTo(null)),
+    init ? of(element).pipe(init, mapTo(null)) : null,
     validations ? validations.pipe(map(validation =>
       h('div', { style: 'color: red' }, validation.map(result => h('div', {}, result === true ? null : result)))
     )) : null
