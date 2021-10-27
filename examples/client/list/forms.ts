@@ -1,4 +1,4 @@
-import { h, $, $$, $if } from 'easyhard'
+import { h, $, $$, $if, $for } from 'easyhard'
 import { useForm, components, formatter, validation } from 'easyhard-forms'
 import { SelectOption } from 'easyhard-forms/components'
 import { Observable, pipe } from 'rxjs'
@@ -18,6 +18,10 @@ function App() {
   })
   const { validations: nestedHelloValidations } = setValidatorsNested(formNested.hello, [required()])
 
+  const items = $$([
+    $('111'),
+    $('222')
+  ])
   const { form, isValid, setValidators } = useForm({
     formNested,
     text: $('1'),
@@ -25,10 +29,7 @@ function App() {
     checkbox: $<boolean>(false),
     number: $(3),
     select: $('first'),
-    items: [
-      $(''),
-      $('67')
-    ],
+    items,
     group: {
       test: $(''),
       nested: {
@@ -38,6 +39,11 @@ function App() {
   })
   const { validations: textValidations } = setValidators(form.text, [required(), minLength(3), maxLength(8)])
   const { validations: nestedValidations } = setValidators(form.group.nested.test, [map(v => !v)])
+
+  const itemWithValidation = $('333')
+  const { validations: itemValidation } = setValidators(itemWithValidation, [required()])
+
+  items.insert(itemWithValidation)
 
   const selectOptions = $$<SelectOption>([
     $({ key: 'first', label: $('First') }),
@@ -63,6 +69,9 @@ function App() {
         input: pipe(min(5), max(8))
       }
     }),
+    h('div', { style: 'border: 1px solid green; padding: 1em' },
+      $for(form.items, map(value => Field('Item', value, { type: Textbox, validations: value === itemWithValidation ? itemValidation : undefined  }))),
+    ),
     Field('Nested group', form.group.nested.test, { type: Checkbox, validations: nestedValidations }),
     Button('Clear', () => form.text.next('')),
     h('p', {}, 'Is valid:', isValid)
