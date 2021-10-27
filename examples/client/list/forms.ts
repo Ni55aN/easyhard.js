@@ -54,25 +54,25 @@ function App() {
   const disabled = form.checkbox.pipe(map(act => !act))
 
   return h('div', {},
-    Field('Text nested', form.formNested.hello, { type: Textbox, validations: nestedHelloValidations }),
+    Field('Text nested', form.formNested.hello, { type: Textbox(), validations: nestedHelloValidations }),
     h('p', {}, 'Is valid nested:', isValidNested),
-    Field('Text Validation', form.text, { type: Textbox, disabled, validations: textValidations }),
+    Field('Text Validation', form.text, { type: Textbox(), disabled, validations: textValidations }),
     Field('Text Formatter (max length: 5)', form.text2, {
-      type: Textbox, disabled, formatters: {
+      type: Textbox(), disabled, formatters: {
         input: map(text => text.substring(0, 5))
       }
     }),
-    Field('Active', form.checkbox, { type: Checkbox }),
+    Field('Active', form.checkbox, { type: Checkbox() }),
     Field('Select', form.select, { type: Select(selectOptions), disabled }),
     Field('Number Formatter (min: 5, max: 8)', form.number, {
-      type: Numbox, formatters: {
+      type: Numbox(), formatters: {
         input: pipe(min(5), max(8))
       }
     }),
     h('div', { style: 'border: 1px solid green; padding: 1em' },
-      $for(form.items, map(value => Field('Item', value, { type: Textbox, validations: value === itemWithValidation ? itemValidation : undefined  }))),
+      $for(form.items, map(value => Field('Item', value, { type: Textbox(), validations: value === itemWithValidation ? itemValidation : undefined  }))),
     ),
-    Field('Nested group', form.group.nested.test, { type: Checkbox, validations: nestedValidations }),
+    Field('Nested group', form.group.nested.test, { type: Checkbox(), validations: nestedValidations }),
     Button('Clear', () => form.text.next('')),
     h('p', {}, 'Is valid:', isValid)
   )
