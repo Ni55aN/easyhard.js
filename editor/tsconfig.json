@@ -1,0 +1,13 @@
+{
+  "include": [
+    "./src/**/*.ts",
+  ],
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "module": "es6",
+    "target": "es5",
+    "allowJs": true,
+    "moduleResolution": "node",
+    "strict": true
+  }
+}
