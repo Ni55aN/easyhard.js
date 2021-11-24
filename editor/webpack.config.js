@@ -5,12 +5,18 @@ const ESLintPlugin = require('eslint-webpack-plugin')
 module.exports = {
   mode: 'development',
   entry: './src/index.ts',
+  devtool: 'source-map',
   output: {
     filename: 'main.js',
     path: path.resolve(__dirname, 'dist'),
   },
   module: {
     rules: [
+      {
+        test: /\.ts$/,
+        enforce: "pre",
+        use: ["source-map-loader"],
+      },
       {
         test: /\.tsx?$/,
         use: 'ts-loader',
