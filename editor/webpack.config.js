@@ -26,12 +26,14 @@ module.exports = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
+    fallback: {
+      os: require.resolve("os-browserify/browser")
+    }
   },
   plugins: [
     new HtmlWebpackPlugin(),
-    new ESLintPlugin({
-      extensions: ['ts'],
-
-    })
+    // new ESLintPlugin({
+    //   extensions: ['ts'],
+    // })
   ]
 }
