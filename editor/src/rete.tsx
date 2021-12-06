@@ -76,7 +76,7 @@ export class TextControl extends Rete.Control {
   }
 }
 
-type ButtonProps = { label: string, click?: () => void}
+type ButtonProps = { label: string, click?: () => void }
 export class Button extends Rete.Control {
   render: string
   component: any
@@ -108,7 +108,7 @@ class ImportDeclaration extends Rete.Component {
       .addOutput(new Rete.Output('return', 'Return', anySocket))
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 class VariableDeclaration extends Rete.Component {
@@ -126,7 +126,7 @@ class VariableDeclaration extends Rete.Component {
 
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 
@@ -142,7 +142,7 @@ class ParameterDeclaration extends Rete.Component {
 
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 class BinaryOperator extends Rete.Component {
@@ -164,7 +164,7 @@ class BinaryOperator extends Rete.Component {
 
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 class Conditional extends Rete.Component {
@@ -181,7 +181,7 @@ class Conditional extends Rete.Component {
 
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 export type NestedNode = Node & { belongsTo?: Node | null }
@@ -201,7 +201,7 @@ export class NestedNodeControl extends Rete.Control {
 
       React.useEffect(() => onRef(inputEl.current), [inputEl])
 
-      return <div ref={inputEl} style={{background: 'white', height: `${height + extender}px`, width: `${width + extender}px` }}></div>
+      return <div ref={inputEl} style={{ background: 'white', height: `${height + extender}px`, width: `${width + extender}px` }}></div>
     }
 
     this.props = {
@@ -250,7 +250,7 @@ export class NestedNodeControl extends Rete.Control {
         this.node.position = [startPosition[0] - k / 2, startPosition[1] - k / 2]
         view?.update()
 
-        ;(this as any).update()
+          ; (this as any).update()
 
         this.editor.view.updateConnections({ node: this.node })
       }
@@ -266,7 +266,7 @@ export class NestedNodeControl extends Rete.Control {
 
       this.props.extender = 0;
       startPosition = null
-      ;(this as any).update()
+        ; (this as any).update()
       selectedNodes.delete(node)
       this.editor.view.updateConnections({ node: this.node })
     })
@@ -292,7 +292,7 @@ export class NestedNodeControl extends Rete.Control {
     const sideMargin = 20
     const topMargin = 80
     this.node.position = [minLeft.view.node.position[0] - sideMargin - this.margin, minTop.view.node.position[1] - topMargin - this.margin]
-    ;(this as any).update()
+      ; (this as any).update()
     this.editor.view.nodes.get(this.node)?.update()
   }
 
@@ -325,7 +325,7 @@ export class NestedNodeControl extends Rete.Control {
 
       if (intersects) {
         node.belongsTo = this.node
-      } else if(isFuncSpecific) {
+      } else if (isFuncSpecific) {
         const pos = startPosition.get(node)
 
         pos && view.translate(pos[0], pos[1])
@@ -391,7 +391,7 @@ class FunctionDeclaration extends Rete.Component {
       .addOutput(new Rete.Output('return', 'Variable', anySocket))
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 class Call extends Rete.Component {
@@ -410,14 +410,14 @@ class Call extends Rete.Component {
 
     for (const i in args) {
       const value = args[i]
-      const key = 'arg'+i
-      const inp = new Rete.Input(key, 'Argument '+i, anySocket)
+      const key = 'arg' + i
+      const inp = new Rete.Input(key, 'Argument ' + i, anySocket)
       inp.addControl(new TextControl(this.editor as any, key, value || '', false))
       node.addInput(inp)
     }
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 class Member extends Rete.Component {
@@ -433,7 +433,7 @@ class Member extends Rete.Component {
 
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 class ObjectComp extends Rete.Component {
@@ -460,7 +460,7 @@ class ObjectComp extends Rete.Component {
 
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 class Return extends Rete.Component {
@@ -474,7 +474,7 @@ class Return extends Rete.Component {
 
   }
 
-  worker() {1}
+  worker() { 1 }
 }
 
 
