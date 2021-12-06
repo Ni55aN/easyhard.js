@@ -12,6 +12,7 @@
     "moduleResolution": "node",
     "strict": true,
     "sourceMap": true,
+    "downlevelIteration": true,
     "baseUrl": "."
   }
 }
