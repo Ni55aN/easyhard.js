@@ -1,14 +1,14 @@
 import { $, $$, $for, h } from 'easyhard'
-import { of } from 'rxjs'
-import { map, mapTo, tap } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators'
 import { injectStyles } from 'easyhard-styles'
 import { parse } from 'recast/parsers/typescript'
+import _ from 'lodash'
 import {
   Node as ASTNode, Statement, Expression, ObjectExpression, ObjectProperty, BinaryExpression,
   CallExpression, MemberExpression, SpreadElement, JSXNamespacedName, ArgumentPlaceholder,
   Identifier, ConditionalExpression, Function as Func
 } from '@babel/types'
-import { createEditor, Output, Node, Button, NestedNode } from './rete'
+import { createEditor, Node, NestedNode, NestedNodeControl, getNodes } from './rete'
 
 // const tsAst = parse(`
 // const k = 45, l = 3
@@ -337,11 +337,21 @@ async function processNode(statement: Statement | Expression, editor: Editor, pr
     props.nodeCreated && props.nodeCreated(node)
     node.meta.identifier = statement.id?.name
 
+    const nodes: Node[] = []
     await process(statement, editor, {
       nodeCreated: nestedNode => {
-        (nestedNode as NestedNode).belongsTo = node
+        nodes.push(nestedNode)
+        ;(nestedNode as NestedNode).belongsTo = node
       }
     })
+    nodes.forEach(nestedNode => {
+      editor.arrange(nestedNode, {
+        skip: n => {
+          return (n as NestedNode).belongsTo !== node
+        }
+      })
+    })
+    ;(node.controls.get('area') as NestedNodeControl)?.adjustPlacement()
 
   } else {
     throw new Error('processNode: cannot process statement ' + statement.type)
@@ -383,8 +393,30 @@ async function process(node: ASTNode, editor: Editor, props: ProcessProps) {
   } else {
     throw new Error('process: cannot process ' + node.type)
   }
+}
 
-  if (editor.origin.nodes[0]) editor.arrange(editor.origin.nodes[0])
+function arrangeRoot(editor: Editor) {
+  const startNode = editor.origin.nodes.filter(n => !(n as NestedNode).belongsTo)[0]
+
+  if (startNode) editor.arrange(startNode, {
+    skip: node => {
+      return Boolean((node as NestedNode).belongsTo)
+    },
+    substitution: {
+      input: (currentNode) => {
+        if (currentNode.name === 'Function') {
+          const nestedNodes = editor.origin.nodes.filter((n: NestedNode) => n.belongsTo === currentNode)
+          const outerInputNodes = _.flatten(nestedNodes.map(n => getNodes(n, 'input'))).filter((n: NestedNode) => n.belongsTo !== n)
+
+          return outerInputNodes
+        }
+        return undefined
+      },
+      output: (n) => {
+        return getNodes(n, 'output').map((n: NestedNode) => n.belongsTo || n)
+      }
+    }
+  })
 }
 
 void async function () {
@@ -407,6 +439,7 @@ void async function () {
     const editor = await createEditor(container)
 
     await process(ast, editor, {  })
+    arrangeRoot(editor)
     tabs.insert({ name, editor })
 
     return name

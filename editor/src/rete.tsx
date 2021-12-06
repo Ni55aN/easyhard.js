@@ -521,8 +521,8 @@ export async function createEditor(container: HTMLElement) {
   return {
     origin: editor,
     components,
-    arrange(node: Node) {
-      editor.trigger('arrange' as any, { node });
+    arrange(node: Node, { skip, substitution }: { skip?: (n: Node) => boolean, substitution?: { input: (n: Node, ns: Node[]) => undefined | Node[], output: (n: Node, ns: Node[]) => undefined | Node[] } }) {
+      editor.trigger('arrange' as any, { node, skip, substitution });
       AreaPlugin.zoomAt(editor)
     },
     async addNode(component: Component, position: [number, number], data: any) {
