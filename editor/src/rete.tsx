@@ -353,7 +353,7 @@ export class NestedNodeControl extends Rete.Control {
   updateConnections() {
     // listen after updatingBelongTo
     this.editor.on('nodedragged', (node: NestedNode) => {
-      if (node.belongsTo) {
+      if (node.belongsTo === this.node) {
         this.getInputLoopNodes(node, node.belongsTo).forEach(c => {
           this.editor.removeConnection(c)
         })
