@@ -541,13 +541,22 @@ export async function createEditor(container: HTMLElement) {
 
 export function getNodes(node: Node, type: 'input' | 'output' = 'output') {
   const nodes: Node[] = [];
+
+  for (const connection of getConnections(node, type)) {
+    nodes.push(connection[type === 'input' ? 'output' : 'input'].node as Node);
+  }
+
+  return nodes;
+}
+
+export function getConnections(node: Node, type: 'input' | 'output' = 'output') {
+  const connections: Connection[] = [];
   const key = `${type}s` as 'inputs' | 'outputs';
 
   for (const io of node[key].values()) {
     for (const connection of io.connections.values()) {
-      nodes.push(connection[type === 'input' ? 'output' : 'input'].node as Node);
+      connections.push(connection)
     }
   }
-
-  return nodes;
+  return connections
 }
