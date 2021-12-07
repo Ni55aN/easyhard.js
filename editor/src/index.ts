@@ -261,7 +261,7 @@ async function processExpression(expression: Expression, editor: Editor, props: 
   if (expression.type === 'Identifier') {
     const node = editor.origin.nodes.find(n => n.meta.identifier === expression.name)
 
-    if (!node) throw new Error('cannot find Identifier')
+    if (!node) throw new Error(`cannot find Identifier "${expression.name}"`)
     return node
   }
   if (expression.type === 'ArrowFunctionExpression') {
