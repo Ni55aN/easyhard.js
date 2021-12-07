@@ -329,7 +329,7 @@ export class NestedNodeControl extends Rete.Control {
         const pos = startPosition.get(node)
 
         pos && view.translate(pos[0], pos[1])
-      } else {
+      } else if (node.belongsTo === this.node) {
         node.belongsTo = null
       }
 
@@ -339,7 +339,6 @@ export class NestedNodeControl extends Rete.Control {
 
   getInputLoopNodes(current: Node, target: Node): Connection[] {
     const inputCons = getConnections(current, 'input')
-    console.log('>> hasInputLoop', current, target)
 
     const directInputs = inputCons.filter(c => c['output'].node === target)
     if (directInputs.length) return directInputs
