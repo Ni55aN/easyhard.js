@@ -243,7 +243,11 @@ export class NestedNodeControl extends Rete.Control {
       if (!el || !this.box || !startPosition) return
 
       const k = 250
-      if (this.intersects(el, this.box)) {
+      const intersects = this.intersects(el, this.box)
+      const inInner = ['Return', 'Parameter'].includes(args.node.name)
+      const belongsToCurrentFunction = (args.node as NestedNode).belongsTo === this.node
+
+      if (intersects && (!inInner || belongsToCurrentFunction)) {
         this.props.extender = k
 
         const view = this.editor.view.nodes.get(this.node)
@@ -323,9 +327,9 @@ export class NestedNodeControl extends Rete.Control {
       const intersects = this.contains(el, this.box)
       const isFuncSpecific = ['Return', 'Parameter'].includes(node.name)
 
-      if (intersects) {
+      if (intersects && !(isFuncSpecific && node.belongsTo !== this.node)) {
         node.belongsTo = this.node
-      } else if (isFuncSpecific) {
+      } else if (isFuncSpecific && node.belongsTo === this.node) {
         const pos = startPosition.get(node)
 
         pos && view.translate(pos[0], pos[1])
