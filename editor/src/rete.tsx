@@ -1,7 +1,7 @@
 import 'regenerator-runtime/runtime'
 import * as React from 'react'
 import _ from 'lodash'
-import Rete, { Component, Control, Input, Node, NodeEditor, Output } from 'rete'
+import Rete, { Component, Connection, Control, Input, Node, NodeEditor, Output } from 'rete'
 // import VueRenderPlugin from 'rete-vue-render-plugin'
 import ReactRenderPlugin, { Node as ReactNode, Socket as ReactSocket, Control as ReactControl } from 'rete-react-render-plugin';
 import ConnectionPlugin from 'rete-connection-plugin'
@@ -337,16 +337,37 @@ export class NestedNodeControl extends Rete.Control {
     })
   }
 
+  getInputLoopNodes(current: Node, target: Node): Connection[] {
+    const inputCons = getConnections(current, 'input')
+    console.log('>> hasInputLoop', current, target)
+
+    const directInputs = inputCons.filter(c => c['output'].node === target)
+    if (directInputs.length) return directInputs
+
+    return inputCons.map(c => {
+      const n = c['output'].node
+
+      return n && this.getInputLoopNodes(n, target).length ? c : null
+    }).filter((c): c is Connection => Boolean(c))
+  }
+
   updateConnections() {
     // listen after updatingBelongTo
     this.editor.on('nodedragged', (node: NestedNode) => {
-      if (node.belongsTo === null) {
-        node.inputs.forEach(inputs => {
-          inputs.connections.forEach(c => {
-            if ((c.output.node as NestedNode).belongsTo === this.node) {
-              this.editor.removeConnection(c)
-            }
-          })
+      if (node.belongsTo) {
+        this.getInputLoopNodes(node, node.belongsTo).forEach(c => {
+          this.editor.removeConnection(c)
+        })
+        getConnections(node, 'output').forEach(c => {
+          if ((c.input.node as NestedNode).belongsTo !== this.node) {
+            this.editor.removeConnection(c)
+          }
+        })
+      } else {
+        getConnections(node, 'input').forEach(c => {
+          if ((c.output.node as NestedNode).belongsTo === this.node) {
+            this.editor.removeConnection(c)
+          }
         })
       }
     })
