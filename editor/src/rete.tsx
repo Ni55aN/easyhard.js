@@ -1,11 +1,12 @@
 import 'regenerator-runtime/runtime'
 import * as React from 'react'
 import _ from 'lodash'
-import Rete, { Component, Connection, Control, Input, Node, NodeEditor, Output } from 'rete'
+import Rete, { Connection, Control, Input, Node, NodeEditor, Output } from 'rete'
 // import VueRenderPlugin from 'rete-vue-render-plugin'
 import ReactRenderPlugin, { Node as ReactNode, Socket as ReactSocket, Control as ReactControl } from 'rete-react-render-plugin';
 import ConnectionPlugin from 'rete-connection-plugin'
 import AreaPlugin from 'rete-area-plugin'
+import ContextMenuPlugin from 'rete-context-menu-plugin'
 import AutoArrangePlugin from 'rete-auto-arrange-plugin'
 import { useRef } from 'react';
 import { NodeView } from 'rete/types/view/node';
@@ -30,7 +31,9 @@ funcSocket.combineWith(anySocket)
 objSocket.combineWith(anySocket)
 
 
-
+abstract class Component extends Rete.Component {
+    scope: 'any' | 'root' | (new () => Component) = 'any'
+}
 
 class MyReactControl extends React.Component<{ value: string, id: string, putData: (...arg: any[]) => void, emitter: NodeEditor }> {
   state: { value?: string } = {};
@@ -96,7 +99,8 @@ export class Button extends Rete.Control {
   }
 }
 
-class ImportDeclaration extends Rete.Component {
+class ImportDeclaration extends Component {
+  scope: 'root' = 'root'
   constructor() {
     super("Import");
   }
@@ -111,7 +115,7 @@ class ImportDeclaration extends Rete.Component {
   worker() { 1 }
 }
 
-class VariableDeclaration extends Rete.Component {
+class VariableDeclaration extends Component {
   constructor() {
     super("Variable");
   }
@@ -130,7 +134,8 @@ class VariableDeclaration extends Rete.Component {
 }
 
 
-class ParameterDeclaration extends Rete.Component {
+class ParameterDeclaration extends Component {
+  scope = FunctionDeclaration
   constructor() {
     super("Parameter");
   }
@@ -145,7 +150,7 @@ class ParameterDeclaration extends Rete.Component {
   worker() { 1 }
 }
 
-class BinaryOperator extends Rete.Component {
+class BinaryOperator extends Component {
   constructor() {
     super("Binary operator");
   }
@@ -167,7 +172,7 @@ class BinaryOperator extends Rete.Component {
   worker() { 1 }
 }
 
-class Conditional extends Rete.Component {
+class Conditional extends Component {
   constructor() {
     super("Condition");
   }
@@ -186,7 +191,11 @@ class Conditional extends Rete.Component {
 
 export type NestedNode = Node & { belongsTo?: Node | null }
 
-export class NestedNodeControl extends Rete.Control {
+export interface INestedNodeControl extends Control {
+  adjustPlacement(): void
+}
+
+export class NestedNodeControl extends Rete.Control implements INestedNodeControl {
   render: string
   component: any
   props: { editor: NodeEditor, width: number, height: number, extender: number, onRef: (el: HTMLElement | null) => void }
@@ -404,7 +413,8 @@ export class NestedNodeControl extends Rete.Control {
 
 }
 
-class FunctionDeclaration extends Rete.Component {
+class FunctionDeclaration extends Component {
+  scope: 'root' = 'root'
   constructor() {
     super("Function");
   }
@@ -418,7 +428,7 @@ class FunctionDeclaration extends Rete.Component {
   worker() { 1 }
 }
 
-class Call extends Rete.Component {
+class Call extends Component {
   constructor() {
     super("Call");
   }
@@ -444,7 +454,7 @@ class Call extends Rete.Component {
   worker() { 1 }
 }
 
-class Member extends Rete.Component {
+class Member extends Component {
   constructor() {
     super("Member");
   }
@@ -460,7 +470,7 @@ class Member extends Rete.Component {
   worker() { 1 }
 }
 
-class ObjectComp extends Rete.Component {
+class ObjectComp extends Component {
   constructor() {
     super("Object");
   }
@@ -487,7 +497,8 @@ class ObjectComp extends Rete.Component {
   worker() { 1 }
 }
 
-class Return extends Rete.Component {
+class Return extends Component {
+  scope = FunctionDeclaration
   constructor() {
     super("Return");
   }
@@ -521,6 +532,37 @@ export async function createEditor(container: HTMLElement) {
   // editor.use(VueRenderPlugin);
   editor.use(ReactRenderPlugin);
   editor.use(AreaPlugin);
+
+  const mouse: [number, number] = [0, 0];
+
+  editor.on('mousemove', ({ x, y }) => {
+    mouse[0] = x;
+    mouse[1] = y;
+  });
+
+  editor.use(ContextMenuPlugin, {
+    nodeItems: (node: Node) => {
+      const position: [number, number] = [...mouse]
+      if (node.name === 'Function') {
+        return {
+          'Component': Object.values(components).reduce((obj, item) => {
+            if (item.scope === 'root') return obj
+            return { ...obj, [item.name]() {
+              addNode(item, position, {}).then(createdNode => {
+                (createdNode as NestedNode).belongsTo = node
+                ;(node.controls.get('area') as INestedNodeControl).adjustPlacement()
+                editor.view.updateConnections({ node })
+              })
+            }}
+          }, {})
+        }
+      }
+      return {}
+    },
+    allocate: (component: Component) => {
+      return component.scope === 'any' || component.scope === 'root' ? [] : null
+    }
+  });
   editor.use(AutoArrangePlugin, { margin: { x: 50, y: 50 }, depth: 0 }); // depth - max depth for arrange (0 - unlimited)
 
 
