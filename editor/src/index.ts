@@ -8,7 +8,7 @@ import {
   CallExpression, MemberExpression, SpreadElement, JSXNamespacedName, ArgumentPlaceholder,
   Identifier, ConditionalExpression, Function as Func
 } from '@babel/types'
-import { createEditor, Node, NestedNode, NestedNodeControl, getNodes } from './rete'
+import { createEditor, Node, NestedNode, INestedNodeControl, getNodes } from './rete'
 
 // const tsAst = parse(`
 // const k = 45, l = 3
@@ -351,7 +351,7 @@ async function processNode(statement: Statement | Expression, editor: Editor, pr
         }
       })
     })
-    ;(node.controls.get('area') as NestedNodeControl)?.adjustPlacement()
+    ;(node.controls.get('area') as INestedNodeControl)?.adjustPlacement()
 
   } else {
     throw new Error('processNode: cannot process statement ' + statement.type)

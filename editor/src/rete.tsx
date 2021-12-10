@@ -195,7 +195,7 @@ export interface INestedNodeControl extends Control {
   adjustPlacement(): void
 }
 
-export class NestedNodeControl extends Rete.Control implements INestedNodeControl {
+class NestedNodeControl extends Rete.Control implements INestedNodeControl {
   render: string
   component: any
   props: { editor: NodeEditor, width: number, height: number, extender: number, onRef: (el: HTMLElement | null) => void }
