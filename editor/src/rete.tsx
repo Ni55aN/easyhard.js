@@ -542,6 +542,15 @@ export async function createEditor(container: HTMLElement) {
 
   editor.trigger('process');
 
+  async function addNode(component: Component, position: [number, number], data: any) {
+    const node = await component.createNode(data);
+
+    node.position = [...position];
+    editor.addNode(node);
+
+    return node
+  }
+
   return {
     origin: editor,
     components,
@@ -549,14 +558,7 @@ export async function createEditor(container: HTMLElement) {
       editor.trigger('arrange' as any, { node, skip, substitution });
       AreaPlugin.zoomAt(editor)
     },
-    async addNode(component: Component, position: [number, number], data: any) {
-      const node = await component.createNode(data);
-
-      node.position = position;
-      editor.addNode(node);
-
-      return node
-    },
+    addNode,
     connect(output: Output, input: Input) {
       editor.connect(output, input)
     }
