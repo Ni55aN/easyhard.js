@@ -109,7 +109,7 @@ async function processObject(exp: ObjectExpression, editor: Editor, props: any) 
     const value =  p.value
     const key =  p.key as Identifier
     if (value.type === 'Identifier') {
-      const identNode = await processExpression(value, (objectNode as NestedNode).belongsTo, editor, props)
+      const identNode = await processExpression(value, objectNode.belongsTo, editor, props)
 
       if (identNode instanceof Node) {
         const objInput = objectNode.inputs.get(key.name)
@@ -130,7 +130,7 @@ async function processMember(expression: MemberExpression, editor: Editor, props
   if (property.type === 'Identifier') {
     const memberNode = await editor.addNode(editor.components.Member, [4, 100], { property: property.name })
     props.nodeCreated && props.nodeCreated(memberNode)
-    const identNode = await processExpression(object, (memberNode as NestedNode).belongsTo, editor, props)
+    const identNode = await processExpression(object, memberNode.belongsTo, editor, props)
 
     if (!(identNode instanceof Node)) throw new Error('cannot find identNode')
 
@@ -192,7 +192,7 @@ async function processBinary(statement: BinaryExpression, editor: Editor, props:
   props.nodeCreated && props.nodeCreated(node)
 
   if (left.type !== 'PrivateName') {
-    const identExp = await processExpression(left, (node as NestedNode).belongsTo, editor, props)
+    const identExp = await processExpression(left, node.belongsTo, editor, props)
 
     if (identExp instanceof Node) {
       const output = identExp.outputs.get('return')
@@ -203,7 +203,7 @@ async function processBinary(statement: BinaryExpression, editor: Editor, props:
       (node.data.left as $<any>).next(identExp)
     }
   }
-  const rightExp = await processExpression(right, (node as NestedNode).belongsTo, editor, props)
+  const rightExp = await processExpression(right, node.belongsTo, editor, props)
 
   if (rightExp instanceof Node) {
     const output = rightExp.outputs.get('return')
@@ -220,7 +220,7 @@ async function processBinary(statement: BinaryExpression, editor: Editor, props:
 async function processConditional(expression: ConditionalExpression, editor: Editor, props: ProcessProps) {
   const node = await editor.addNode(editor.components.Conditional, [100,0], { consequent: $(''), alternate: $('') })
   props.nodeCreated && props.nodeCreated(node)
-  const testNode = await processExpression(expression.test, (node as NestedNode).belongsTo, editor, props)
+  const testNode = await processExpression(expression.test, node.belongsTo, editor, props)
 
   if (testNode instanceof Node) {
     const output = testNode.outputs.get('return')
@@ -229,7 +229,7 @@ async function processConditional(expression: ConditionalExpression, editor: Edi
     editor.connect(output as any, input as any)
   }
 
-  const consequentExp = await processExpression(expression.consequent, (node as NestedNode).belongsTo, editor, props)
+  const consequentExp = await processExpression(expression.consequent, node.belongsTo, editor, props)
 
   if (consequentExp instanceof Node) {
     const output = consequentExp.outputs.get('return')
@@ -240,7 +240,7 @@ async function processConditional(expression: ConditionalExpression, editor: Edi
     (node.data.consequent as $<any>).next(consequentExp)
   }
 
-  const alternateExp = await processExpression(expression.alternate, (node as NestedNode).belongsTo, editor, props)
+  const alternateExp = await processExpression(expression.alternate, node.belongsTo, editor, props)
 
   if (alternateExp instanceof Node) {
     const output = alternateExp.outputs.get('return')
@@ -269,7 +269,7 @@ async function processExpression(expression: Expression, scope: Scope, editor: E
   }
   if (expression.type === 'Identifier') {
     const matchName = (n: Node) => n.meta.identifier === expression.name
-    const scopeNodes = editor.origin.nodes.filter(n => scope ? (n as NestedNode).belongsTo === scope : false)
+    const scopeNodes = editor.origin.nodes.filter((n: NestedNode) => scope ? n.belongsTo === scope : false)
     const rootNodes = editor.origin.nodes
     const node = scopeNodes.find(matchName) || rootNodes.find(matchName)
 
@@ -296,7 +296,7 @@ async function processExpression(expression: Expression, scope: Scope, editor: E
   throw new Error('processExpression: cannot process ' + expression.type)
 }
 
-type ProcessProps = { nodeCreated?: (node: Node) => void }
+type ProcessProps = { nodeCreated?: (node: NestedNode) => void }
 
 async function processNode(statement: Statement | Expression, scope: Scope, editor: Editor, props: ProcessProps) {
   if (statement.type === 'ImportDeclaration') {
@@ -342,7 +342,7 @@ async function processNode(statement: Statement | Expression, scope: Scope, edit
   } else if (statement.type === 'ReturnStatement') {
     const node = await editor.addNode(editor.components.Return, [280, 200], {})
     props.nodeCreated && props.nodeCreated(node)
-    const expNode = statement.argument && await processExpression(statement.argument, (node as NestedNode).belongsTo, editor, props)
+    const expNode = statement.argument && await processExpression(statement.argument, node.belongsTo, editor, props)
 
     if (expNode instanceof Node) {
       const outputReturn = expNode.outputs.get('return')
@@ -355,17 +355,17 @@ async function processNode(statement: Statement | Expression, scope: Scope, edit
     props.nodeCreated && props.nodeCreated(node)
     node.meta.identifier = statement.id?.name
 
-    const nodes: Node[] = []
+    const nodes: NestedNode[] = []
     await process(statement, editor, {
       nodeCreated: nestedNode => {
         nodes.push(nestedNode)
-        ;(nestedNode as NestedNode).belongsTo = node
+        nestedNode.belongsTo = node
       }
     })
     nodes.forEach(nestedNode => {
       editor.arrange(nestedNode, {
-        skip: n => {
-          return (n as NestedNode).belongsTo !== node
+        skip: (n: NestedNode) => {
+          return n.belongsTo !== node
         }
       })
     })
@@ -400,7 +400,7 @@ async function process(node: ASTNode, editor: Editor, props: ProcessProps) {
       const returnNode = await editor.addNode(editor.components.Return, [280, 200], {})
       props.nodeCreated && props.nodeCreated(returnNode)
 
-      const expNode = await processExpression(node.body, (returnNode as NestedNode).belongsTo, editor, props)
+      const expNode = await processExpression(node.body, returnNode.belongsTo, editor, props)
 
       if (expNode instanceof Node) {
         const outputReturn = expNode.outputs.get('return')
@@ -415,11 +415,11 @@ async function process(node: ASTNode, editor: Editor, props: ProcessProps) {
 }
 
 function arrangeRoot(editor: Editor) {
-  const startNode = editor.origin.nodes.filter(n => !(n as NestedNode).belongsTo)[0]
+  const startNode = editor.origin.nodes.filter((n: NestedNode) => !n.belongsTo)[0]
 
   if (startNode) editor.arrange(startNode, {
-    skip: node => {
-      return Boolean((node as NestedNode).belongsTo)
+    skip: (node: NestedNode) => {
+      return Boolean(node.belongsTo)
     },
     substitution: {
       input: (currentNode) => {

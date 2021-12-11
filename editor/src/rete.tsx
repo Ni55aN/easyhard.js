@@ -627,7 +627,7 @@ export async function createEditor(container: HTMLElement) {
 
   editor.trigger('process');
 
-  async function addNode(component: Component, position: [number, number], data: any) {
+  async function addNode(component: Component, position: [number, number], data: any): Promise<NestedNode> {
     const node = await component.createNode(data);
 
     node.position = [...position];
