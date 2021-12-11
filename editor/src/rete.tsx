@@ -181,37 +181,49 @@ class ParameterDeclaration extends Component {
 }
 
 class BinaryOperator extends Component {
+  data!: {
+    op: string
+    left: $<string>
+    right: $<string>
+  }
   constructor() {
     super("Binary operator");
   }
 
   async builder(node: Node) {
     const left = new Rete.Input('left', 'Left', anySocket)
-    left.addControl(new TextControl(this.editor as any, 'left', String(node.data.left), false))
+    left.addControl(new TextControl(this.editor as any, 'left', node.data.left as any, false))
     const right = new Rete.Input('right', 'Right', anySocket)
-    right.addControl(new TextControl(this.editor as any, 'right', String(node.data.right), false))
+    right.addControl(new TextControl(this.editor as any, 'right', node.data.right as any, false))
 
     node
       .addInput(left)
       .addInput(right)
       .addControl(new TextControl(this.editor as any, 'op', String(node.data.op), true))
       .addOutput(new Rete.Output('return', "Return", anySocket))
-
   }
 
   worker() { 1 }
 }
 
 class Conditional extends Component {
+  data!: {
+    consequent: $<string>
+    alternate: $<string>
+  }
   constructor() {
     super("Condition");
   }
 
   async builder(node: Node) {
+    const consequent = new Rete.Input('consequent', 'Consequent', anySocket)
+    consequent.addControl(new TextControl(this.editor as any, 'op', node.data.consequent as any, true))
+    const alternate = new Rete.Input('alternate', 'Alternate', anySocket)
+    alternate.addControl(new TextControl(this.editor as any, 'op', node.data.alternate as any, true))
     node
       .addInput(new Rete.Input('test', 'Test', anySocket))
-      .addInput(new Rete.Input('alternate', 'Alternate', anySocket))
-      .addInput(new Rete.Input('consequent', 'Consequent', anySocket))
+      .addInput(consequent)
+      .addInput(alternate)
       .addOutput(new Rete.Output('return', 'Return', anySocket))
 
   }
@@ -322,12 +334,13 @@ class NestedNodeControl extends Rete.Control implements INestedNodeControl {
       .map(n => this.editor.view.nodes.get(n))
       .filter((n): n is NodeView => Boolean(n))
       .map(view => ({ rect: view.el.getBoundingClientRect(), view }))
+    type Item = typeof nestedNodesViews[0]
+    if (!nestedNodesViews.length) return
 
-    const minLeft = _.minBy(nestedNodesViews, a => a.rect.left)
-    const minTop = _.minBy(nestedNodesViews, a => a.rect.top)
-    const maxRight = _.maxBy(nestedNodesViews, a => a.rect.right)
-    const maxBottom = _.maxBy(nestedNodesViews, a => a.rect.bottom)
-    if (!minLeft || !minTop || !maxRight || !maxBottom) throw new Error('maxBottom')
+    const minLeft = _.minBy(nestedNodesViews, a => a.rect.left) as Item
+    const minTop = _.minBy(nestedNodesViews, a => a.rect.top) as Item
+    const maxRight = _.maxBy(nestedNodesViews, a => a.rect.right) as Item
+    const maxBottom = _.maxBy(nestedNodesViews, a => a.rect.bottom) as Item
 
     this.props.width = (maxRight.rect.right - minLeft.rect.left) / this.editor.view.area.transform.k + this.margin * 2
     this.props.height = (maxBottom.rect.bottom - minTop.rect.top) / this.editor.view.area.transform.k + this.margin * 2

@@ -90,6 +90,7 @@ console.log('Root', tsAst.program.body)
 
 
 type Editor = ReturnType<typeof createEditor> extends Promise<infer U> ? U : never
+type Scope = Node | null | undefined
 
 function getValue(exp: Expression | SpreadElement | JSXNamespacedName | ArgumentPlaceholder) {
   const literal = ['StringLiteral', 'NumericLiteral', 'BooleanLiteral']
@@ -103,14 +104,14 @@ async function processObject(exp: ObjectExpression, editor: Editor, props: any) 
     .filter((p): p is ObjectProperty => p.type === 'ObjectProperty' && p.key.type === 'Identifier')
 
   const objectNode = await editor.addNode(editor.components.Object, [4, 100], { properties: properties.map(p => (p.key as Identifier).name).join(', ') })
-  props.nodeCreated && props.nodeCreated(Object)
+  props.nodeCreated && props.nodeCreated(objectNode)
   for (const p of properties) {
     const value =  p.value
     const key =  p.key as Identifier
     if (value.type === 'Identifier') {
-      const identNode = editor.origin.nodes.find(n => n.meta.identifier === value.name)
+      const identNode = await processExpression(value, (objectNode as NestedNode).belongsTo, editor, props)
 
-      if (identNode) {
+      if (identNode instanceof Node) {
         const objInput = objectNode.inputs.get(key.name)
         const identOutput = identNode.outputs.get('return')
         editor.connect(identOutput as any, objInput as any)
@@ -129,9 +130,9 @@ async function processMember(expression: MemberExpression, editor: Editor, props
   if (property.type === 'Identifier') {
     const memberNode = await editor.addNode(editor.components.Member, [4, 100], { property: property.name })
     props.nodeCreated && props.nodeCreated(memberNode)
-    const identNode = await processExpression(object, editor, props)
+    const identNode = await processExpression(object, (memberNode as NestedNode).belongsTo, editor, props)
 
-    if (!identNode) throw new Error('cannot find identNode')
+    if (!(identNode instanceof Node)) throw new Error('cannot find identNode')
 
     const identOutput = identNode.outputs.get('return') as any
     const memberInput = memberNode.inputs.get('object') as any
@@ -147,12 +148,12 @@ function isLiteral(arg: Expression) {
   return arg.type === 'StringLiteral' || arg.type === 'NumericLiteral' ||  arg.type === 'BooleanLiteral'
 }
 
-async function processCall(expression: CallExpression, editor: Editor, props: ProcessProps): Promise<Node | undefined> {
+async function processCall(expression: CallExpression, scope: Scope, editor: Editor, props: ProcessProps): Promise<Node | undefined> {
   const args = await Promise.all(expression.arguments.map(async arg => {
     if (arg.type === 'SpreadElement' || arg.type === 'JSXNamespacedName' || arg.type === 'ArgumentPlaceholder') return null
     if (isLiteral(arg)) return getValue(arg)
 
-    return await processExpression(arg, editor, props)
+    return await processExpression(arg, scope, editor, props)
   }))
   const callNode = await editor.addNode(editor.components.Call, [0,0], { arguments: args.map(arg => arg instanceof Node ? '' : arg) })
   props.nodeCreated && props.nodeCreated(callNode)
@@ -166,9 +167,9 @@ async function processCall(expression: CallExpression, editor: Editor, props: Pr
   })
 
   if (expression.callee.type !== 'V8IntrinsicIdentifier') {
-    const calleNode = await processExpression(expression.callee, editor, props)
+    const calleNode = await processExpression(expression.callee, scope, editor, props)
 
-    if (!calleNode) throw new Error('cannot process CallExpression\'s callee')
+    if (!(calleNode instanceof Node)) throw new Error('cannot process CallExpression\'s callee')
 
     const memberOutput = calleNode.outputs.get('return') as any
     const funcInput = callNode.inputs.get('function') as any
@@ -185,69 +186,77 @@ async function processBinary(statement: BinaryExpression, editor: Editor, props:
   const { left, right } = statement
   const node = await editor.addNode(editor.components.BinaryOperator, [100,0], {
     op: statement.operator,
-    left: getValue(left as any),
-    right: getValue(right as any)
+    left: $(''),
+    right: $('')
   })
   props.nodeCreated && props.nodeCreated(node)
 
   if (left.type !== 'PrivateName') {
-    const identNode = await processExpression(left, editor, props)
+    const identExp = await processExpression(left, (node as NestedNode).belongsTo, editor, props)
 
-    if (identNode) {
-      const output = identNode.outputs.get('return')
+    if (identExp instanceof Node) {
+      const output = identExp.outputs.get('return')
       const input = node.inputs.get('left')
 
       editor.connect(output as any, input as any)
+    } else {
+      (node.data.left as $<any>).next(identExp)
     }
   }
-  const rightNode = await processExpression(right, editor, props)
+  const rightExp = await processExpression(right, (node as NestedNode).belongsTo, editor, props)
 
-  if (rightNode) {
-    const output = rightNode.outputs.get('return')
+  if (rightExp instanceof Node) {
+    const output = rightExp.outputs.get('return')
     const input = node.inputs.get('right')
 
     editor.connect(output as any, input as any)
+  } else {
+    (node.data.right as $<any>).next(rightExp)
   }
 
   return node
 }
 
 async function processConditional(expression: ConditionalExpression, editor: Editor, props: ProcessProps) {
-  const node = await editor.addNode(editor.components.Conditional, [100,0], {})
+  const node = await editor.addNode(editor.components.Conditional, [100,0], { consequent: $(''), alternate: $('') })
   props.nodeCreated && props.nodeCreated(node)
-  const testNode = await processExpression(expression.test, editor, props)
+  const testNode = await processExpression(expression.test, (node as NestedNode).belongsTo, editor, props)
 
-  if (testNode) {
+  if (testNode instanceof Node) {
     const output = testNode.outputs.get('return')
     const input = node.inputs.get('test')
 
     editor.connect(output as any, input as any)
   }
 
-  const consequentNode = await processExpression(expression.consequent, editor, props)
+  const consequentExp = await processExpression(expression.consequent, (node as NestedNode).belongsTo, editor, props)
 
-  if (consequentNode) {
-    const output = consequentNode.outputs.get('return')
+  if (consequentExp instanceof Node) {
+    const output = consequentExp.outputs.get('return')
     const input = node.inputs.get('consequent')
 
     editor.connect(output as any, input as any)
+  } else {
+    (node.data.consequent as $<any>).next(consequentExp)
   }
 
-  const alternateNode = await processExpression(expression.alternate, editor, props)
+  const alternateExp = await processExpression(expression.alternate, (node as NestedNode).belongsTo, editor, props)
 
-  if (alternateNode) {
-    const output = alternateNode.outputs.get('return')
+  if (alternateExp instanceof Node) {
+    const output = alternateExp.outputs.get('return')
     const input = node.inputs.get('alternate')
 
     editor.connect(output as any, input as any)
+  } else {
+    (node.data.alternate as $<any>).next(alternateExp)
   }
 
   return node
 }
 
-async function processExpression(expression: Expression, editor: Editor, props: ProcessProps) {
+async function processExpression(expression: Expression, scope: Scope, editor: Editor, props: ProcessProps) {
   if (expression.type === 'CallExpression') {
-    return await processCall(expression, editor, props)
+    return await processCall(expression, scope, editor, props)
   }
   if (expression.type === 'MemberExpression') {
     return await processMember(expression, editor, props)
@@ -259,7 +268,10 @@ async function processExpression(expression: Expression, editor: Editor, props: 
     return await processConditional(expression, editor, props)
   }
   if (expression.type === 'Identifier') {
-    const node = editor.origin.nodes.find(n => n.meta.identifier === expression.name)
+    const matchName = (n: Node) => n.meta.identifier === expression.name
+    const scopeNodes = editor.origin.nodes.filter(n => scope ? (n as NestedNode).belongsTo === scope : false)
+    const rootNodes = editor.origin.nodes
+    const node = scopeNodes.find(matchName) || rootNodes.find(matchName)
 
     if (!node) throw new Error(`cannot find Identifier "${expression.name}"`)
     return node
@@ -275,12 +287,18 @@ async function processExpression(expression: Expression, editor: Editor, props: 
     // (button as any).update()
     return node
   }
+  if (expression.type === 'ObjectExpression') {
+    return await processObject(expression, editor, props)
+  }
+  if (isLiteral(expression)) {
+    return getValue(expression)
+  }
   throw new Error('processExpression: cannot process ' + expression.type)
 }
 
 type ProcessProps = { nodeCreated?: (node: Node) => void }
 
-async function processNode(statement: Statement | Expression, editor: Editor, props: ProcessProps) {
+async function processNode(statement: Statement | Expression, scope: Scope, editor: Editor, props: ProcessProps) {
   if (statement.type === 'ImportDeclaration') {
     const module = statement.source.value
 
@@ -312,21 +330,21 @@ async function processNode(statement: Statement | Expression, editor: Editor, pr
         props.nodeCreated && props.nodeCreated(node)
         node.meta.identifier = id
       } else {
-        const expNode = await processExpression(declarator.init, editor, props)
+        const expNode = await processExpression(declarator.init, scope, editor, props)
 
-        if (!expNode) throw new Error('VariableDeclaration: cannot find init\'s node')
+        if (!(expNode instanceof Node)) throw new Error('VariableDeclaration: cannot find init\'s node')
 
         expNode.meta.identifier = id
       }
     }
   } else if (statement.type === 'ExpressionStatement') {
-    await processExpression(statement.expression, editor, props)
+    await processExpression(statement.expression, scope, editor, props)
   } else if (statement.type === 'ReturnStatement') {
     const node = await editor.addNode(editor.components.Return, [280, 200], {})
     props.nodeCreated && props.nodeCreated(node)
-    const expNode = statement.argument && await processExpression(statement.argument, editor, props)
+    const expNode = statement.argument && await processExpression(statement.argument, (node as NestedNode).belongsTo, editor, props)
 
-    if (expNode) {
+    if (expNode instanceof Node) {
       const outputReturn = expNode.outputs.get('return')
       const inputArgument = node.inputs.get('argument')
 
@@ -362,7 +380,7 @@ async function process(node: ASTNode, editor: Editor, props: ProcessProps) {
   console.log('process', node)
   if (node.type === 'File') {
     for (const statement of node.program.body) {
-      await processNode(statement, editor, props)
+      await processNode(statement, null, editor, props)
     }
   } else if (node.type === 'FunctionDeclaration' || node.type === 'ArrowFunctionExpression') {
     for (const statement of node.params) {
@@ -376,14 +394,15 @@ async function process(node: ASTNode, editor: Editor, props: ProcessProps) {
 
     if (node.body.type === 'BlockStatement') {
       for (const statement of node.body.body) {
-        await processNode(statement, editor, props)
+        await processNode(statement, null, editor, props)
       }
     } else {
       const returnNode = await editor.addNode(editor.components.Return, [280, 200], {})
-      const expNode = await processExpression(node.body, editor, props)
-
       props.nodeCreated && props.nodeCreated(returnNode)
-      if (expNode) {
+
+      const expNode = await processExpression(node.body, (returnNode as NestedNode).belongsTo, editor, props)
+
+      if (expNode instanceof Node) {
         const outputReturn = expNode.outputs.get('return')
         const inputArgument = returnNode.inputs.get('argument')
 
