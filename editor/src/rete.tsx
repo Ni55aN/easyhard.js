@@ -1,5 +1,6 @@
 import 'regenerator-runtime/runtime'
 import * as React from 'react'
+import { $ } from 'easyhard'
 import _ from 'lodash'
 import Rete, { Connection, Control, Input, Node, NodeEditor, Output } from 'rete'
 // import VueRenderPlugin from 'rete-vue-render-plugin'
@@ -10,6 +11,7 @@ import ContextMenuPlugin from 'rete-context-menu-plugin'
 import AutoArrangePlugin from 'rete-auto-arrange-plugin'
 import { useRef } from 'react';
 import { NodeView } from 'rete/types/view/node';
+import { Subject, Subscription } from 'rxjs'
 
 export { Component, Input, Node, NodeEditor, Output } from 'rete'
 
@@ -35,20 +37,48 @@ abstract class Component extends Rete.Component {
     scope: 'any' | 'root' | (new () => Component) = 'any'
 }
 
-class MyReactControl extends React.Component<{ value: string, id: string, putData: (...arg: any[]) => void, emitter: NodeEditor }> {
+type TextControlComponentProps = {
+  value: string | $<string>
+  id: string
+  readonly: boolean
+  putData: (...arg: any[]) => void
+  emitter: NodeEditor
+}
+
+class TextControlComponent extends React.Component<TextControlComponentProps> {
   state: { value?: string } = {};
+  sub!: Subscription
+
+  componentWillUnmount() {
+    if (this.sub) this.sub.unsubscribe()
+  }
   componentDidMount() {
-    this.setState({
-      value: this.props.value
-    });
-    this.props.putData(this.props.id, this.props.value);
+    const { value } = this.props
+    if (value instanceof Subject) {
+      this.sub = value.subscribe(v => {
+        this.setState({
+          value: v
+        });
+      })
+    } else {
+      this.setState({
+        value: this.props.value
+      });
+      this.props.putData(this.props.id, this.props.value);
+    }
   }
   onChange(event: any) {
-    this.props.putData(this.props.id, event.target.value);
-    this.props.emitter.trigger("process");
-    this.setState({
-      value: event.target.value
-    });
+    const next = event.target.value
+    const { value } = this.props
+    if (value instanceof Subject) {
+      value.next(next)
+    } else {
+      this.props.putData(this.props.id, next);
+      this.props.emitter.trigger("process");
+      this.setState({
+        value: next
+      });
+    }
   }
 
   render() {
@@ -61,11 +91,11 @@ class MyReactControl extends React.Component<{ value: string, id: string, putDat
 export class TextControl extends Rete.Control {
   render: string
   component: any
-  props: any
-  constructor(emitter: NodeEditor, key: string, value: string, readonly: boolean, events: { change?: () => void } = {}) {
+  props: TextControlComponentProps
+  constructor(emitter: NodeEditor, key: string, value: string | $<string>, readonly: boolean, events: { change?: () => void } = {}) {
     super(key);
     this.render = "react";
-    this.component = MyReactControl;
+    this.component = TextControlComponent;
     this.props = {
       emitter,
       id: key,
