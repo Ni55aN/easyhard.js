@@ -33,8 +33,9 @@ funcSocket.combineWith(anySocket)
 objSocket.combineWith(anySocket)
 
 
+type Scope = 'any' | 'root' | (new () => Component)
 abstract class Component extends Rete.Component {
-    scope: 'any' | 'root' | (new () => Component) = 'any'
+    scope: Scope = 'any'
 }
 
 type TextControlComponentProps = {
@@ -243,8 +244,10 @@ class NestedNodeControl extends Rete.Control implements INestedNodeControl {
   props: { editor: NodeEditor, width: number, height: number, extender: number, onRef: (el: HTMLElement | null) => void }
   box: HTMLElement | null = null
   margin = 20
+  scopeComponents: string[]
+  rootComponents: string[]
 
-  constructor(private editor: NodeEditor, key: string, private node: Node) {
+  constructor(private editor: NodeEditor, private scope: Scope, key: string, private node: Node) {
     super(key);
     this.render = "react";
     this.component = ({ onRef, height, width, extender }: typeof this.props) => {
@@ -255,6 +258,8 @@ class NestedNodeControl extends Rete.Control implements INestedNodeControl {
       return <div ref={inputEl} style={{ background: 'white', height: `${height + extender}px`, width: `${width + extender}px` }}></div>
     }
 
+    this.scopeComponents = Object.values(components).filter(c => c.scope === this.scope).map(c => c.name)
+    this.rootComponents = Object.values(components).filter(c => c.scope === 'root').map(c => c.name)
     this.props = {
       editor,
       width: 140,
@@ -295,7 +300,7 @@ class NestedNodeControl extends Rete.Control implements INestedNodeControl {
 
       const k = 250
       const intersects = this.intersects(el, this.box)
-      const inInner = ['Return', 'Parameter'].includes(args.node.name)
+      const inInner = this.scopeComponents.includes(args.node.name)
       const belongsToCurrentFunction = (args.node as NestedNode).belongsTo === this.node
 
       if (intersects && (!inInner || belongsToCurrentFunction)) {
@@ -377,7 +382,7 @@ class NestedNodeControl extends Rete.Control implements INestedNodeControl {
 
       if (!el || !this.box) return
       const intersects = this.contains(el, this.box)
-      const isFuncSpecific = ['Return', 'Parameter'].includes(node.name)
+      const isFuncSpecific = this.scopeComponents.includes(node.name)
 
       if (intersects && !(isFuncSpecific && node.belongsTo !== this.node)) {
         node.belongsTo = this.node
@@ -464,7 +469,7 @@ class FunctionDeclaration extends Component {
 
   async builder(node: Node) {
     node
-      .addControl(new NestedNodeControl(this.editor as any, 'area', node))
+      .addControl(new NestedNodeControl(this.editor as any, FunctionDeclaration, 'area', node))
       .addOutput(new Rete.Output('return', 'Variable', anySocket))
   }
 
@@ -555,20 +560,20 @@ class Return extends Component {
   worker() { 1 }
 }
 
+const components = {
+  VariableDeclaration: new VariableDeclaration(),
+  ParameterDeclaration: new ParameterDeclaration(),
+  Call: new Call(),
+  Member: new Member(),
+  Return: new Return(),
+  Object: new ObjectComp(),
+  ImportDeclaration: new ImportDeclaration(),
+  FunctionDeclaration: new FunctionDeclaration(),
+  BinaryOperator: new BinaryOperator(),
+  Conditional: new Conditional()
+}
 
 export async function createEditor(container: HTMLElement) {
-  const components = {
-    VariableDeclaration: new VariableDeclaration(),
-    ParameterDeclaration: new ParameterDeclaration(),
-    Call: new Call(),
-    Member: new Member(),
-    Return: new Return(),
-    Object: new ObjectComp(),
-    ImportDeclaration: new ImportDeclaration(),
-    FunctionDeclaration: new FunctionDeclaration(),
-    BinaryOperator: new BinaryOperator(),
-    Conditional: new Conditional()
-  }
 
   const editor = new Rete.NodeEditor('demo@0.1.0', container);
   editor.use(ConnectionPlugin);
