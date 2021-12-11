@@ -383,10 +383,12 @@ class NestedNodeControl extends Rete.Control implements INestedNodeControl {
       if (!el || !this.box) return
       const intersects = this.contains(el, this.box)
       const isFuncSpecific = this.scopeComponents.includes(node.name)
+      const isRootSpecific = this.rootComponents.includes(node.name)
 
-      if (intersects && !(isFuncSpecific && node.belongsTo !== this.node)) {
+      if (intersects && !isRootSpecific && !(isFuncSpecific && node.belongsTo !== this.node)) {
         node.belongsTo = this.node
-      } else if (isFuncSpecific && node.belongsTo === this.node) {
+      } else if ((isFuncSpecific && node.belongsTo === this.node) || (isRootSpecific && intersects)) {
+
         const pos = startPosition.get(node)
 
         pos && view.translate(pos[0], pos[1])
