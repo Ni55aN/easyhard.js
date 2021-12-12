@@ -6,7 +6,8 @@ import _ from 'lodash'
 import {
   Node as ASTNode, Statement, Expression, ObjectExpression, ObjectProperty, BinaryExpression,
   CallExpression, MemberExpression, SpreadElement, JSXNamespacedName, ArgumentPlaceholder,
-  Identifier, ConditionalExpression, Function as Func
+  Identifier, ConditionalExpression, Function as Func,
+  FunctionDeclaration, ArrowFunctionExpression
 } from '@babel/types'
 import { createEditor, Node, NestedNode, INestedNodeControl, getNodes } from './rete'
 
@@ -277,15 +278,7 @@ async function processExpression(expression: Expression, scope: Scope, editor: E
     return node
   }
   if (expression.type === 'ArrowFunctionExpression') {
-    const node = await editor.addNode(editor.components.FunctionDeclaration, [280, 200], {})
-    props.nodeCreated && props.nodeCreated(node)
-    // const button = node.controls.get('editButton') as Button
-
-    // button.props.click = () => {
-    //   // props.open(expression)
-    // }
-    // (button as any).update()
-    return node
+    return await processFunction(expression, editor, props)
   }
   if (expression.type === 'ObjectExpression') {
     return await processObject(expression, editor, props)
@@ -351,29 +344,58 @@ async function processNode(statement: Statement | Expression, scope: Scope, edit
       editor.connect(outputReturn as any, inputArgument as any)
     }
   } else if (statement.type === 'FunctionDeclaration') {
-    const node = await editor.addNode(editor.components.FunctionDeclaration, [280, 200], {})
-    props.nodeCreated && props.nodeCreated(node)
-    node.meta.identifier = statement.id?.name
-
-    const nodes: NestedNode[] = []
-    await process(statement, editor, {
-      nodeCreated: nestedNode => {
-        nodes.push(nestedNode)
-        nestedNode.belongsTo = node
-      }
-    })
-    nodes.forEach(nestedNode => {
-      editor.arrange(nestedNode, {
-        skip: (n: NestedNode) => {
-          return n.belongsTo !== node
-        }
-      })
-    })
-    ;(node.controls.get('area') as INestedNodeControl)?.adjustPlacement()
-
+    await processFunction(statement, editor, props)
   } else {
     throw new Error('processNode: cannot process statement ' + statement.type)
   }
+}
+
+async function processFunction(expression: FunctionDeclaration | ArrowFunctionExpression, editor: Editor, props: ProcessProps) {
+  const node = await editor.addNode(editor.components.FunctionDeclaration, [280, 200], {})
+  props.nodeCreated && props.nodeCreated(node)
+
+  if (expression.type === 'FunctionDeclaration') {
+    node.meta.identifier = expression.id?.name
+  }
+
+  const subnodes: NestedNode[] = []
+  const subprops = {
+    nodeCreated: (nestedNode: NestedNode) => {
+      subnodes.push(nestedNode)
+      nestedNode.belongsTo = node
+    }
+  }
+
+  for (const statement of expression.params) {
+    if (statement.type !== 'Identifier') throw new Error('FunctionDeclaration: cannot process ' + statement.type)
+    const { name } = statement
+    const node = await editor.addNode(editor.components.ParameterDeclaration, [0,0], { name })
+
+    subprops.nodeCreated && subprops.nodeCreated(node)
+    node.meta.identifier = name
+  }
+
+  if (expression.body.type === 'BlockStatement') {
+    for (const statement of expression.body.body) {
+      await processNode(statement, null, editor, subprops)
+    }
+  } else {
+    const returnNode = await editor.addNode(editor.components.Return, [280, 200], {})
+    subprops.nodeCreated && subprops.nodeCreated(returnNode)
+
+    const expNode = await processExpression(expression.body, returnNode.belongsTo, editor, subprops)
+
+    if (expNode instanceof Node) {
+      const outputReturn = expNode.outputs.get('return')
+      const inputArgument = returnNode.inputs.get('argument')
+
+      editor.connect(outputReturn as any, inputArgument as any)
+    }
+  }
+
+  arrangeSubnodes(node, editor, subnodes)
+
+  return node
 }
 
 async function process(node: ASTNode, editor: Editor, props: ProcessProps) {
@@ -381,33 +403,6 @@ async function process(node: ASTNode, editor: Editor, props: ProcessProps) {
   if (node.type === 'File') {
     for (const statement of node.program.body) {
       await processNode(statement, null, editor, props)
-    }
-  } else if (node.type === 'FunctionDeclaration' || node.type === 'ArrowFunctionExpression') {
-    for (const statement of node.params) {
-      if (statement.type !== 'Identifier') throw new Error('FunctionDeclaration: cannot process ' + statement.type)
-      const { name } = statement
-      const node = await editor.addNode(editor.components.ParameterDeclaration, [0,0], { name })
-
-      props.nodeCreated && props.nodeCreated(node)
-      node.meta.identifier = name
-    }
-
-    if (node.body.type === 'BlockStatement') {
-      for (const statement of node.body.body) {
-        await processNode(statement, null, editor, props)
-      }
-    } else {
-      const returnNode = await editor.addNode(editor.components.Return, [280, 200], {})
-      props.nodeCreated && props.nodeCreated(returnNode)
-
-      const expNode = await processExpression(node.body, returnNode.belongsTo, editor, props)
-
-      if (expNode instanceof Node) {
-        const outputReturn = expNode.outputs.get('return')
-        const inputArgument = returnNode.inputs.get('argument')
-
-        editor.connect(outputReturn as any, inputArgument as any)
-      }
     }
   } else {
     throw new Error('process: cannot process ' + node.type)
@@ -436,6 +431,17 @@ function arrangeRoot(editor: Editor) {
       }
     }
   })
+}
+
+function arrangeSubnodes(node: NestedNode, editor: Editor, nodes: NestedNode[]) {
+  nodes.forEach(nestedNode => {
+    editor.arrange(nestedNode, {
+      skip: (n: NestedNode) => {
+        return n.belongsTo !== node
+      }
+    })
+  })
+  ;(node.controls.get('area') as INestedNodeControl)?.adjustPlacement()
 }
 
 void async function () {
