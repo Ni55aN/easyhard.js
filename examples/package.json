@@ -27,7 +27,7 @@
         "express-ws": "^4.0.0",
         "history": "^5.0.0",
         "imask": "^6.2.2",
-        "lodash-es": "^4.17.15",
+        "lodash-es": "^4.17.21",
         "module-alias": "^2.2.2",
         "rxjs": "^7.1.0",
         "todomvc-app-css": "^2.4.1",
