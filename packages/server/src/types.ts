@@ -9,7 +9,7 @@ export type Handlers<T, R> = {
   [K in keyof T]: Handler<T[K], R>
 }
 
-export type HandlerPayload<T> = ObjectMapping<ExtractPayload<T, 'request'>, RequestMapper, 0, 2>
+export type HandlerPayload<T> = ObjectMapping<ExtractPayload<T, 'request'>, RequestMapper, 1, 2>
 export type ResponsePayload<T> = ObjectMapping<ExtractPayload<T, 'response'>, ResponseMapper, 0, 1>
 
 export type Attachment = { detach: () => void }

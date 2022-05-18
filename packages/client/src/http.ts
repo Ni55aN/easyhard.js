@@ -1,9 +1,9 @@
 import { delay } from './utils'
 
 export type HttpHeaders = {[key:string]: string}
-export type HttpBody = Document | BodyInit | null | undefined
+export type HttpBody = Document | XMLHttpRequestBodyInit | null | undefined
 export type HTTP = {
-  send: (id: string, headers: HttpHeaders, body?: Document | BodyInit | null | undefined) => Promise<void>,
+  send: (id: string, headers: HttpHeaders, body?: Document | XMLHttpRequestBodyInit | null | undefined) => Promise<void>,
   abort: (id: string) => void
 }
 
