@@ -11,6 +11,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 14
+      - run: npm i -g npm@8
       - run: npm install
       - run: npm run build # npm run lint is executed internally
       - run: npm run test
