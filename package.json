@@ -1,7 +1,7 @@
 {
   "scripts": {
     "build": "MODE=prod rollup -c",
-    "postbuild": "node ./scripts/link.mjs",
+    "postbuild": "for d in build/*; do (cd \"$d\" && npm pack --pack-destination ..); done",
     "build:dev": "MODE=dev rollup -cw",
     "lint": "eslint packages/*/src/**",
     "lint:examples": "eslint examples/client/** examples/server/** examples/shared/**",
@@ -72,7 +72,7 @@
   "dependencies": {
     "tslib": "^2.2.0"
   },
-  "engines" : {
-    "npm" : ">=7.0.0"
+  "engines": {
+    "npm": ">=7.0.0"
   }
 }
