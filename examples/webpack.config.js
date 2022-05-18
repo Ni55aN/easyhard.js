@@ -21,6 +21,9 @@ module.exports = {
   ),
   mode,
   devtool: 'source-map',
+  snapshot: {
+    managedPaths: [new RegExp(/^(.+?[\\/]node_modules)[\\/]((?!easyhard)).*[\\/]*/)]
+  },
   devServer: {
     static: './dist/client',
     hot: true,
