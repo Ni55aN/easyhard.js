@@ -28,7 +28,7 @@ async function initRouter(routes: Route[], history: History) {
 }
 
 describe('router', () => {
-  let history: MemoryHistory<any>
+  let history: MemoryHistory
 
   beforeEach(() => {
     history = createMemoryHistory()
