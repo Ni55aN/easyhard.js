@@ -22,9 +22,9 @@ module.exports = {
   mode,
   devtool: 'source-map',
   devServer: {
-    contentBase: './dist/client',
+    static: './dist/client',
     hot: true,
-    disableHostCheck: true,
+    allowedHosts: "all",
     proxy: {
       '/api': {
          target: 'ws://localhost:3000',
