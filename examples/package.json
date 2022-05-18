@@ -12,17 +12,17 @@
         "@types/express-ws": "^3.0.0",
         "@types/lodash-es": "^4.17.3",
         "cookie": "^0.4.1",
-        "easyhard": "file:../build/core",
-        "easyhard-api": "file:../build/api",
-        "easyhard-bridge": "file:../build/bridge",
-        "easyhard-client": "file:../build/client",
-        "easyhard-common": "file:../build/common",
-        "easyhard-forms": "file:../build/forms",
-        "easyhard-loader": "file:../build/loader",
-        "easyhard-router": "file:../build/router",
-        "easyhard-server": "file:../build/server",
-        "easyhard-server-uws": "file:../build/server-uws",
-        "easyhard-styles": "file:../build/styles",
+        "easyhard": "file:../build/easyhard-0.8.1.tgz",
+        "easyhard-api": "file:../build/easyhard-api-0.1.1.tgz",
+        "easyhard-bridge": "file:../build/easyhard-bridge-0.2.6.tgz",
+        "easyhard-client": "file:../build/easyhard-client-0.5.9.tgz",
+        "easyhard-common": "file:../build/easyhard-common-0.3.0.tgz",
+        "easyhard-forms": "file:../build/easyhard-forms-0.2.0.tgz",
+        "easyhard-loader": "file:../build/easyhard-loader-0.1.1.tgz",
+        "easyhard-router": "file:../build/easyhard-router-0.3.1.tgz",
+        "easyhard-server": "file:../build/easyhard-server-0.6.2.tgz",
+        "easyhard-server-uws": "file:../build/easyhard-server-uws-0.1.0.tgz",
+        "easyhard-styles": "file:../build/easyhard-styles-0.3.1.tgz",
         "express": "^4.17.1",
         "express-ws": "^4.0.0",
         "history": "^5.0.0",
@@ -51,9 +51,5 @@
         "webpack": "5.72.1",
         "webpack-cli": "4.9.2",
         "webpack-dev-server": "4.9.0"
-    },
-    "_moduleAliases": {
-        "easyhard-common": "../build/common",
-        "easyhard-bridge": "../build/bridge"
     }
 }
