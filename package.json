@@ -7,7 +7,7 @@
     "lint:examples": "eslint examples/client/** examples/server/** examples/shared/**",
     "test": "jest --verbose",
     "commit": "git-cz",
-    "postinstall": "for d in packages/*; do (cd \"$d\" && npm i); done"
+    "postinstall": "for d in packages/*; do (cd \"$d\" && npm i --legacy-peer-deps); done"
   },
   "repository": {
     "type": "git",
@@ -71,5 +71,8 @@
   },
   "dependencies": {
     "tslib": "^2.2.0"
+  },
+  "engines" : {
+    "npm" : ">=7.0.0"
   }
 }
