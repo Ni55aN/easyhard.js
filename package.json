@@ -5,7 +5,7 @@
     "build:dev": "MODE=dev rollup -cw",
     "lint": "eslint packages/*/src/**",
     "lint:examples": "eslint examples/client/** examples/server/** examples/shared/**",
-    "test": "jest --verbose",
+    "test": "jest --coverage --verbose",
     "commit": "git-cz",
     "postinstall": "for d in packages/*; do (cd \"$d\" && npm i --legacy-peer-deps); done"
   },
