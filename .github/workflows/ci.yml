@@ -20,6 +20,12 @@ jobs:
         with:
           name: npm-logs
           path: ~/.npm/_logs
+      - name: Archive npm failure build
+        uses: actions/upload-artifact@v3
+        if: ${{failure()}}
+        with:
+          name: npm-build
+          path: ./build
   test:
     runs-on: ubuntu-latest
     steps:
