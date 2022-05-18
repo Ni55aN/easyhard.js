@@ -8,6 +8,7 @@ import path from 'path';
 import { mainPkg, packages } from './scripts/shared/index.mjs'
 
 const isDev = process.env.MODE === 'dev'
+const destination = process.env.DEST || 'build'
 
 const getBanner = (pkg) => `/*!
  * ${pkg.name} v${pkg.version}
@@ -21,7 +22,7 @@ export default packages.map(({ folder, pkg }) => {
     external: Object.keys(pkg.dependencies || {}),
     output: ['cjs', 'esm'].map(format => {
       return {
-        file: `build/${folder}/${format}.js`,
+        file: `${destination}/${pkg.name}/${format}.js`,
         format,
         exports: 'auto',
         sourcemap: true,
@@ -43,9 +44,11 @@ export default packages.map(({ folder, pkg }) => {
           compilerOptions: {
             sourceMap: true,
             declaration: true,
-            declarationDir: path.resolve(`build/${folder}/types`),
+            declarationDir: path.resolve(`${destination}/${pkg.name}/types`),
             baseUrl: '.',
-            paths: fromEntries(packages.map(({ folder, pkg }) => [pkg.name, [`../../build/${folder}`]]))
+            paths: destination === 'build'
+              ? fromEntries(packages.map(({ folder, pkg }) => [pkg.name, [`../../${destination}/${pkg.name}`]]))
+              : {}
           }
          }
       }),
@@ -59,9 +62,10 @@ export default packages.map(({ folder, pkg }) => {
             module: 'esm',
             repository, author, license, bugs, homepage
           }
-          fs.ensureDirSync(`build/${folder}`)
-          fs.copyFileSync(path.resolve(`packages/${folder}/package-lock.json`), path.resolve(`build/${folder}/package-lock.json`))
-          fs.writeFileSync(path.resolve(`build/${folder}/package.json`), JSON.stringify(packageJson, null, 4))
+
+          fs.mkdirSync(`${destination}/${pkg.name}`, { recursive: true })
+          fs.copyFileSync(path.resolve(`packages/${folder}/package-lock.json`), path.resolve(`${destination}/${pkg.name}/package-lock.json`))
+          fs.writeFileSync(path.resolve(`${destination}/${pkg.name}/package.json`), JSON.stringify(packageJson, null, 4))
         }
       },
       isDev ? undefined : terser({
