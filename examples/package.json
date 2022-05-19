@@ -5,7 +5,8 @@
         "start:server": "nodemon server/index.ts",
         "build": "webpack && tsc --project tsconfig.server.json",
         "stats": "webpack --profile --json > dist/stats.json",
-        "lt": "lt --port 8080 --subdomain easyhard"
+        "lt": "lt --port 8080 --subdomain easyhard",
+        "build-deps": "DEST=examples/node_modules npm run build:dev --prefix .."
     },
     "dependencies": {
         "@types/express": "^4.17.11",
