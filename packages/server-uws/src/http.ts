@@ -46,6 +46,8 @@ export function useHttp(): Http & { tunnel: HttpTunnel } {
     const cookieSetter = cookieSetters.get(cookieSetterKey)
 
     if (cookieSetter) {
+      // no-unsafe-argument bug
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const cookie = serialize(cookieSetterKey, cookieSetter.value || '', cookieSetter.options)
 
       res.setHeader('set-cookie', cookie)

@@ -10,8 +10,8 @@ type DiValue<T> = Subject<T>;
 type DiInjection<T> = WeakMap<Node, T>;
 
 class Injections {
-  map = new WeakMap<DiKey<unknown>, DiInjection<unknown>>();
-  list$ = $<Node | null>(null);
+  map = new WeakMap<DiKey<unknown>, DiInjection<unknown>>()
+  list$ = $<Node | null>(null)
 
   observe<T, K>(id: DiKey<K>): Observable<DiInjection<T>> {
     return this.list$.pipe(
@@ -41,7 +41,7 @@ class Injections {
 
 const injections = new Injections()
 
-export function $provide<T extends unknown, K extends unknown>(id: DiKey<K>, value: DiValue<T>): Child {
+export function $provide<T, K>(id: DiKey<K>, value: DiValue<T>): Child {
   const anchor = createAnchor()
 
   value.pipe(untilExist(anchor)).subscribe(value => {
@@ -52,7 +52,7 @@ export function $provide<T extends unknown, K extends unknown>(id: DiKey<K>, val
   return anchor
 }
 
-export function $inject<T extends unknown, K extends unknown>(id: DiKey<K>, act: DiValue<T>): Child {
+export function $inject<T, K>(id: DiKey<K>, act: DiValue<T>): Child {
   const anchor = createAnchor()
   const injection = injections.observe(id)
 

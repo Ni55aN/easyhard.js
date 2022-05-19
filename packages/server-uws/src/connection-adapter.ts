@@ -1,7 +1,7 @@
 import { WebSocketState, WsConnection } from 'easyhard-bridge'
-import { WebSocket } from 'uWebSockets.js'
+import { RecognizedString, WebSocket } from 'uWebSockets.js'
 
-type Listener = [string, (...args: any[]) => any]
+type Listener = [string, (...args: unknown[]) => unknown]
 
 export class ConnectionAdapter implements WsConnection {
   private listeners: Listener[] = []
@@ -15,11 +15,11 @@ export class ConnectionAdapter implements WsConnection {
       .forEach(e => e[1](payload))
   }
 
-  addEventListener(event: any, handler: (props: any) => void) {
+  addEventListener(event: string, handler: (props: unknown) => void) {
     this.listeners.push([event, handler])
   }
 
-  removeEventListener(event: any, handler: any) {
+  removeEventListener(event: string, handler: (props: unknown) => void) {
     const listenersToRemove = [...this.listeners].filter(e => e[0] === event && e[1] === handler)
 
     listenersToRemove.forEach(item => {
@@ -29,7 +29,7 @@ export class ConnectionAdapter implements WsConnection {
     })
   }
 
-  send(data: any) {
+  send(data: RecognizedString) {
     this.ws.send(data)
   }
 }

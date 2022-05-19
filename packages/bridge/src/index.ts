@@ -3,8 +3,8 @@ import { RequestId } from './binder'
 
 export type ExtractPayload<T, K extends 'request' | 'response'> =
   K extends 'response'
-    ? (T extends Observable<infer U> ? U : (T extends OperatorFunction<any, infer U> ? U : never))
-    : (T extends OperatorFunction<infer U, any> ? U : never)
+    ? (T extends Observable<infer U> ? U : (T extends OperatorFunction<unknown, infer U> ? U : never))
+    : (T extends OperatorFunction<infer U, unknown> ? U : never)
 
 export type Payload = Record<string, unknown>
 

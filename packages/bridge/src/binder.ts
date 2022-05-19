@@ -123,7 +123,7 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
   const onClose = () => {
     Array.from(subscriptions.keys()).forEach(unsubscribe)
   }
-  const onMessage = (event: { data: any }) => {
+  const onMessage = (event: { data: string }) => {
     const data: ClientToServer<Key> = JSON.parse(event.data)
 
     if ('subscribe' in data && data.key === key) {

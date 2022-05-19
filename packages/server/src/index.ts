@@ -1,8 +1,8 @@
-import { Attachment, HandlerPayload, Handlers, ObservableHandler, PipeHandler, ResponsePayload } from './types'
+import { Attachment, HandlerPayload, Handlers, ResponsePayload } from './types'
 import { Http } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
 import { ExtractPayload, registerObservable, WsConnection } from 'easyhard-bridge'
-import { Observable, pipe, throwError } from 'rxjs'
+import { Observable, OperatorFunction, pipe, throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 export function attach<T, R>(actions: Handlers<T, R>, ws: WsConnection, req: R, http: Http): Attachment {
@@ -19,11 +19,11 @@ export function attach<T, R>(actions: Handlers<T, R>, ws: WsConnection, req: R, 
     const postMap = pipe(transformError, transformValue, map(params => ({ ...params, $request: undefined })))
 
     if (stream instanceof Observable) {
-      const s = stream as ObservableHandler<T[keyof T]>
-      return registerObservable(key, s.pipe(postMap as any), ws)
+      const s = stream as Observable<Return>
+      return registerObservable(key, s.pipe(postMap), ws)
     } else {
-      const s = stream as PipeHandler<T[keyof T], R>
-      return registerObservable(key, pipe(preMap, s as any, postMap), ws)
+      const s = stream as OperatorFunction<HandlerPayload<T[keyof T]>, Return>
+      return registerObservable(key, pipe(preMap, s, postMap), ws)
     }
   })
 

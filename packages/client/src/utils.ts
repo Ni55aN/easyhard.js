@@ -17,7 +17,7 @@ export function mount<T>(onMount: () => () => void) {
 export function mapWithSubscriber<T, R>(project: (value: T, subscriber: Subscriber<R>) => R) {
   return (source: Observable<T>): Observable<unknown> => new Observable<R>(observer => {
     return source.subscribe({
-      error: error => observer.next(error),
+      error: (error: R) => observer.next(error),
       complete: () => observer.complete(),
       next: value => observer.next(project(value, observer))
     })

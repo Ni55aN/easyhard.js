@@ -27,7 +27,7 @@ export function useHttp(): Http & { tunnel: HttpTunnel } {
     const bodyListener = bodyListeners.get(subscriptionId)
     if (bodyListener) {
       req
-        .on('data', data => {
+        .on('data', (data: Buffer) => {
           bodyListener.next(data)
         })
         .on('error', (err) => {

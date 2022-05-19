@@ -21,7 +21,7 @@ function App() {
   const error = $<Error | null>(null)
   const count3 = client.call('getDataError').pipe(
     map(data => String(data.count)),
-    catchError(e => {
+    catchError((e: Error) => {
       error.next(e)
       return Promise.resolve(null)
     }),

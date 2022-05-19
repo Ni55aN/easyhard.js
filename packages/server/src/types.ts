@@ -2,7 +2,7 @@ import {ExtractPayload, ObjectMapping, RequestMapper, ResponseMapper } from 'eas
 import { Observable, OperatorFunction } from 'rxjs'
 
 export type ObservableHandler<T> = T extends Observable<infer U> ? Observable<U> : never
-export type PipeHandler<T, R> = T extends OperatorFunction<infer A, infer B> ? OperatorFunction<ObjectMapping<A, RequestMapper, 0, 2> & { $request: R }, B> : never
+export type PipeHandler<T, R> = T extends OperatorFunction<infer A, infer B> ? OperatorFunction<ObjectMapping<A, RequestMapper, 1, 2> & { $request: R }, B> : never
 export type Handler<T, R> = ObservableHandler<T> | PipeHandler<T, R>
 
 export type Handlers<T, R> = {

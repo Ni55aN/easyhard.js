@@ -94,7 +94,7 @@ export function createConnection<Args>(props: Props): Return<Args> {
     get args() {
       return connection ? connection.args : null
     },
-    send(data: any) {
+    send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
       connection?.socket.send(data)
     },
     addEventListener(event: any, handler: any) {
