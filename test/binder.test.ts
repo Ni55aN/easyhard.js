@@ -30,7 +30,7 @@ describe('binder', () => {
 
   beforeEach((done) => {
     server = new Server({ port: 0 })
-    client = new WebSocket(`http://localhost:${(server.address() as AddressInfo).port}`)
+    client = new WebSocket(`ws://localhost:${(server.address() as AddressInfo).port}`)
 
     const app = express()
 

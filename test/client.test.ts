@@ -12,7 +12,7 @@ describe('client', () => {
     server = new Server({ port: 0 })
     client = createConnection({ reconnectDelay: 100 })
 
-    client.connect(() => new WebSocket(`http://localhost:${(server.address() as AddressInfo).port}`), {})
+    client.connect(() => new WebSocket(`ws://localhost:${(server.address() as AddressInfo).port}`), {})
   })
 
   afterEach(() => {
