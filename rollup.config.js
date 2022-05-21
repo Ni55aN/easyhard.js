@@ -37,6 +37,11 @@ export default packages.map(({ folder, pkg }) => {
         })
       ) : null,
       eslint(),
+      isDev ? undefined : terser({
+        format: {
+          comments: new RegExp(mainPkg.author)
+        }
+      }),
       typescript({
         tsconfig: `packages/${folder}/tsconfig.json`,
         useTsconfigDeclarationDir: false,
@@ -67,12 +72,7 @@ export default packages.map(({ folder, pkg }) => {
           fs.copyFileSync(path.resolve(`packages/${folder}/package-lock.json`), path.resolve(`${destination}/${pkg.name}/package-lock.json`))
           fs.writeFileSync(path.resolve(`${destination}/${pkg.name}/package.json`), JSON.stringify(packageJson, null, 4))
         }
-      },
-      isDev ? undefined : terser({
-        format: {
-          comments: new RegExp(mainPkg.author)
-        }
-      })
+      }
     ]
   }
 })
