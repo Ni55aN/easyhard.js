@@ -46,9 +46,10 @@ export function easyhardServer<T>(actions: Handlers<T, Request>): { attachClient
       },
       close(uws, code, message) {
         const ws = uws as WebSocket
+        const reason = arrayBufferToString(message)
 
         ws.adapter.readyState = WebSocketState.CLOSED
-        ws.adapter.emit('close', { code, reson: message, wasClean: true })
+        ws.adapter.emit('close', { code, reason, wasClean: true } as CloseEvent)
       }
     }
   }
