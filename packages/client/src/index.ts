@@ -8,11 +8,16 @@ import { requestTransformer, responseTransformer } from './transformers'
 import { ConnectionArgs, JSONPayload } from './types'
 import { mapWithSubscriber, mount } from './utils'
 
+export { Connection }  from './connection'
+
 type Props = {
   reconnectDelay?: number
 }
 
-/* eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types */
+type GetNullKeys<T> = {
+  [K in keyof T]: T[K] extends null ? K : never;
+}[keyof T];
+
 export function easyhardClient<T>({
   reconnectDelay = 5000
 }: Props = {}) {
@@ -28,9 +33,15 @@ export function easyhardClient<T>({
     return value
   }
 
-  function call<K extends keyof T>(key: K): T[K] extends Observable<infer U> ? Observable<U> : never {
-    type Type = T[K] extends Observable<infer U> ? U : (T[K] extends OperatorFunction<unknown, infer B> ? B : never)
-    type ObType = T[K] extends Observable<infer U> ? Observable<U> : never
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  type Calls = Omit<T, GetNullKeys<{
+    [K in keyof T]: T[K] extends Observable<any> ? K : null
+  }>>
+
+  type GetType<T> = T extends Observable<infer U> ? U : never
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  function call<K extends keyof Calls, O extends Calls[K], Type extends GetType<O>>(key: K): Observable<Type> {
     type JSONResponse = ObjectMapping<Type, ResponseMapper, 0, 1>
 
     const transformError = catchError<JSONResponse, Observable<JSONResponse>>(err => throwError(responseTransformer.prop(err, null)))
@@ -40,12 +51,19 @@ export function easyhardClient<T>({
       transformError,
       transformValue,
       mergeMap(setCookies)
-    ) as unknown as ObType
+    )
   }
 
-  function pipe<K extends keyof T>(key: K): T[K] extends OperatorFunction<infer A, infer B> ? OperatorFunction<A, B> : OperatorFunction<any, any> {
-    type Input = T[K] extends OperatorFunction<infer U, any> ? U : never
-    type Output = T[K] extends OperatorFunction<any, infer U> ? U : never
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  type Pipes = Omit<T, GetNullKeys<{
+    [K in keyof T]: T[K] extends OperatorFunction<any, any> ? K : null
+  }>>
+
+  type GetInput<T> = T extends OperatorFunction<infer U, any> ? U : never
+  type GetOutput<T> = T extends OperatorFunction<any, infer U> ? U : never
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  function pipe<K extends keyof Pipes, P extends Pipes[K], Input extends GetInput<P>, Output extends GetOutput<P>>(key: K): OperatorFunction<Input, Output> {
     type JSONResponse = ObjectMapping<Output, ResponseMapper, 0, 1>
 
     const transformError = catchError<JSONResponse, Observable<JSONResponse>>(err => throwError(responseTransformer.prop(err, null)))
@@ -57,7 +75,7 @@ export function easyhardClient<T>({
       const jsonSource = source.pipe(
         mapWithSubscriber((params, subscriber) => {
           const jsonParams = (params ? requestTransformer.apply(params, null) : {}) as JSONPayload<Input>
-          const paramsDiffs = requestTransformer.diffs(params as any, jsonParams || {})
+          const paramsDiffs = requestTransformer.diffs(params as Record<string, unknown>, jsonParams || {})
 
           paramsDestroy.push(...paramsDiffs.map(item => {
             if (item.from instanceof Observable && '__ob' in item.to) {
@@ -115,7 +133,7 @@ export function easyhardClient<T>({
           }
         })
       )
-    }) as any
+    })
   }
 
   return {

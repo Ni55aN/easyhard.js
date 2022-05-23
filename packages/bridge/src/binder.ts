@@ -20,11 +20,45 @@ export enum WebSocketState {
   CLOSED = 3,
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export interface Event {
+  type: string
+  target: any
+}
+
+export interface MessageEvent {
+  data: string | Buffer | ArrayBuffer | Buffer[]
+  type: string
+  target: any
+}
+
+export interface ErrorEvent {
+  error: any
+  message: string
+  type: string
+  target: any
+}
+
+export interface CloseEvent {
+  code: number
+  reason: string
+  wasClean: boolean
+  target: any
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+export interface WebSocketEventMap {
+  'close': CloseEvent
+  'error': ErrorEvent
+  'message': MessageEvent
+  'open': Event
+}
+
 export type WsConnection = {
-  readyState: number
-  send: (data: any) => void
-  addEventListener: (event: any, handler: (props: any) => void) => void
-  removeEventListener: (event: any, handler: any) => void
+  readyState: WebSocketState
+  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void
+  addEventListener<K extends keyof WebSocketEventMap>(type: K, listener: (ev: WebSocketEventMap[K]) => void): void
+  removeEventListener<K extends keyof WebSocketEventMap>(type: K, listener: (ev: WebSocketEventMap[K]) => void): void
 }
 
 type BindProps = {
@@ -61,7 +95,7 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Ws
         data && send(data)
       }
     }
-    const onError = (error: Error) => {
+    const onError = (error: ErrorEvent) => {
       subscriber.error(error)
     }
     client.addEventListener('open', onOpen)
@@ -70,8 +104,8 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Ws
     send({ key, id, source, subscribe: true })
     props?.subscribe && props?.subscribe(id, subscriber)
 
-    const handler = (event: { data: string }) => {
-      const data: ServerToClient<T> = JSON.parse(event.data)
+    const handler = (event: MessageEvent) => {
+      const data: ServerToClient<T> = JSON.parse(String(event.data))
 
       if (data.id !== id) return
       else if ('error' in data) subscriber.error(data.error)
@@ -123,8 +157,8 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
   const onClose = () => {
     Array.from(subscriptions.keys()).forEach(unsubscribe)
   }
-  const onMessage = (event: { data: string }) => {
-    const data: ClientToServer<Key> = JSON.parse(event.data)
+  const onMessage = (event: MessageEvent) => {
+    const data: ClientToServer<Key> = JSON.parse(String(event.data))
 
     if ('subscribe' in data && data.key === key) {
       const observable = stream instanceof Observable

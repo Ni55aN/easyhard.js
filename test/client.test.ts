@@ -1,12 +1,12 @@
 import { defer, firstValueFrom, interval } from 'rxjs'
 import { Server, default as WebSocket, AddressInfo } from 'ws'
 import { registerObservable, bindObservable, WebSocketState } from '../packages/bridge/src/binder'
-import { createConnection } from '../packages/client/src/connection'
+import { Connection, createConnection } from '../packages/client/src/connection'
 import { retry, retryWhen, take, tap } from 'rxjs/operators'
 
 describe('client', () => {
   let server: Server
-  let client: ReturnType<typeof createConnection>
+  let client: Connection<Record<string, unknown>>
 
   beforeEach(() => {
     server = new Server({ port: 0 })
@@ -50,7 +50,7 @@ describe('client', () => {
     })
     const sub = bindObservable<number>('getFromServer', null, client).pipe(
       retryWhen(error => error.pipe(
-        tap(error => {
+        tap((error: Error) => {
           errors.push(error)
           result.push(error)
         })

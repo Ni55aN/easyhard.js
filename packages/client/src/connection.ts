@@ -1,4 +1,4 @@
-import { WebSocketState } from 'easyhard-bridge'
+import { WebSocketState, WebSocketEventMap, WsConnection } from 'easyhard-bridge'
 import { $ } from 'easyhard-common'
 import { Observable } from 'rxjs'
 
@@ -6,83 +6,54 @@ type Props = {
   reconnectDelay?: number
 }
 
-type Return<Args> = {
-  connect: <T extends WebSocketConnection>(ws: () => T, args: Args) => T
+export type WebSocketConnection = WsConnection & {
+  readonly url: string
+  close(code?: number, reason?: string): void
+}
+
+export type Connection<Args> = WsConnection & {
+  connect: <T extends WebSocketConnection>(ws: () => T, args: Args) => WebSocketConnection
   state: Observable<WebSocketState | null>
-  readyState: number
   args: Args | null
-  send: (data: any) => boolean | void
-  addEventListener: (event: any, handler: any) => void
-  removeEventListener: (event: any, handler: any) => void
   close: () => void
 }
 
-interface CloseEvent {
-  readonly code: number;
-  readonly reason: string;
-  readonly wasClean: boolean;
-  target: any
-}
-interface ErrorEvent {
-  readonly error: any;
-  readonly message: string;
-  readonly type: string;
-  target: any;
-}
-
-interface MessageEvent {
-  data: any;
-  type: string;
-  target: any;
-}
-
-export type WebSocketConnection = {
-  url: string
-  readyState: WebSocketState
-  onclose: ((ev: any) => any) | null;
-  onerror: ((ev: any) => any) | null;
-  onmessage: ((ev: any) => any) | null;
-  onopen: ((ev: any) => any) | null;
-  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void;
-  close(code?: number, reason?: string): void;
-}
-
-export function createConnection<Args>(props: Props): Return<Args> {
-  let connection: null | { socket: WebSocketConnection | WebSocket, args: Args } = null
+export function createConnection<Args>(props: Props): Connection<Args> {
+  let connection: null | { socket: WebSocketConnection, args: Args } = null
   const state = $<WebSocketState | null>(null)
-  const listeners: {[key: string]: any[]} = {
+  const listeners: {[key in keyof WebSocketEventMap]: ((ev: WebSocketEventMap[key]) => void)[]} = {
     open: [],
     close: [],
     error: [],
     message: []
   }
 
-  function connect<Socket extends WebSocketConnection | WebSocket>(ws: () => Socket, args: Args): Socket {
+  function connect<Socket extends WebSocketConnection>(ws: () => Socket, args: Args): WebSocketConnection {
     const socket = ws()
 
     state.next(WebSocketState.CONNECTING)
     connection && connection.socket.close()
     connection = { socket, args }
-    connection.socket.onopen = () => {
+    connection.socket.addEventListener('open', () => {
       state.next(WebSocketState.OPEN)
-      listeners.open.slice().forEach(h => h())
-    }
+      listeners.open.slice().forEach(h => h(new Event('')))
+    })
 
-    connection.socket.onclose = (event: CloseEvent) => {
+    connection.socket.addEventListener('close', event => {
       state.next(WebSocketState.CLOSED)
       if (!event.wasClean) setTimeout(() => connection && connect(ws, connection.args), props.reconnectDelay)
       listeners.close.slice().forEach(h => h(event))
-    }
+    })
 
-    connection.socket.onmessage = (event: MessageEvent) => {
+    connection.socket.addEventListener('message', event => {
       listeners.message.slice().forEach(h => h(event))
-    }
+    })
 
-    connection.socket.onerror = function(error: ErrorEvent) {
+    connection.socket.addEventListener('error', error => {
       listeners.error.slice().forEach(h => h(error))
-    }
+    })
 
-    return connection.socket as Socket
+    return connection.socket
   }
 
   return {
@@ -97,10 +68,10 @@ export function createConnection<Args>(props: Props): Return<Args> {
     send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
       connection?.socket.send(data)
     },
-    addEventListener(event: any, handler: any) {
+    addEventListener(event, handler) {
       listeners[event].push(handler)
     },
-    removeEventListener(event: any, handler: any) {
+    removeEventListener(event, handler) {
       const index = listeners[event].indexOf(handler)
       if (index >= 0) listeners[event].splice(index, 1)
     },

@@ -22,7 +22,7 @@ export function attach<T, R>(actions: Handlers<T, R>, ws: WsConnection, req: R, 
       const s = stream as Observable<Return>
       return registerObservable(key, s.pipe(postMap), ws)
     } else {
-      const s = stream as OperatorFunction<HandlerPayload<T[keyof T]>, Return>
+      const s = stream as OperatorFunction<HandlerPayload<T[keyof T]> & { $request: R }, Return>
       return registerObservable(key, pipe(preMap, s, postMap), ws)
     }
   })

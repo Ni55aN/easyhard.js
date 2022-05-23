@@ -16,6 +16,8 @@ export class Cookie {
 }
 
 export type RequestMapper = {
+  // HOTFIX 'passObservable' example
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   __ob: [Observable<any>, { __ob: string }, Observable<any>],
   __file: [File, { __file: string }, Observable<Buffer>],
   __cookie: [Cookie, { __cookie: string }, Observable<string>],

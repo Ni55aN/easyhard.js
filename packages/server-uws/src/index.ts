@@ -42,7 +42,7 @@ export function easyhardServer<T>(actions: Handlers<T, Request>): { attachClient
         const ws = uws as WebSocket
         const data = arrayBufferToString(message)
 
-        ws.adapter.emit('message', { data })
+        ws.adapter.emit('message', { data, type: '', target: null })
       },
       close(uws, code, message) {
         const ws = uws as WebSocket

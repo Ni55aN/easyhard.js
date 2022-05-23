@@ -5,12 +5,12 @@ import { Transformer } from '../src/transformer'
 
 type Actions = {
   test: OperatorFunction<{
-      a: number,
-      b: File,
-      c: Cookie
-    }, {
-      c: number
-    }>
+    a: number,
+    b: File,
+    c: Cookie
+  }, {
+    c: number
+  }>
 }
 
 type RequestPayload = ExtractPayload<Actions['test'], 'request'>
