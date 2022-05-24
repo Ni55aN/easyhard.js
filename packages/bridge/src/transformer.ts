@@ -9,7 +9,7 @@ type Diffs<Schema extends TransformerSchema, In extends number, Out extends numb
 } extends Record<string, infer DD> ? DD : never
 
 export class Transformer<Schema extends TransformerSchema, In extends number, Out extends number, Args> {
-  constructor(private scheme: {[key in keyof Schema]: (value: Schema[keyof Schema][In], args: Args) => Schema[key][Out] | boolean}) {}
+  constructor(private scheme: {[key in keyof Schema]: (value: Schema[keyof Schema][In], args: Args) => (Schema[key][Out] extends undefined ? Schema[key][0] : Schema[key][Out]) | boolean}) {}
 
   prop<T>(arg: T, args: Args): Mapping<T, Schema, In, Out> {
     for (const transformerKey in this.scheme) {

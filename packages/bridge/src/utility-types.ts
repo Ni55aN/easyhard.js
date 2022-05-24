@@ -10,7 +10,7 @@ export type FindNonNullableField<T> = GetFirstField<ExcludeNullableFields<T>>
 type ByDefault<T, B> = [T] extends [never] ? B : T
 
 export type Mapping<P, Mapper extends Record<string, unknown[]>, M extends number, N extends number> = ByDefault<FindNonNullableField<{
-  [KK in keyof Mapper]: P extends Mapper[KK][M] ? Mapper[KK][N] : never
+  [KK in keyof Mapper]: P extends Mapper[KK][M] ? (Mapper[KK][N] extends undefined ? P : Mapper[KK][N]): never
 }>, P>
 
 export type ObjectMapping<P, Mapper extends Record<string, unknown[]>, M extends number, N extends number> = {
