@@ -9,15 +9,16 @@ describe('client', () => {
   let client: Connection<Record<string, unknown>>
 
   beforeEach(() => {
-    server = new Server({ port: 0 })
+    const _server = server = new Server({ port: 0 })
+    const port = (_server.address() as AddressInfo).port
     client = createConnection({ reconnectDelay: 100 })
 
-    client.connect(() => new WebSocket(`ws://localhost:${(server.address() as AddressInfo).port}`), {})
+    client.connect(() => new WebSocket(`ws://localhost:${port}`), {})
   })
 
   afterEach(() => {
     client.readyState === WebSocket.OPEN && client.close()
-    server.close()
+    server?.close()
   })
 
   it ('state', (done) => {
