@@ -1,8 +1,10 @@
 const { basename, join, resolve } = require('path');
 const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-const mode = 'development';
+
+const mode = process.env.PRODUCTION ? 'production' : 'development';
 const LIST_PATH = resolve(__dirname, 'client', 'list')
 const examples = fs.readdirSync(LIST_PATH).map(item => {
   const itemPath = join(LIST_PATH, item)
