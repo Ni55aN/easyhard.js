@@ -92,6 +92,9 @@ module.exports = {
   plugins: [
     ...examples.map(({ name }) => new HtmlWebpackPlugin({
       inject: true, filename: `${name}.html`, chunks: ['vendors', name]
-    }))
+    })),
+    new BundleAnalyzerPlugin({
+      analyzerMode: 'static'
+    })
   ]
 };
