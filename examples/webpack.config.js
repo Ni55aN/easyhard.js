@@ -5,6 +5,7 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 
 
 const mode = process.env.PRODUCTION ? 'production' : 'development';
+const SERVE = process.env.WEBPACK_SERVE
 const LIST_PATH = resolve(__dirname, 'client', 'list')
 const examples = fs.readdirSync(LIST_PATH).map(item => {
   const itemPath = join(LIST_PATH, item)
@@ -93,8 +94,8 @@ module.exports = {
     ...examples.map(({ name }) => new HtmlWebpackPlugin({
       inject: true, filename: `${name}.html`, chunks: ['vendors', name]
     })),
-    new BundleAnalyzerPlugin({
+    ...(!SERVE ? [new BundleAnalyzerPlugin({
       analyzerMode: 'static'
-    })
+    })] : [])
   ]
 };
