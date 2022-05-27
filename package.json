@@ -2,8 +2,9 @@
   "scripts": {
     "build": "MODE=prod rollup -c",
     "postbuild": "for d in build/*; do (cd \"$d\" && npm pack --pack-destination ..); done",
+    "build-tools": "for d in tools/*; do (cd \"$d\" && npm run build); done",
     "build:dev": "MODE=dev rollup -cw",
-    "lint": "eslint packages/*/src/**",
+    "lint": "eslint packages/*/src/** tools/*/src/**",
     "lint:examples": "eslint examples/client/** examples/server/** examples/shared/**",
     "test": "jest --coverage --verbose",
     "postinstall": "for d in packages/*; do (cd \"$d\" && npm i --legacy-peer-deps); done",
