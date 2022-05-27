@@ -1,0 +1,30 @@
+{
+  "name": "easyhard-devtools",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "PRODUCTION=true webpack",
+    "dev": "webpack --watch"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.188",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "eslint-webpack-plugin": "^3.1.1",
+    "html-webpack-plugin": "^5.5.0",
+    "ts-loader": "^9.3.0",
+    "typescript": "^4.7.2",
+    "webpack": "^5.72.1",
+    "webpack-cli": "^4.9.2"
+  },
+  "copy": [
+    "manifest.json"
+  ],
+  "dependencies": {
+    "@types/cytoscape": "^3.19.4",
+    "cytoscape": "^3.21.1",
+    "easyhard": "^0.7.2",
+    "easyhard-common": "^0.1.5",
+    "easyhard-styles": "^0.3.1",
+    "rxjs": "^7.5.5"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Easyhard Developer Tools",
+  "version": "1.0",
+  "manifest_version": 3,
+  "devtools_page": "index.html",
+  "content_scripts": [
+    {
+      "matches": ["http://*/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

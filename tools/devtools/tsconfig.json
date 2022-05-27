@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["./src/**/*"],
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "es2019"
+    ],
+    "baseUrl": ".",
+    "typeRoots": ["node_modules/@types"]
+  }
+}
