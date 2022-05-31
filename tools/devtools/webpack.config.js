@@ -14,6 +14,7 @@ module.exports = {
     panel: path.resolve(__dirname, 'src', 'panel.ts'),
     popup: path.resolve(__dirname, 'src', 'popup.ts'),
     content: path.resolve(__dirname, 'src', 'content.ts'),
+    background: path.resolve(__dirname, 'src', 'background.ts'),
   },
   output: {
     path: path.join(__dirname, 'dist'),

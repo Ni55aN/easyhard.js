@@ -1,6 +1,15 @@
+import { Services } from './types'
+import { Connection } from './utils/communication'
 
 console.log('test')
 
-window.addEventListener('message', console.log)
+const connection = new Connection<Services>('easyhard-content')
 
-window.postMessage({ test: 345 })
+connection.addListener(message => {
+  console.log('content received from background', { message })
+})
+
+document.body.addEventListener('click', () => {
+  console.log('post')
+  connection.postMessage('easyhard-devtools', { data: 'from content' })
+})
