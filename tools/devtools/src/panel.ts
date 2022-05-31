@@ -4,6 +4,10 @@ import { css, injectStyles } from 'easyhard-styles'
 import { tap } from 'rxjs'
 import { Services } from './types'
 import { Connection } from './utils/communication'
+import klay from 'cytoscape-klay'
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+cytoscape.use(klay)
 
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools')
 
