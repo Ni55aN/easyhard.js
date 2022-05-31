@@ -1,9 +1,7 @@
 import { Services } from './types'
 import { Connection } from './utils/communication'
 
-console.log('test')
-
-const connection = new Connection<Services>('easyhard-content')
+const connection = new Connection<Services, 'easyhard-content'>('easyhard-content')
 
 connection.addListener(message => {
   console.log('content received from background', { message })

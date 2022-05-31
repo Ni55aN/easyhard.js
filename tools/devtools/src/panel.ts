@@ -5,7 +5,7 @@ import { tap } from 'rxjs'
 import { Services } from './types'
 import { Connection } from './utils/communication'
 
-const connection = new Connection<Services>('easyhard-devtools')
+const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools')
 
 connection.addListener(message => {
   console.log('panel received from background', { message })

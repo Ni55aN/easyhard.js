@@ -1,27 +1,37 @@
 type ToMessage<ID, T> = { to: ID, message: T }
 
-export class Hub<ID extends string> {
-  ports: {[key in ID]?: chrome.runtime.Port}
+export class Hub<Services extends {[key: string]: unknown}> {
+  ports: {[key in keyof Services]?: chrome.runtime.Port}
 
-  constructor(private accept: ID[]) {
+  constructor(private accept: (keyof Services)[]) {
     this.ports = {}
   }
 
-  listen(onMessage: <T>(payload: { from: ID, to: ID, message: T }) => void) {
+  listen<F extends keyof Services, To extends keyof Services>(onMessage: (payload: { from: F, to: To, message: Services[To] }) => void) {
     chrome.runtime.onConnect.addListener(port => {
-      const name = port.name as ID
+      const name = port.name as F
       if (!this.accept.includes(name)) return
-      console.log('connected ', name)
+      console.debug('connected ', name)
       this.ports[name] = port
 
-      port.onMessage.addListener((payload: ToMessage<ID, any>) => {
+      port.onMessage.addListener((payload: ToMessage<To, Services[To]>) => {
         onMessage({ from: name, to: payload.to, message: payload.message })
-        this.getPort(payload.to).postMessage(payload.message)
+        try {
+          this.getPort(payload.to).postMessage(payload.message)
+        } catch (error: Error | any) {
+          console.warn(error)
+          this.getPort(name).postMessage({ error: 'message' in error ? error.message : error })
+        }
+      })
+
+      port.onDisconnect.addListener(() => {
+        console.debug('disconnected ', name)
+        this.ports[name] = undefined
       })
     })
   }
 
-  private getPort(id: ID): chrome.runtime.Port {
+  private getPort(id: keyof Services): chrome.runtime.Port {
     const port = this.ports[id]
 
     if (!port) throw new Error('port hasnt connected')
@@ -30,18 +40,18 @@ export class Hub<ID extends string> {
   }
 }
 
-export class Connection<ID extends string> {
+export class Connection<Services extends {[key: string]: unknown}, Key extends keyof Services> {
   private port: chrome.runtime.Port
 
-  constructor(name: ID) {
-    this.port = chrome.runtime.connect({ name })
+  constructor(name: Key) {
+    this.port = chrome.runtime.connect({ name: name as string })
   }
 
-  addListener<T>(handler: (message: T) => void) {
+  addListener(handler: (message: Services[Key]) => void) {
     this.port.onMessage.addListener(handler)
   }
 
-  postMessage<T>(to: ID, message: T) {
-    this.port.postMessage(<ToMessage<ID, T>>{ to, message })
+  postMessage<ID extends keyof Services>(to: ID, message: Services[ID]) {
+    this.port.postMessage(<ToMessage<ID, Services[ID]>>{ to, message })
   }
 }
