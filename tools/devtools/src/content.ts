@@ -11,3 +11,5 @@ document.body.addEventListener('click', () => {
   console.log('post')
   connection.postMessage('easyhard-devtools', { data: 'from content' })
 })
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+injectScript(chrome.runtime.getURL('/inject.js'), 'head')
