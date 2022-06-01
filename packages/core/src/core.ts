@@ -3,9 +3,12 @@ import { distinctUntilChanged } from 'rxjs/operators'
 import { DomElement, Attrs, Child, PropAttrs, TagName, EventAttrs, EventHandler, EventName, ElementType, NestedChild } from './types'
 import { insertNode, createAnchor } from './utils'
 import { untilExist } from './operators/until-exist'
+import { debugAnchor, debugElement } from './devtools'
 
 export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: NestedChild[]): ElementType<K> {
   const element = document.createElement(tag)
+
+  debugElement(element, attrs)
 
   for (const name in attrs) {
     if (name && attrs.hasOwnProperty(name)) {
@@ -56,6 +59,8 @@ export function appendChild(child: Child, parent: ChildNode, after: DomElement =
 function resolveChild(child: Child): DomElement {
   if (child instanceof Observable) {
     const anchor = createAnchor()
+
+    debugAnchor(anchor, child)
 
     child.pipe(untilExist(anchor), distinctUntilChanged()).subscribe(v => {
       anchor.edge && anchor.edge.remove()
