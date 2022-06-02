@@ -1,5 +1,5 @@
 import { getUID } from 'easyhard-common'
-import { Observable } from 'rxjs'
+import { Observable, OperatorFunction } from 'rxjs'
 import { Anchor, Attrs, TagName } from './types'
 
 const debugWindow = <Window & { __easyhardDebug?: boolean }>window
@@ -28,4 +28,20 @@ export function debugAnchor(anchor: Anchor, observable: Observable<unknown>) {
       configurable: false
     })
   }
+}
+
+export function debugOperator<T, K>(operator: OperatorFunction<T, K>, name: string, parent: (Node | Observable<never>)[]): OperatorFunction<T, K> {
+  if (debugWindow.__easyhardDebug) {
+    Object.defineProperty(operator, '__debug', {
+      value: {
+        id: getUID(),
+        name,
+        parent
+      },
+      writable: false,
+      configurable: false
+    })
+  }
+
+  return operator
 }
