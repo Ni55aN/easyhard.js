@@ -1,5 +1,5 @@
-import cytoscape from 'cytoscape'
-import { h } from 'easyhard'
+import cytoscape, { ElementGroup } from 'cytoscape'
+import { h, onMount } from 'easyhard'
 import { css, injectStyles } from 'easyhard-styles'
 import { tap } from 'rxjs'
 import { Services } from './types'
@@ -12,42 +12,19 @@ cytoscape.use(klay)
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
 
 connection.addListener(message => {
-  console.log('panel received from background', { message })
+  if (message.type === 'GRAPH') {
+    cy.elements().remove()
+    cy.add([
+      ...message.data.nodes.map(data => ({ group: 'nodes' as ElementGroup, data })),
+      ...message.data.edges.map(data => ({ group: 'edges' as ElementGroup, data }))
+    ])
+    cy.elements().makeLayout({ name: 'klay' }).run()
+  }
 })
 
 const onClick = tap(() => {
-  console.log('post')
-  connection.postMessage('easyhard-content', { data: 'from panel' })
+  connection.postMessage('easyhard-content', { type: 'GET_GRAPH' })
 })
-
-
-setTimeout(() => {
-  const cy = cytoscape({
-    container,
-    elements: [ // list of graph elements to start with
-      { // node a
-        data: { id: 'a' }
-      },
-      { // node b
-        data: { id: 'b' }
-      },
-      { // edge ab
-        data: { id: 'ab', source: 'a', target: 'b' }
-      }
-    ],
-    layout: {
-      name: 'grid',
-      rows: 1
-    }
-  })
-
-  window.addEventListener('resize', () => {
-    cy.resize()
-  })
-
-}, 200)
-
-
 
 const bodyStyles = css({
   margin: 0,
@@ -87,3 +64,91 @@ const sidebarStyles = css({
 })
 const sidebar =  h('div', {}, injectStyles(sidebarStyles), 'Sidebar')
 document.body.appendChild(sidebar)
+
+function trimLabel(label: string) {
+  return label.substring(0, 15)
+}
+
+const cy = cytoscape({
+  container,
+  style: [
+    {
+      'selector': 'node[label]',
+      'style': {
+        label(ele: cytoscape.NodeSingular) {
+          return trimLabel(String(ele.data('label')))
+        },
+        'text-valign': 'center',
+        'text-halign': 'center',
+        width(ele: cytoscape.NodeSingular) {
+          return trimLabel(String(ele.data('label'))).length * 5 + 20
+        },
+        height: 25,
+        'font-size': '11px',
+      }
+    },
+    {
+      selector: 'node[type="node"]',
+      style: {
+        'shape': 'round-rectangle',
+        'border-width': 2,
+        'border-color': 'white',
+        'background-color': '#5e86ff'
+      }
+    },
+    {
+      selector: 'node[type="text"]',
+      style: {
+        'shape': 'round-rectangle',
+        'border-width': 2,
+        'border-color': 'white',
+        'background-color': '#a9a9a9'
+      }
+    },
+    {
+      selector: 'node[type="eh-node"]',
+      style: {
+        'shape': 'round-rectangle',
+        'border-width': 1,
+        'border-color': 'black',
+        'background-color': '#5e86ff'
+      }
+    },
+    {
+      selector: 'node[type="eh-text"]',
+      style: {
+        'shape': 'round-rectangle',
+        'border-width': 1,
+        'border-color': 'black',
+        'background-color': '#a9a9a9'
+      }
+    },
+    {
+      selector: 'node[type="observable"]',
+      style: {
+        'shape': 'round-rectangle',
+        'border-width': 1,
+        'border-color': 'black',
+        'background-color': '#f1c82a',
+        color: 'white'
+      }
+    },
+    {
+      selector: 'edge',
+      style: {
+        'curve-style': 'bezier',
+        'control-point-step-size': 10
+      }
+    },
+  ]
+})
+
+onMount(container, () => {
+  setTimeout(() => {
+    connection.postMessage('easyhard-content', { type: 'GET_GRAPH' })
+  }, 200)
+})
+
+window.addEventListener('resize', () => {
+  cy.resize()
+})
