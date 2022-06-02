@@ -1,8 +1,9 @@
 import { Observable, MonoTypeOperatorFunction } from 'rxjs'
+import { debugOperator } from '../devtools'
 import { observeElement } from '../mutation-observer'
 
 export function untilExist<T>(el: ChildNode | null, container: Node = document.body): MonoTypeOperatorFunction<T> {
-  return <T>(source: Observable<T>): Observable<T> => new Observable(observer => {
+  const operator = <T>(source: Observable<T>): Observable<T> => new Observable(observer => {
     const values: T[] = []
     const next = () => {
       while(values.length > 0) {
@@ -28,4 +29,8 @@ export function untilExist<T>(el: ChildNode | null, container: Node = document.b
       complete() { observer.complete() }
     })
   })
+
+  debugOperator(operator, 'untilExist', el ? [el] : [])
+
+  return operator
 }
