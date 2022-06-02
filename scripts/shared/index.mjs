@@ -13,7 +13,8 @@ export const packages = [
   'bridge',
   'client',
   'server',
-  'server-uws'
+  'server-uws',
+  'debug'
 ].map(folder => ({
   folder,
   pkg: require(`../../packages/${folder}/package.json`)

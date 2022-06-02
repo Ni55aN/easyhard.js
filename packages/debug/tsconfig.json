@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["./src/**/*"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "rxjs-alias": ["../../node_modules/rxjs"],
+      "easyhard-alias": ["../core/src"],
+      "easyhard-common": ["../common/src"],
+      "easyhard-common-alias": ["../common/src"]
+    }
+  }
+}

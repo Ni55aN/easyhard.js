@@ -1,0 +1,11 @@
+{
+  "name": "easyhard-debug",
+  "version": "0.1.0",
+  "peerDependencies": {
+    "rxjs": ">= 6.x <=7.x",
+    "easyhard-common": "^0.3.0"
+  },
+  "rollup": {
+    "inputs": ["rx", "core", "common"]
+  }
+}
