@@ -17,19 +17,21 @@ const getBanner = (pkg) => `/*!
  */`
 
 export default packages.map(({ folder, pkg }) => {
-  return {
-    input: `packages/${folder}/src/index.ts`,
+  const inputs = pkg.rollup?.inputs || ['index']
+
+  return inputs.map(input => ({
+    input: `packages/${folder}/src/${input}.ts`,
     external: Object.keys(pkg.dependencies || {}),
     output: ['cjs', 'esm'].map(format => {
       return {
-        file: `${destination}/${pkg.name}/${format}.js`,
+        file: `${destination}/${pkg.name}/${input === 'index' ? format : [input, format].join('.')}.js`,
         format,
         exports: 'auto',
         sourcemap: true,
         banner: isDev ? undefined : getBanner(pkg)
       }
     }),
-    external: ['rxjs', 'rxjs/operators', 'recast', 'cookie', 'easyhard', 'easyhard-common', 'easyhard-bridge'],
+    external: ['rxjs', 'rxjs/operators', 'recast', 'cookie', 'easyhard', 'easyhard-common', 'easyhard-bridge', 'easyhard-alias', 'easyhard-common-alias', 'rxjs-alias',/* TODO */],
     plugins: [
       pkg.rollup?.node ? (
         nodeResolve({
@@ -74,5 +76,5 @@ export default packages.map(({ folder, pkg }) => {
         }
       }
     ]
-  }
-})
+  }))
+}).flat()
