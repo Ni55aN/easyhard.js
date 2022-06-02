@@ -84,7 +84,17 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
-    symlinks: false
+    symlinks: false,
+    alias: {
+      'rxjs-alias': resolve(__dirname, 'node_modules/rxjs'),
+      'easyhard-common-alias': resolve(__dirname, 'node_modules/easyhard-common'),
+      'easyhard-alias': resolve(__dirname, 'node_modules/easyhard'),
+
+      'rxjs/operators': resolve(__dirname, 'node_modules/easyhard-debug/rx.esm'),
+      'rxjs': resolve(__dirname, 'node_modules/easyhard-debug/rx.esm'),
+      'easyhard': resolve(__dirname, 'node_modules/easyhard-debug/core.esm'),
+      'easyhard-common': resolve(__dirname, 'node_modules/easyhard-debug/common.esm')
+    },
   },
   output: {
     filename: `[name]${mode === 'development'?'':'.[chunkhash]'}.js`,
