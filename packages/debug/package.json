@@ -6,6 +6,6 @@
     "easyhard-common": "^0.3.0"
   },
   "rollup": {
-    "inputs": ["rx", "core", "common"]
+    "inputs": ["rx", "core", "common", "webpack"]
   }
 }
