@@ -6,7 +6,7 @@ import { Graph, GraphNode } from './types'
 type Parent = (EhObservable | EhMeta | Parent)[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-type EhObservable = Observable<unknown> & { __debug: { id: string, parent: (EhObservable | EhMeta)[], name: string } }
+type EhObservable = Observable<unknown> & { __debug: { id: string, parent: Parent[], name: string } }
 type EhMeta = { __easyhard?: { id: string, attrs?: Attrs<TagName>, observable?: EhObservable }}
 type EhNode = Node & EhMeta
 
@@ -23,26 +23,26 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
       })
 
       ;(ob.__debug.parent.flat() as (EhObservable | EhMeta)[]).forEach(parent => {
-          initParentObservableNodes(graph, parent)
+        initParentObservableNodes(graph, parent)
 
-          if (!ob.__debug.id) throw new Error('__debug id is undefined')
+        if (!ob.__debug.id) throw new Error('__debug id is undefined')
 
-          if ('__debug' in parent) {
-            graph.edges.push({
-              id: [ob.__debug.id, parent.__debug.id].join('_'),
-              source: parent.__debug.id,
-              target: ob.__debug.id
-            })
-          } else if ('__easyhard' in parent && parent.__easyhard) {
-            graph.edges.push({
-              id: [ob.__debug.id, parent.__easyhard.id].join('_'),
-              source: parent.__easyhard.id,
-              target: ob.__debug.id
-            })
-          } else {
-            throw new Error('not found __debug or __easyhard property')
-          }
-        })
+        if ('__debug' in parent) {
+          graph.edges.push({
+            id: [ob.__debug.id, parent.__debug.id].join('_'),
+            source: parent.__debug.id,
+            target: ob.__debug.id
+          })
+        } else if ('__easyhard' in parent && parent.__easyhard) {
+          graph.edges.push({
+            id: [ob.__debug.id, parent.__easyhard.id].join('_'),
+            source: parent.__easyhard.id,
+            target: ob.__debug.id
+          })
+        } else {
+          throw new Error('not found __debug or __easyhard property')
+        }
+      })
     }
   } else {
     console.log(ob)
@@ -107,11 +107,11 @@ window.addEventListener('message', ({ data }) => {
   console.log({ data })
   if (data.type === 'GET_GRAPH') {
     setTimeout(() => {
-    const graph: Graph = { edges: [], nodes: [] }
+      const graph: Graph = { edges: [], nodes: [] }
 
-    pushNode(document.body, graph)
+      pushNode(document.body, graph)
 
-    window.postMessage({ type: 'GRAPH', data: graph })
+      window.postMessage({ type: 'GRAPH', data: graph })
     }, 1000)
   }
 })
