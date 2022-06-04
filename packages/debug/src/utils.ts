@@ -44,9 +44,13 @@ export function decoratePipe(context: any, pipe: any) {
         }
         if ((res as any).__debug) console.warn('__debug already defined')
         if (!(res as any).__debug) {
-          (res as any).__debug = (op as any).__debug
+          (res as any).__debug = {
+            id: getUID(),
+            name: (op as any).__debug.name,
+            parent: []
+          }
         }
-        (res as any).__debug.parent.push(source, ...((op as any).__debug.parent ? (op as any).__debug.parent : []))
+        (res as any).__debug.parent.push(source, (op as any).__debug.parent ? (op as any).__debug.parent : [])
         return res
       }
     }))
