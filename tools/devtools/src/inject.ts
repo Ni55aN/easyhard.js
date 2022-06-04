@@ -3,6 +3,8 @@ import { nanoid } from 'nanoid'
 import { Observable } from 'rxjs'
 import { Graph, GraphNode } from './types'
 
+type Parent = (EhObservable | EhMeta | Parent)[]
+
 // eslint-disable-next-line @typescript-eslint/ban-types
 type EhObservable = Observable<unknown> & { __debug: { id: string, parent: (EhObservable | EhMeta)[], name: string } }
 type EhMeta = { __easyhard?: { id: string, attrs?: Attrs<TagName>, observable?: EhObservable }}
@@ -20,7 +22,7 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
         type: 'observable'
       })
 
-        ob.__debug.parent.forEach(parent => {
+      ;(ob.__debug.parent.flat() as (EhObservable | EhMeta)[]).forEach(parent => {
           initParentObservableNodes(graph, parent)
 
           if (!ob.__debug.id) throw new Error('__debug id is undefined')
