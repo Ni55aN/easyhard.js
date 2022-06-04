@@ -22,10 +22,10 @@ export function decorateOperator<Args extends never[], Return, Operator extends 
     if ((op as any).__debug) console.warn('__debug already defined')
     if (!(op as any).__debug) {
       (op as any).__debug = {
-      id: getUID(),
+        id: getUID(),
         name: operator.name,
         parent: []
-    }
+      }
     }
     (op as any).__debug.parent.push(...processedArgs.filter((a: any) => a instanceof Observable))
 
@@ -40,29 +40,37 @@ export function decoratePipe(context: any, pipe: any) {
         const res = op(source)
 
         if (!(op as any).__debug) {
-          console.warn('Skip operator without __debug property', op)
-          return res
+          throw new Error('operator should have __debug property')
         }
-        (res as any).__debug = {
-          id: getUID(),
-          name: (op as any).__debug.name,
-          parent: [source, ...((op as any).__debug.parent ? (op as any).__debug.parent : [])]
+        if ((res as any).__debug) console.warn('__debug already defined')
+        if (!(res as any).__debug) {
+          (res as any).__debug = {
+            id: getUID(),
+            name: (op as any).__debug.name,
+            parent: []
+          }
         }
+        (res as any).__debug.parent.push(source, ...((op as any).__debug.parent ? (op as any).__debug.parent : []))
         return res
       }
     }))
   }
 }
 
-export function decorateObservableFactory<Ob extends (...args: (Observable<any> | never)[]) => Observable<any>>(factory: Ob): Ob {
+export function decorateObservableFactory<Ob extends (...args: any[]) => Observable<any>>(factory: Ob): Ob {
   return <Ob>((...args) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const ob = factory(...args)
 
-    ;(ob as any).__debug = {
-      id: getUID(),
-      name: factory.name,
-      parent: args.filter(o => o instanceof Observable || (typeof o === 'object' && 'nodeType' in o))
+    if ((ob as any).__debug) console.warn('__debug already defined')
+    if (!(ob as any).__debug) {
+      (ob as any).__debug = {
+        id: getUID(),
+        name: factory.name,
+        parent: []
+      }
     }
+    (ob as any).__debug.parent.push(...args.filter(o => o instanceof Observable || (typeof o === 'object' && 'nodeType' in o)))
 
     ob.pipe = decoratePipe(ob, ob.pipe)
 
