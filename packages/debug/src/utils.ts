@@ -1,14 +1,33 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getUID } from 'easyhard-common'
 import { Observable, OperatorFunction } from 'rxjs'
 
 export function decorateOperator<Args extends never[], Return, Operator extends (...args: Args) => Return>(operator: Operator): Operator {
   return <Operator>((...args) => {
-    const op = operator(...args)
+    const processedArgs = <Args>args.map((arg: any) => {
+      if (typeof arg == 'function') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        return (...params: any[]) => {
+          const result = arg(...params)
+          if (result instanceof Observable) {
+            (op as any).__debug.parent.push(result)
+          }
+          return result
+        }
+      }
+      return arg
+    })
+    const op = operator(...processedArgs)
 
-    ;(op as any).__debug = {
+    if ((op as any).__debug) console.warn('__debug already defined')
+    if (!(op as any).__debug) {
+      (op as any).__debug = {
       id: getUID(),
-      name: operator.name
+        name: operator.name,
+        parent: []
     }
+    }
+    (op as any).__debug.parent.push(...processedArgs.filter((a: any) => a instanceof Observable))
 
     return op
   })
