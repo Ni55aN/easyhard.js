@@ -9,6 +9,7 @@ import klay from 'cytoscape-klay'
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 cytoscape.use(klay)
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
 
 connection.addListener(message => {

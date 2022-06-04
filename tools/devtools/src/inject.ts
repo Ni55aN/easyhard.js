@@ -20,7 +20,6 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
         type: 'observable'
       })
 
-      if (ob.__debug) {
         ob.__debug.parent.forEach(parent => {
           initParentObservableNodes(graph, parent)
 
@@ -42,7 +41,6 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
             throw new Error('not found __debug or __easyhard property')
           }
         })
-      }
     }
   } else {
     console.log(ob)
@@ -106,10 +104,12 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode {
 window.addEventListener('message', ({ data }) => {
   console.log({ data })
   if (data.type === 'GET_GRAPH') {
+    setTimeout(() => {
     const graph: Graph = { edges: [], nodes: [] }
 
     pushNode(document.body, graph)
 
     window.postMessage({ type: 'GRAPH', data: graph })
+    }, 1000)
   }
 })
