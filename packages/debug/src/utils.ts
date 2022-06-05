@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getUID } from 'easyhard-common'
+import { getUID } from 'easyhard-common-alias'
 import { Observable, OperatorFunction } from 'rxjs'
 
 type DebugMeta = { __debug?: { id: string, name: string, parent: MestedDebugObject[] } }
@@ -87,6 +87,14 @@ export function decorateObservableFactory<Ob extends (...args: any[]) => Observa
 
     return ob
   })
+}
+
+export function decorateObservable(ob: Observable<number>, name: string) {
+  assignMeta(ob, name)
+
+  ob.pipe = decoratePipe(ob, ob.pipe)
+
+  return ob
 }
 
 function isDebugLike(object: DebugObject) {

@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs-alias'
-import { decorateObservableFactory, decorateOperator, decoratePipe } from './utils'
+import { decorateObservable, decorateObservableFactory, decorateOperator, decoratePipe } from './utils'
 import './setup'
 import { getUID } from 'easyhard-common'
 
@@ -126,6 +126,10 @@ export const range = decorateObservableFactory(Rx.range)
 export const pairs = decorateObservableFactory(Rx.pairs)
 export const defer = decorateObservableFactory(Rx.defer)
 
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+export const EMPTY = decorateObservable(Rx.EMPTY, 'EMPTY')
+export const NEVER = decorateObservable(Rx.NEVER, 'NEVER')
+/* eslint-enable @typescript-eslint/no-unsafe-argument */
 
 export class BehaviorSubject<T> extends Rx.BehaviorSubject<T> {
   __debug = {
