@@ -21,20 +21,27 @@ function assignMeta(object: DebugObject, name: string) {
   return object.__debug
 }
 
+type FunctionalArgument = (...args: unknown[]) => unknown
+
+function decorateArguments<T extends FunctionalArgument[]>(args: T, emit: { observable: (value: Observable<any>) => void }) {
+  return args.map(arg => {
+    if (typeof arg == 'function') {
+      return (...params: Parameters<typeof arg>) => {
+        const result = arg(...params)
+        if (result instanceof Observable) {
+          emit.observable(result)
+        }
+        return result
+      }
+    }
+    return arg
+  }) as T
+}
+
 export function decorateOperator<Args extends never[], Return extends DebugObject, Operator extends (...args: Args) => Return>(operator: Operator): Operator {
   return <Operator>((...args) => {
-    const processedArgs = <Args>args.map((arg: any) => {
-      if (typeof arg == 'function') {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        return (...params: any[]) => {
-          const result = arg(...params)
-          if (result instanceof Observable) {
-            debug.parent.push(result)
-          }
-          return result
-        }
-      }
-      return arg
+    const processedArgs = decorateArguments(args, {
+      observable: value => debug.parent.push(value)
     })
     const op = operator(...processedArgs)
     const debug = assignMeta(op, operator.name)
@@ -66,17 +73,8 @@ export function decoratePipe(context: any, pipe: any) {
 
 export function decorateObservableFactory<Ob extends (...args: any[]) => Observable<any>>(factory: Ob): Ob {
   return <Ob>((...args) => {
-    const processedArgs = args.map((arg: any) => {
-      if (typeof arg == 'function') {
-        return (...params: any[]) => {
-          const result = arg(...params)
-          if (result instanceof Observable) {
-            debug.parent.push(result)
-          }
-          return result
-        }
-      }
-      return arg
+    const processedArgs = decorateArguments(args, {
+      observable: value => debug.parent.push(value)
     })
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const ob = factory(...processedArgs)
