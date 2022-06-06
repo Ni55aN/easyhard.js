@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getUID } from 'easyhard-common-alias'
-import { Observable, OperatorFunction } from 'rxjs'
+import { Observable, OperatorFunction, UnaryFunction } from 'rxjs'
 
 type DebugMeta = { __debug?: { id: string, name: string, parent: MestedDebugObject[] } }
 type MestedDebugObject = DebugObject | MestedDebugObject[]
 type DebugOperator = OperatorFunction<any, any> & DebugMeta
 type DebugObservable = Observable<any> & DebugMeta
-type DebugObject = DebugOperator | DebugObservable
+type DebugClass<T extends { pipe: any }> = ({ new(...args: any[]): T } & DebugMeta)
+type DebugObject = DebugOperator | DebugObservable | (UnaryFunction<any, any> & DebugMeta) | DebugClass<any>
 
 function assignMeta(object: DebugObject, name: string) {
   if (object.__debug) console.warn('__debug already defined in ', object)
@@ -55,22 +56,34 @@ export function decorateOperator<Args extends never[], Return extends DebugObjec
 }
 
 export function decoratePipe(context: any, pipe: any) {
-  return (...operations: OperatorFunction<any, any>[]): Observable<any> => {
-    return pipe.apply(context, operations.map((op: DebugOperator) => {
-      return (source: Observable<any>) => {
-        const res = op(source)
+  const piped = (...operations: OperatorFunction<any, any>[]): Observable<any> => {
+    const piped = pipe.apply(context, operations.map((op: DebugOperator) => {
+      if (!op.__debug) { // set operator as unknown if __debug wasnt specified before
+        assignMeta(op, 'unknown')
+      }
+      if (!op.__debug) return // prevent TS error
 
-        if (!op.__debug) {
-          throw new Error('operator should have __debug property')
-        }
+      const func = (source: Observable<any>) => {
+        if (!op.__debug) return // prevent TS error
+        const res = op(source)
         const debug = assignMeta(res, op.__debug.name)
 
         debug.parent.push(source, op.__debug.parent ? op.__debug.parent : []) // TODO condition
 
         return res
       }
+
+      assignMeta(func, op.__debug.name)
+
+      return func
     }))
+    piped.pipe = decoratePipe(piped, piped.pipe)
+
+    return piped
   }
+  assignMeta(piped, 'pipe')
+
+  return piped
 }
 
 export function decorateObservableFactory<Ob extends (...args: any[]) => Observable<any>>(factory: Ob): Ob {
