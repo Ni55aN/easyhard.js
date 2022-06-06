@@ -115,3 +115,22 @@ export function decorateObservable(ob: Observable<number>, name: string) {
 function isDebugLike(object: number | string | DebugObject) {
   return object && typeof object === 'object' && '__debug' in object
 }
+
+export function decorateClass<T extends { pipe: any } & DebugMeta>(ident: DebugClass<T>): { new (): T } {
+  return new Proxy(ident, {
+    construct(target, args) {
+      const processedArgs = decorateArguments(args, {
+        observable: value => debug.parent.push(value)
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const instance = new target(...processedArgs)
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const debug = assignMeta(instance as any, ident.name)
+
+      instance.pipe = decoratePipe(instance, instance.pipe)
+
+      return instance
+    }
+  })
+}

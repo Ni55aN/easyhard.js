@@ -1,7 +1,6 @@
 import * as Rx from 'rxjs-alias'
-import { decorateObservable, decorateObservableFactory, decorateOperator, decoratePipe } from './utils'
+import { decorateClass, decorateObservable, decorateObservableFactory, decorateOperator } from './utils'
 import './setup'
-import { getUID } from 'easyhard-common'
 
 export * from 'rxjs-alias'
 
@@ -131,13 +130,11 @@ export const EMPTY = decorateObservable(Rx.EMPTY, 'EMPTY')
 export const NEVER = decorateObservable(Rx.NEVER, 'NEVER')
 /* eslint-enable @typescript-eslint/no-unsafe-argument */
 
-export class BehaviorSubject<T> extends Rx.BehaviorSubject<T> {
-  __debug = {
-    id: getUID(),
-    name: 'BehaviorSubject',
-    parent: []
-  }
 
-  pipe = decoratePipe(this, this.pipe)
-
-}
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+export const Observable = decorateClass(Rx.Observable)
+export const Subject = decorateClass(Rx.Subject)
+export const BehaviorSubject = decorateClass(Rx.BehaviorSubject)
+export const ReplaySubject = decorateClass(Rx.ReplaySubject)
+export const AsyncSubject = decorateClass(Rx.AsyncSubject)
+/* eslint-enable @typescript-eslint/no-unsafe-argument */
