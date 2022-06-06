@@ -21,11 +21,13 @@ function assignMeta(object: DebugObject, name: string) {
   return object.__debug
 }
 
-type FunctionalArgument = (...args: unknown[]) => unknown
+type FunctionalArgument = (...args: unknown[]) => unknown & DebugMeta
 
 function decorateArguments<T extends FunctionalArgument[]>(args: T, emit: { observable: (value: Observable<any>) => void }) {
   return args.map(arg => {
-    if (typeof arg == 'function') {
+    const isDebugOperator = Boolean(arg && (arg as DebugMeta).__debug)
+
+    if (typeof arg == 'function' && !isDebugOperator) {
       return (...params: Parameters<typeof arg>) => {
         const result = arg(...params)
         if (result instanceof Observable) {
@@ -97,6 +99,6 @@ export function decorateObservable(ob: Observable<number>, name: string) {
   return ob
 }
 
-function isDebugLike(object: DebugObject) {
-  return '__debug' in object
+function isDebugLike(object: number | string | DebugObject) {
+  return object && typeof object === 'object' && '__debug' in object
 }
