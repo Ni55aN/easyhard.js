@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs-alias'
-import { decorateClass, decorateObservable, decorateObservableFactory, decorateOperator } from './utils'
+import { decorateClass, decorateObservable, decorateObservableFactory, decorateOperator, decoratePipe } from './utils'
 import './setup'
 
 export * from 'rxjs-alias'
@@ -115,6 +115,8 @@ export const withLatestFrom = decorateOperator(Rx.withLatestFrom)
 export const zip = decorateOperator(Rx.zip)
 export const zipAll = decorateOperator(Rx.zipAll)
 export const zipWith = decorateOperator(Rx.zipWith)
+export const identity = decorateOperator(Rx.identity)
+export const iif = decorateOperator(Rx.iif)
 
 export const combineLatest = decorateObservableFactory(Rx.combineLatest)
 export const race = decorateObservableFactory(Rx.race)
@@ -124,12 +126,14 @@ export const concat = decorateObservableFactory(Rx.concat)
 export const range = decorateObservableFactory(Rx.range)
 export const pairs = decorateObservableFactory(Rx.pairs)
 export const defer = decorateObservableFactory(Rx.defer)
+export const of = decorateObservableFactory(Rx.of)
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 export const EMPTY = decorateObservable(Rx.EMPTY, 'EMPTY')
 export const NEVER = decorateObservable(Rx.NEVER, 'NEVER')
 /* eslint-enable @typescript-eslint/no-unsafe-argument */
 
+export const pipe = decoratePipe(null, Rx.pipe)
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 export const Observable = decorateClass(Rx.Observable)
