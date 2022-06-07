@@ -60,23 +60,19 @@ const PIPE = Symbol('pipe')
 export function decoratePipe(context: any, pipe: any) {
   return (...operations: OperatorFunction<any, any>[]): Observable<any> => {
     const piped = pipe.apply(context, operations.map((op: DebugOperator) => {
-      if (!op.__debug) { // set operator as unknown if __debug wasnt specified before
-        assignMeta(op, 'unknown')
-      }
-      if (!op.__debug) return // prevent TS error
+      const originDebug = assignMeta(op, 'unknown')
 
       const func = (source: Observable<any>) => {
-        if (!op.__debug) return // prevent TS error
         const res = op(source)
-        const debug = assignMeta(res, op.__debug.name)
+        const debug = assignMeta(res, originDebug.name)
 
-        if (op.__debug.name !== PIPE) debug.parent.push(source)
-        debug.parent.push(op.__debug.parent)
+        if (originDebug.name !== PIPE) debug.parent.push(source)
+        debug.parent.push(originDebug.parent)
 
         return res
       }
 
-      assignMeta(func, op.__debug.name)
+      assignMeta(func, originDebug.name)
 
       return func
     }))
