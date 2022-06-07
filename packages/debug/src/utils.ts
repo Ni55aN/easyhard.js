@@ -49,8 +49,6 @@ export function decorateOperator<Args extends never[], Return extends DebugObjec
     const op = operator(...processedArgs)
     const debug = assignMeta(op, operator.name)
 
-    debug.parent.push(...processedArgs.filter(isDebugLike))
-
     return op
   })
 }
@@ -92,9 +90,6 @@ export function decorateObservableFactory<Ob extends (...args: any[]) => Observa
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const ob = factory(...processedArgs)
     const debug = assignMeta(ob, factory.name)
-    const parents: DebugObject[] = processedArgs.filter(isDebugLike)
-
-    debug.parent.push(...parents)
 
     ob.pipe = decoratePipe(ob, ob.pipe)
 
@@ -108,10 +103,6 @@ export function decorateObservable(ob: Observable<number>, name: string) {
   ob.pipe = decoratePipe(ob, ob.pipe)
 
   return ob
-}
-
-function isDebugLike(object: number | string | DebugObject) {
-  return object && typeof object === 'object' && '__debug' in object
 }
 
 export function decorateClass<T extends { pipe: any } & DebugMeta>(ident: DebugClass<T>): { new (): T } {
