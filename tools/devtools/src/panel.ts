@@ -4,22 +4,40 @@ import { css, injectStyles } from 'easyhard-styles'
 import { tap } from 'rxjs'
 import { Services } from './types'
 import { Connection } from './utils/communication'
-import klay from 'cytoscape-klay'
+import dagre  from 'cytoscape-dagre'
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-cytoscape.use(klay)
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+cytoscape.use(dagre)
+/* eslint-enable @typescript-eslint/no-unsafe-argument */
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
 
-connection.addListener(message => {
+connection.addListener(async message => {
   if (message.type === 'GRAPH') {
     cy.elements().remove()
     cy.add([
       ...message.data.nodes.map(data => ({ group: 'nodes' as ElementGroup, data })),
       ...message.data.edges.map(data => ({ group: 'edges' as ElementGroup, data }))
     ])
-    cy.elements().makeLayout({ name: 'klay' }).run()
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    await cy.elements().makeLayout({
+      name: 'dagre',
+      rankDir: 'LR',
+      ranker: 'tight-tree',
+      spacingFactor: 0.56,
+      minLen(edge: any) {
+        const nodes = edge.connectedNodes().map((n: any) => n.data())
+
+        if ((nodes[0].type === 'observable') !== (nodes[1].type === 'observable')) {
+          return 6
+        }
+
+        return 1
+      },
+      animate: true
+    } as any).run().promiseOn('layoutstop')
   }
 })
 
@@ -66,9 +84,6 @@ const sidebarStyles = css({
 const sidebar =  h('div', {}, injectStyles(sidebarStyles), 'Sidebar')
 document.body.appendChild(sidebar)
 
-function trimLabel(label: string) {
-  return label.substring(0, 15)
-}
 
 const cy = cytoscape({
   container,
@@ -77,15 +92,19 @@ const cy = cytoscape({
       'selector': 'node[label]',
       'style': {
         label(ele: cytoscape.NodeSingular) {
-          return trimLabel(String(ele.data('label')))
+          const label = String(ele.data('label'))
+
+          return label.length > 6 ? label.substring(0, 7) + '...' : label
         },
         'text-valign': 'center',
         'text-halign': 'center',
-        width(ele: cytoscape.NodeSingular) {
-          return trimLabel(String(ele.data('label'))).length * 5 + 20
+        'font-size'(ele: cytoscape.NodeSingular) {
+          const label = String(ele.data('label'))
+
+          return label.length > 6 ? 8 : 10
         },
-        height: 25,
-        'font-size': '11px',
+        width: 45,
+        height: 25
       }
     },
     {
