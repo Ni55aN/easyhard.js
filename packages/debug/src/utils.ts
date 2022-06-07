@@ -3,15 +3,15 @@
 import { getUID } from 'easyhard-common-alias'
 import { Observable, OperatorFunction, UnaryFunction } from 'rxjs'
 
-type DebugMeta = { __debug?: { id: string, name: string, parent: MestedDebugObject[] } }
+type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[] } }
 type MestedDebugObject = DebugObject | MestedDebugObject[]
 type DebugOperator = OperatorFunction<any, any> & DebugMeta
 type DebugObservable = Observable<any> & DebugMeta
 type DebugClass<T extends { pipe: any }> = ({ new(...args: any[]): T } & DebugMeta)
 type DebugObject = DebugOperator | DebugObservable | (UnaryFunction<any, any> & DebugMeta) | DebugClass<any>
 
-function assignMeta(object: DebugObject, name: string) {
-  if (object.__debug) console.warn('__debug already defined in ', object)
+function assignMeta(object: DebugObject, name: string | symbol) {
+  // if (object.__debug) console.warn('__debug already defined in ', object)
   if (!object.__debug) {
     object.__debug = {
       id: getUID(),
@@ -55,8 +55,10 @@ export function decorateOperator<Args extends never[], Return extends DebugObjec
   })
 }
 
+const PIPE = Symbol('pipe')
+
 export function decoratePipe(context: any, pipe: any) {
-  const piped = (...operations: OperatorFunction<any, any>[]): Observable<any> => {
+  return (...operations: OperatorFunction<any, any>[]): Observable<any> => {
     const piped = pipe.apply(context, operations.map((op: DebugOperator) => {
       if (!op.__debug) { // set operator as unknown if __debug wasnt specified before
         assignMeta(op, 'unknown')
@@ -68,7 +70,8 @@ export function decoratePipe(context: any, pipe: any) {
         const res = op(source)
         const debug = assignMeta(res, op.__debug.name)
 
-        debug.parent.push(source, op.__debug.parent ? op.__debug.parent : []) // TODO condition
+        if (op.__debug.name !== PIPE) debug.parent.push(source)
+        debug.parent.push(op.__debug.parent)
 
         return res
       }
@@ -79,11 +82,10 @@ export function decoratePipe(context: any, pipe: any) {
     }))
     piped.pipe = decoratePipe(piped, piped.pipe)
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    assignMeta(piped, context ? context.__debug.name : PIPE)
     return piped
   }
-  assignMeta(piped, 'pipe')
-
-  return piped
 }
 
 export function decorateObservableFactory<Ob extends (...args: any[]) => Observable<any>>(factory: Ob): Ob {
