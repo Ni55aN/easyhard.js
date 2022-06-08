@@ -1,28 +1,32 @@
 import * as Rx from 'rxjs'
-import { DebugObservable, DebugOperator, decorateObservable, decorateObservableFactory, decorateOperator } from '../src/utils'
+import { DebugObservable, decorateObservable, decorateObservableFactory, decorateOperator } from '../src/utils'
 
 describe('debug', () => {
   it('operator - map', () => {
     const map = decorateOperator(Rx.map)
-    const operator = map(() => null) as DebugOperator
+    const operator = map(() => null)
+    const observable = operator(Rx.EMPTY) as DebugObservable
 
-    expect(operator.__debug).toBeTruthy()
-    expect(operator.__debug?.id).toEqual(expect.any(String))
-    expect(operator.__debug?.name).toEqual('map')
-    expect(operator.__debug?.parent).toHaveLength(0)
+    expect(observable.__debug).toBeTruthy()
+    expect(observable.__debug?.id).toEqual(expect.any(String))
+    expect(observable.__debug?.name).toEqual('map')
+    expect(observable.__debug?.parent).toHaveLength(1)
   })
 
   it('operator - mergeMap', () => {
     const mergeMap = decorateOperator(Rx.mergeMap)
-    const operator = mergeMap(() => Rx.of(true)) as DebugOperator
+    const operator = mergeMap(() => Rx.of(true))
 
-    Rx.of(true).pipe(operator).subscribe()
+    const observable = Rx.of(true).pipe(operator) as DebugObservable
 
-    expect(operator.__debug).toBeTruthy()
-    expect(operator.__debug?.id).toEqual(expect.any(String))
-    expect(operator.__debug?.name).toEqual('mergeMap')
-    expect(operator.__debug?.parent).toHaveLength(1)
-    expect(operator.__debug?.parent[0]).toBeInstanceOf(Rx.Observable)
+    observable.subscribe()
+
+    expect(observable.__debug).toBeTruthy()
+    expect(observable.__debug?.id).toEqual(expect.any(String))
+    expect(observable.__debug?.name).toEqual('mergeMap')
+    expect(observable.__debug?.parent).toHaveLength(2)
+    expect(observable.__debug?.parent[0]).toBeInstanceOf(Rx.Observable)
+    expect(observable.__debug?.parent[1]).toBeInstanceOf(Rx.Observable)
   })
 
   it('of', () => {

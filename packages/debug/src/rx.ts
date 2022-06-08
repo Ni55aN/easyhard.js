@@ -133,8 +133,6 @@ export const EMPTY = decorateObservable(Rx.EMPTY, 'EMPTY')
 export const NEVER = decorateObservable(Rx.NEVER, 'NEVER')
 /* eslint-enable @typescript-eslint/no-unsafe-argument */
 
-export const pipe = decoratePipe(null, Rx.pipe)
-
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 export const Observable = decorateClass(Rx.Observable)
 export const Subject = decorateClass(Rx.Subject)

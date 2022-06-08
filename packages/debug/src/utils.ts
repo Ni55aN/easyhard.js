@@ -3,20 +3,20 @@
 import { getUID } from 'easyhard-common-alias'
 import { Observable, OperatorFunction, UnaryFunction } from 'rxjs'
 
-type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[] } }
-type MestedDebugObject = DebugObject | MestedDebugObject[]
-type DebugOperator = OperatorFunction<any, any> & DebugMeta
-type DebugObservable = Observable<any> & DebugMeta
-type DebugClass<T extends { pipe: any }> = ({ new(...args: any[]): T } & DebugMeta)
-type DebugObject = DebugOperator | DebugObservable | (UnaryFunction<any, any> & DebugMeta) | DebugClass<any>
+export type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[] } }
+export type MestedDebugObject = DebugObject | MestedDebugObject[]
+export type DebugOperator = OperatorFunction<any, any> & DebugMeta
+export type DebugObservable = Observable<any> & DebugMeta
+export type DebugClass<T extends { pipe: any }> = ({ new(...args: any[]): T } & DebugMeta)
+export type DebugObject = DebugOperator | DebugObservable | (UnaryFunction<any, any> & DebugMeta) | DebugClass<any>
 
-function assignMeta(object: DebugObject, name: string | symbol) {
+export function assignMeta(object: DebugObject, name: string | symbol, parent: MestedDebugObject[] = []) {
   // if (object.__debug) console.warn('__debug already defined in ', object)
   if (!object.__debug) {
     object.__debug = {
       id: getUID(),
       name,
-      parent: []
+      parent
     }
   }
   return object.__debug
@@ -41,66 +41,46 @@ function decorateArguments<T extends FunctionalArgument[]>(args: T, emit: { obse
   }) as T
 }
 
-export function decorateOperator<Args extends never[], Return extends DebugObject, Operator extends (...args: Args) => Return>(operator: Operator): Operator {
-  return <Operator>((...args) => {
+type Operator<K, L> = UnaryFunction<Observable<K> & DebugMeta, Observable<L> & DebugMeta>
+
+export function decorateOperator<Args extends any[], OperatorDeclaration extends (...args: Args) => Operator<any, any>>(operatorDeclaration: OperatorDeclaration): OperatorDeclaration {
+  return <OperatorDeclaration>((...args: Args) => {
+    const parent: MestedDebugObject[] = []
     const processedArgs = decorateArguments(args, {
-      observable: value => debug.parent.push(value)
+      observable: value => {
+        parent.push(value)
+      }
     })
-    const op = operator(...processedArgs)
-    const debug = assignMeta(op, operator.name)
+    const operator = operatorDeclaration(...processedArgs)
+
+    const op = (source: Observable<unknown> & DebugMeta) => {
+      const observable = operator(source)
+      assignMeta(observable, operatorDeclaration.name, parent)
+      parent.push(source)
+      return observable
+    }
 
     return op
   })
 }
 
-const PIPE = Symbol('pipe')
-
-export function decoratePipe(context: any, pipe: any) {
-  return (...operations: OperatorFunction<any, any>[]): Observable<any> => {
-    const piped = pipe.apply(context, operations.map((op: DebugOperator) => {
-      const originDebug = assignMeta(op, 'unknown')
-
-      const func = (source: Observable<any>) => {
-        const res = op(source)
-        const debug = assignMeta(res, originDebug.name)
-
-        if (originDebug.name !== PIPE) debug.parent.push(source)
-        debug.parent.push(originDebug.parent)
-
-        return res
-      }
-
-      assignMeta(func, originDebug.name)
-
-      return func
-    }))
-    piped.pipe = decoratePipe(piped, piped.pipe)
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    assignMeta(piped, context ? context.__debug.name : PIPE)
-    return piped
-  }
-}
-
 export function decorateObservableFactory<Ob extends (...args: any[]) => Observable<any>>(factory: Ob): Ob {
   return <Ob>((...args) => {
+    const parent: MestedDebugObject[] = []
     const processedArgs = decorateArguments(args, {
-      observable: value => debug.parent.push(value)
+      observable: value => parent.push(value)
     })
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const ob = factory(...processedArgs)
-    const debug = assignMeta(ob, factory.name)
 
-    ob.pipe = decoratePipe(ob, ob.pipe)
+    assignMeta(ob, factory.name, parent)
 
     return ob
   })
 }
 
-export function decorateObservable(ob: Observable<number>, name: string) {
+export function decorateObservable(ob: Observable<any>, name: string) {
   assignMeta(ob, name)
-
-  ob.pipe = decoratePipe(ob, ob.pipe)
 
   return ob
 }
@@ -108,16 +88,15 @@ export function decorateObservable(ob: Observable<number>, name: string) {
 export function decorateClass<T extends { pipe: any } & DebugMeta>(ident: DebugClass<T>): { new (): T } {
   return new Proxy(ident, {
     construct(target, args) {
+      const parent: MestedDebugObject[] = []
       const processedArgs = decorateArguments(args, {
-        observable: value => debug.parent.push(value)
+        observable: value => parent.push(value)
       })
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const instance = new target(...processedArgs)
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const debug = assignMeta(instance as any, ident.name)
-
-      instance.pipe = decoratePipe(instance, instance.pipe)
+      assignMeta(instance as any, ident.name, parent)
 
       return instance
     }
