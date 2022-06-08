@@ -53,9 +53,7 @@ export default packages.map(({ folder, pkg }) => {
             declaration: true,
             declarationDir: path.resolve(`${destination}/${pkg.name}/types`),
             baseUrl: '.',
-            paths: destination === 'build'
-              ? fromEntries(packages.map(({ folder, pkg }) => [pkg.name, [`../../${destination}/${pkg.name}`]]))
-              : {}
+            paths: fromEntries(packages.map(({ folder, pkg }) => [pkg.name, [`../../${destination}/${pkg.name}`]]))
           }
          }
       }),
