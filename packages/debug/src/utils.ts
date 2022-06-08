@@ -22,13 +22,11 @@ export function assignMeta(object: DebugObject, name: string | symbol, parent: M
   return object.__debug
 }
 
-type FunctionalArgument = (...args: unknown[]) => unknown & DebugMeta
+type FunctionalArgument = ((...args: unknown[]) => unknown) | (Observable<any> & DebugMeta)
 
 export function decorateArguments<T extends FunctionalArgument[]>(args: T, emit: { observable: (value: Observable<any>) => void }) {
   return args.map(arg => {
-    const isDebugOperator = Boolean(arg && (arg as DebugMeta).__debug)
-
-    if (typeof arg == 'function' && !isDebugOperator) {
+    if (typeof arg == 'function') {
       return (...params: Parameters<typeof arg>) => {
         const result = arg(...params)
         if (result instanceof Observable) {
