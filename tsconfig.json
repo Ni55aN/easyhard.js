@@ -20,7 +20,8 @@
     "paths": {
       "easyhard": ["packages/core/src"],
       "easyhard-common": ["packages/common/src"],
-      "easyhard-bridge": ["packages/bridge/src"]
+      "easyhard-bridge": ["packages/bridge/src"],
+      "easyhard-common-alias": ["packages/common/src"]
     }
   }
 }
