@@ -63,4 +63,18 @@ describe('debug', () => {
     expect(parent1.__debug?.name).toEqual('map')
     expect(parent2.__debug?.name).toEqual('of')
   })
+
+  it('observable arguments', () => {
+    const combineLatest = decorateObservableFactory(Rx.combineLatest)
+    const a = Rx.of(1)
+    const b = Rx.of(1)
+    const c = Rx.of(1)
+    const observable = combineLatest(a, b, c) as DebugObservable
+
+    expect(observable.__debug).toBeTruthy()
+    expect(observable.__debug?.parent).toHaveLength(3)
+    expect(observable.__debug?.parent[0]).toEqual(a)
+    expect(observable.__debug?.parent[1]).toEqual(b)
+    expect(observable.__debug?.parent[2]).toEqual(c)
+  })
 })

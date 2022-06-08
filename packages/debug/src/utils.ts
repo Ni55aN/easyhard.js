@@ -24,7 +24,7 @@ export function assignMeta(object: DebugObject, name: string | symbol, parent: M
 
 type FunctionalArgument = (...args: unknown[]) => unknown & DebugMeta
 
-function decorateArguments<T extends FunctionalArgument[]>(args: T, emit: { observable: (value: Observable<any>) => void }) {
+export function decorateArguments<T extends FunctionalArgument[]>(args: T, emit: { observable: (value: Observable<any>) => void }) {
   return args.map(arg => {
     const isDebugOperator = Boolean(arg && (arg as DebugMeta).__debug)
 
@@ -36,6 +36,9 @@ function decorateArguments<T extends FunctionalArgument[]>(args: T, emit: { obse
         }
         return result
       }
+    }
+    if (arg instanceof Observable) {
+      emit.observable(arg)
     }
     return arg
   }) as T
