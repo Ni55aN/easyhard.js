@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs-alias'
-import { decorateClass, decorateObservable, decorateObservableFactory, decorateOperator, decoratePipe } from './utils'
+import { decorateClass, decorateObservable, decorateObservableFactory, decorateOperator } from './utils'
 import './setup'
 
 export * from 'rxjs-alias'
@@ -50,7 +50,6 @@ export const map = decorateOperator(Rx.map)
 export const mapTo = decorateOperator(Rx.mapTo)
 export const materialize = decorateOperator(Rx.materialize)
 export const max = decorateOperator(Rx.max)
-export const merge = decorateOperator(Rx.merge)
 export const mergeAll = decorateOperator(Rx.mergeAll)
 export const flatMap = decorateOperator(Rx.flatMap)
 export const mergeMap = decorateOperator(Rx.mergeMap)
@@ -60,15 +59,12 @@ export const mergeWith = decorateOperator(Rx.mergeWith)
 export const min = decorateOperator(Rx.min)
 export const multicast = decorateOperator(Rx.multicast)
 export const observeOn = decorateOperator(Rx.observeOn)
-export const onErrorResumeNext = decorateOperator(Rx.onErrorResumeNext)
 export const pairwise = decorateOperator(Rx.pairwise)
-// export const partition = decorateOperator(Rx.partition)
 export const pluck = decorateOperator(Rx.pluck)
 export const publish = decorateOperator(Rx.publish)
-// export const publishBehavior = decorateOperator(Rx.publishBehavior) // TODO UnaryFunction
+export const publishBehavior = decorateOperator(Rx.publishBehavior)
 export const publishLast = decorateOperator(Rx.publishLast)
 export const publishReplay = decorateOperator(Rx.publishReplay)
-// export const race = decorateOperator(Rx.race)
 export const raceWith = decorateOperator(Rx.raceWith)
 export const reduce = decorateOperator(Rx.reduce)
 export const repeat = decorateOperator(Rx.repeat)
@@ -112,11 +108,9 @@ export const windowTime = decorateOperator(Rx.windowTime)
 export const windowToggle = decorateOperator(Rx.windowToggle)
 export const windowWhen = decorateOperator(Rx.windowWhen)
 export const withLatestFrom = decorateOperator(Rx.withLatestFrom)
-export const zip = decorateOperator(Rx.zip)
 export const zipAll = decorateOperator(Rx.zipAll)
 export const zipWith = decorateOperator(Rx.zipWith)
 export const identity = decorateOperator(Rx.identity)
-export const iif = decorateOperator(Rx.iif)
 
 export const combineLatest = decorateObservableFactory(Rx.combineLatest)
 export const race = decorateObservableFactory(Rx.race)
@@ -127,6 +121,9 @@ export const range = decorateObservableFactory(Rx.range)
 export const pairs = decorateObservableFactory(Rx.pairs)
 export const defer = decorateObservableFactory(Rx.defer)
 export const of = decorateObservableFactory(Rx.of)
+export const zip = decorateObservableFactory(Rx.zip)
+export const merge = decorateObservableFactory(Rx.merge)
+export const iif = decorateObservableFactory(Rx.iif)
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 export const EMPTY = decorateObservable(Rx.EMPTY, 'EMPTY')
