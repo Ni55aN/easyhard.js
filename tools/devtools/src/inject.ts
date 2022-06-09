@@ -65,7 +65,9 @@ function pushObservableNodes(graph: Graph, ob: EhObservable, dependentNode: Grap
   })
 }
 
-function pushNode(ehNode: EhNode, graph: Graph): GraphNode {
+function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
+  if (!ehNode.__easyhard && ehNode.nodeName == '#text' && !ehNode.textContent?.trim()) return null
+
   const node: GraphNode = {
     id: ehNode.__easyhard?.id || nanoid(),
     type: ehNode.__easyhard ? (ehNode.nodeName == '#text' ? 'eh-text' : 'eh-node') : (ehNode.nodeName == '#text' ? 'text' : 'node'),
