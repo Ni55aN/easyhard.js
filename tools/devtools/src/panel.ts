@@ -159,7 +159,15 @@ const cy = cytoscape({
       style: {
         'curve-style': 'unbundled-bezier',
         'source-endpoint': '20px 0',
-        'target-endpoint': '-20px 0'
+        'target-endpoint': '-20px 0',
+        'width': 2
+      }
+    },
+    {
+      selector: 'edge[type="pipe"]',
+      style: {
+        'line-color': '#f1c82a',
+        'width': 1.5
       }
     },
   ]

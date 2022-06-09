@@ -7,7 +7,7 @@ type Parent = (EhObservable | EhMeta | Parent)[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type EhObservable = Observable<unknown> & { __debug: { id: string, parent: Parent[], name: string } }
-type EhMeta = { __easyhard?: { id: string, attrs?: Attrs<TagName>, observable?: EhObservable }}
+type EhMeta = { __easyhard?: { id: string, attrs?: Attrs<TagName>, parent?: EhObservable[], observable?: EhObservable }}
 type EhNode = Node & EhMeta
 
 
@@ -31,13 +31,15 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
           graph.edges.push({
             id: [ob.__debug.id, parent.__debug.id].join('_'),
             source: parent.__debug.id,
-            target: ob.__debug.id
+            target: ob.__debug.id,
+            type: 'pipe'
           })
         } else if ('__easyhard' in parent && parent.__easyhard) {
           graph.edges.push({
             id: [ob.__debug.id, parent.__easyhard.id].join('_'),
             source: parent.__easyhard.id,
-            target: ob.__debug.id
+            target: ob.__debug.id,
+            type: 'pipe'
           })
         } else {
           throw new Error('not found __debug or __easyhard property')
@@ -58,7 +60,8 @@ function pushObservableNodes(graph: Graph, ob: EhObservable, dependentNode: Grap
   graph.edges.push({
     id: [ob.__debug.id, dependentNode.id].join('_'),
     source: ob.__debug.id,
-    target: dependentNode.id
+    target: dependentNode.id,
+    type: 'pipe'
   })
 }
 
@@ -81,6 +84,13 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode {
       }
     }
   }
+  // const parent = ehNode.__easyhard?.parent
+
+  // if (parent) {
+  //   parent.flat().forEach(p => {
+  //     pushObservableNodes(graph, p, node)
+  //   })
+  // }
 
   if (ehNode.__easyhard && ehNode.__easyhard.observable) {
     const ob = ehNode.__easyhard.observable
@@ -96,7 +106,8 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode {
     graph.edges.push({
       source: node.id,
       target: childNode.id,
-      id: [node.id,childNode.id].join('_')
+      id: [node.id,childNode.id].join('_'),
+      type: 'other'
     })
   })
 

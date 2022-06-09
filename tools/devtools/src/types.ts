@@ -5,7 +5,7 @@ export type GraphNode = {
   type: 'eh-text' | 'text' | 'node' | 'eh-node' | 'observable'
   label: string | null
 }
-export type GraphEdge = { id: string, source: string, target: string }
+export type GraphEdge = { id: string, source: string, target: string, type: 'pipe' | 'other' }
 export type Graph = { nodes: GraphNode[], edges: GraphEdge[] }
 
 export type Services = {
