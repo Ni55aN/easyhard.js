@@ -1,4 +1,4 @@
-import cytoscape, { ElementGroup } from 'cytoscape'
+import cytoscape, { EdgeSingular, ElementGroup, EventObjectNode } from 'cytoscape'
 import { h, onMount } from 'easyhard'
 import { css, injectStyles } from 'easyhard-styles'
 import { tap } from 'rxjs'
@@ -156,11 +156,32 @@ const cy = cytoscape({
     {
       selector: 'edge',
       style: {
-        'curve-style': 'bezier',
-        'control-point-step-size': 10
+        'curve-style': 'unbundled-bezier'
       }
     },
   ]
+})
+
+function adjustEdgeCurve(edge: EdgeSingular) {
+  const sourcePosition = edge.source().position()
+  const targetPosition = edge.target().position()
+  const x = targetPosition.x - sourcePosition.x
+  const y = targetPosition.y - sourcePosition.y
+  const distance = Math.sqrt(x * x + y * y)
+  const costheta = x / distance
+  const alpha = 0.2
+  const controlPointDistances = [-alpha * y * costheta, 0, alpha * y * costheta]
+
+  edge.style('control-point-weights', [alpha,  0.5, 1 - alpha])
+  edge.style('control-point-distances', controlPointDistances)
+
+}
+
+cy.on('layoutstop', () => {
+  cy.edges().forEach(edge => adjustEdgeCurve(edge))
+})
+cy.on('drag', (el: EventObjectNode) => {
+  el.target.connectedEdges().forEach(edge => adjustEdgeCurve(edge))
 })
 
 onMount(container, () => {
