@@ -56,8 +56,7 @@ export function decorateOperator<Args extends any[], OperatorDeclaration extends
 
     const op = (source: Observable<unknown> & DebugMeta) => {
       const observable = operator(source)
-      assignMeta(observable, operatorDeclaration.name, parent)
-      parent.push(source)
+      assignMeta(observable, operatorDeclaration.name, [source, parent])
       return observable
     }
 
