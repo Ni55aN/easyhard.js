@@ -63,15 +63,14 @@ function resolveChild(child: Child): DomElement {
     debugAnchor(anchor, child)
 
     child.pipe(untilExist(anchor), distinctUntilChanged()).subscribe(v => {
-      anchor.edge && anchor.edge.remove()
-      anchor.textContent = ''
-
-      if (v instanceof Comment || v instanceof HTMLElement || v instanceof Text) {
-        anchor.edge = v
-        insertNode(anchor.edge, anchor.parentNode as Node, anchor)
-      } else {
-        anchor.textContent = v as string
+      if (typeof v !== 'object' && anchor.edge instanceof Text) { // performance optimization
+        anchor.edge.textContent = v as string
+        return
       }
+      anchor.edge && anchor.edge.remove()
+      anchor.edge = (v instanceof Comment || v instanceof HTMLElement || v instanceof Text) ? v : debugElement(new Text(v as string), {})
+
+      insertNode(anchor.edge, anchor.parentNode as Node, anchor)
     }, null, () => {
       anchor.edge && anchor.edge.remove()
       anchor.remove()

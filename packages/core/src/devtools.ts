@@ -4,17 +4,20 @@ import { Anchor, Attrs, TagName } from './types'
 
 const debugWindow = <Window & { __easyhardDebug?: boolean }>window
 
-export function debugElement(element: HTMLElement, attrs: Attrs<TagName>) {
+export function debugElement(element: Comment | HTMLElement | Text, attrs: Attrs<TagName>) {
   if (debugWindow.__easyhardDebug) {
     Object.defineProperty(element, '__easyhard', {
       value: {
         id: getUID(),
-        attrs
+        attrs,
+        parent: []
       },
       writable: false,
       configurable: false
     })
   }
+
+  return element
 }
 
 export function debugAnchor(anchor: Anchor, observable: Observable<unknown>) {
