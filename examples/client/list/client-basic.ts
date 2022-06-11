@@ -38,7 +38,7 @@ function App() {
       )
     ),
     h('div', {},
-      $for(array, map(item => h('b', {}, item)))
+      $for(array, item => h('b', {}, item))
     )
   )
 

@@ -1,5 +1,5 @@
 import { h, $, $$, $for } from 'easyhard'
-import { map, tap } from 'rxjs/operators'
+import { tap } from 'rxjs/operators'
 
 function App() {
   const list = $$(new Array(10000).fill(null).map((_, i) => $(i)))
@@ -7,7 +7,7 @@ function App() {
 
   return h('div', {},
     h('button', { click: tap(increment) }, 'inc'),
-    $for(list, map(v => h('div', {}, v)))
+    $for(list, v => h('div', {}, v))
   )
 }
 

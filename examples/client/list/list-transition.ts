@@ -39,11 +39,11 @@ function App() {
   const { list, container, remove } = useFadeList(arr, { duration: $(1000) })
 
   return h('div', {},
-    $for(list, map(v => container(v, h('div', {
+    $for(list, v => container(v, h('div', {
       click: pipe(mapTo(v), remove) },
     injectStyles(itemStyles),
     v.value
-    ))))
+    )))
   )
 }
 

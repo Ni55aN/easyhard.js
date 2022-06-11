@@ -15,7 +15,7 @@ const load = <T>(init?: RequestInit): OperatorFunction<RequestInfo, T> => pipe(
 )
 
 function UsersList(users: User[]) {
-  return $for($$(users), map(item => h('div', {}, item.email)))
+  return $for($$(users), item => h('div', {}, item.email))
 }
 
 function App() {

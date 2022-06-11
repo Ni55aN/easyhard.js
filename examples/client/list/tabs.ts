@@ -18,15 +18,15 @@ function useTabs(list: $$<TabItem>, component: TabHeaderComponent = TabComponent
     selectTab(i: number) {
       active.next(list.value[i])
     },
-    header: $for(list, mergeMap(item => {
+    header: $for(list, item => {
       const isActive = active.pipe(map(activeItem => item === activeItem))
       const label = map(() => component(item, isActive, () => active.next(item)))
 
       return item ? $if(item.hidden || of(false), map(() => null), label) : of(null)
-    })),
+    }),
     content: active.pipe(mergeMap(tab => {
       if (!tab) return of(null)
-  
+
       return tab.content instanceof Observable ? tab.content : of(tab.content)
     }))
   }

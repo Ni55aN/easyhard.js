@@ -1,5 +1,5 @@
-import { h, $, $$, $for, SimpleType, DomElement, appendChild } from 'easyhard'
-import { OperatorFunction, Observable, combineLatest, pipe } from 'rxjs'
+import { h, $, $$, $for, appendChild, Child } from 'easyhard'
+import { Observable, combineLatest, pipe } from 'rxjs'
 import { map, tap, debounceTime, mapTo } from 'rxjs/operators'
 import { intersection, difference } from 'lodash-es'
 import { collectionLength } from 'easyhard-common'
@@ -48,7 +48,7 @@ function createVirtualList<T>(sourceList: $$<T>, scrollTop: $<number>, container
   }
 }
 
-function ListView<T>(source: $$<T>, props: { height: $<number> }, render: OperatorFunction<T, DomElement | SimpleType>) {
+function ListView<T>(source: $$<T>, props: { height: $<number> }, render: (item: T) => Child) {
   const scrollTop = $(0)
   const containerHeight = $(0)
   const { inject, list, sourceHeight, offset } = createVirtualList<T>(source, scrollTop, containerHeight, props.height)
@@ -78,10 +78,10 @@ function ListView<T>(source: $$<T>, props: { height: $<number> }, render: Operat
 
 function App() {
   const arr = $$(new Array(10000).fill(0).map((_, i) => i))
-  const renderItem = map<number, HTMLElement>(item => {
+  const renderItem = (item: number) => {
     for(let i = 0; i < 10000; i += Math.random()) i += Math.random()
     return h('div', {}, item)
-  })
+  }
 
   return h('div', {  style: 'height: 80vh; border: 1px solid red; overflow: auto' },
     // $for(arr, renderItem),

@@ -45,7 +45,7 @@ function App() {
   return h('div', {},
     Input({ model: target }),
     h('button', { click: tap(() => { add(target.value); target.next('')}) }, '+'),
-    $for(list, map(item => TodoItem({ item, remove })))
+    $for(list, item => TodoItem({ item, remove }))
   )
 }
 

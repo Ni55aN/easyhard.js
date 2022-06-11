@@ -1,5 +1,4 @@
-import { Observable, pipe } from 'rxjs'
-import { filter, map, mergeMap, delay as delayOp } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { $, $$, $for, $if, $inject, $provide, $show, h, untilExist } from '../src/index'
 import { delay, waitAnimationFrame } from './utils/timers'
 
@@ -76,7 +75,7 @@ describe('operators', () => {
 
   it('$for', async () => {
     const collection = $$([1,2,3])
-    const div = h('div', {}, $for(collection, map(item => item)))
+    const div = h('div', {}, $for<number>(collection, item => item))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
@@ -85,7 +84,7 @@ describe('operators', () => {
 
   it('$for - insert', async () => {
     const collection = $$([1,2,3])
-    const div = h('div', {}, $for(collection, map(item => item)))
+    const div = h('div', {}, $for<number>(collection, item => item))
     document.body.appendChild(div)
 
     collection.insert(4)
@@ -95,7 +94,7 @@ describe('operators', () => {
 
   it('$for - insert before render', async () => {
     const collection = $$([1,2,3])
-    const div = h('div', {}, $for(collection, map(item => item)))
+    const div = h('div', {}, $for<number>(collection, item => item))
 
     collection.insert(4)
     await delay(100)
@@ -106,7 +105,7 @@ describe('operators', () => {
 
   it('$for - async insert', async () => {
     const collection = $$([1,2,3])
-    const div = h('div', {}, $for(collection, map(item => item), { comparator: (a, b) => a < b}))
+    const div = h('div', {}, $for<number>(collection, item => item, { comparator: (a, b) => a < b}))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
@@ -117,7 +116,7 @@ describe('operators', () => {
 
   it('$for - remove', async () => {
     const collection = $$([1,2,3])
-    const div = h('div', {}, $for(collection, map(item => item)))
+    const div = h('div', {}, $for<number>(collection, item => item))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
@@ -129,7 +128,7 @@ describe('operators', () => {
 
   it('$for - removeAt', async () => {
     const collection = $$([1,2,3])
-    const div = h('div', {}, $for(collection, map(item => item)))
+    const div = h('div', {}, $for<number>(collection, item => item))
     document.body.appendChild(div)
 
     await waitAnimationFrame()
@@ -137,48 +136,6 @@ describe('operators', () => {
     collection.remove(2)
     await waitAnimationFrame()
     expect(document.body.textContent).toBe('13')
-  })
-
-  describe('$for - detached', () => {
-    afterEach(() => {
-      document.body.innerHTML = ''
-    })
-
-    it('shouldnt be removed', async () => {
-      const collection = $$<number>([1,2,3])
-      const div = h('div', {}, $for(collection, map(([item]) => item), { detached: true }))
-      document.body.appendChild(div)
-
-      await waitAnimationFrame()
-      expect(document.body.textContent).toBe('123')
-      collection.remove(1)
-      await waitAnimationFrame()
-      expect(document.body.textContent).toBe('123')
-    })
-
-    it('should be removed with delay', async () => {
-      const delayRemove = (time: number) => <K, T extends [K, Observable<boolean>]>(source: Observable<T>): Observable<T> => new Observable(observer => {
-        return source.subscribe({
-          next(value) { observer.next(value) },
-          error(err) { observer.error(err) },
-          complete() { observer.complete() }
-        }).add(source.pipe(mergeMap(value => value[1]), filter(removed => removed), delayOp(time)).subscribe({
-          next() { observer.complete() }
-        }))
-      })
-
-      const collection = $$<number>([1,2,3])
-      const div = h('div', {}, $for(collection, pipe(delayRemove(1000), map(([item]) => item)), { detached: true }))
-      document.body.appendChild(div)
-
-      await waitAnimationFrame()
-      expect(document.body.textContent).toBe('123')
-      collection.remove(1)
-      await waitAnimationFrame()
-      expect(document.body.textContent).toBe('123')
-      await delay(1100)
-      expect(document.body.textContent).toBe('23')
-    })
   })
 
   it('$inject/$provide', async () => {

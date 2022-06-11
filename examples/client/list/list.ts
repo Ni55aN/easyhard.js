@@ -13,7 +13,6 @@ function App() {
     distinctUntilChanged(),
     switchMap(length => timer(0, 500).pipe(
       map(() => {
-        console.log(length)
         const i = Math.round(Math.random() * (length - 1))
         const subj = list.value[i][1]
 
@@ -29,7 +28,7 @@ function App() {
 
   return h('div', {},
     randomList,
-    $for(list, map(v => h('div', {}, v[1])), { comparator: (a, b) => a[0] <= b[0]})
+    $for(list, v => h('div', {}, v[1]), { comparator: (a, b) => a[0] <= b[0]})
   )
 }
 

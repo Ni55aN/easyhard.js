@@ -16,7 +16,7 @@ function App(): HTMLElement {
         return null
       })
     ),
-    $for(list, map(item => h('div', {}, item)))
+    $for(list, item => h('div', {}, item))
   )
 }
 

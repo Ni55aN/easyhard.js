@@ -1,4 +1,4 @@
-import { h, $, $$, $if, $for } from 'easyhard'
+import { h, $, $$, $for } from 'easyhard'
 import { useForm, components, formatter, validation } from 'easyhard-forms'
 import { SelectOption } from 'easyhard-forms/components'
 import { Observable, pipe } from 'rxjs'
@@ -50,7 +50,7 @@ function App() {
   const selectOptions = $$<SelectOption>([
     $({ key: 'first', label: $('First') }),
     $({ key: 'second', label: $('Second') }),
-    $if(form.checkbox, map(() => ({ key: 'third', label: $('Third') })))
+    form.checkbox.pipe(map(v => v ? ({ key: 'third', label: $('Third') }) : null))
   ])
 
   const disabled = form.checkbox.pipe(map(act => !act))
@@ -78,7 +78,7 @@ function App() {
       }))
     }),
     h('div', { style: 'border: 1px solid green; padding: 1em' },
-      $for(form.items, map(value => Field('Item', value, { type: Textbox(), validations: value === itemWithValidation ? itemValidation : undefined  }))),
+      $for(form.items, value => Field('Item', value, { type: Textbox(), validations: value === itemWithValidation ? itemValidation : undefined  })),
     ),
     Field('Nested group', form.group.nested.test, { type: Checkbox(), validations: nestedValidations }),
     Button('Clear', () => form.text.next('')),
