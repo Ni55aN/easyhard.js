@@ -10,7 +10,7 @@ describe('debug', () => {
     expect(observable.__debug).toBeTruthy()
     expect(observable.__debug?.id).toEqual(expect.any(String))
     expect(observable.__debug?.name).toEqual('map')
-    expect(observable.__debug?.parent).toHaveLength(1)
+    expect(observable.__debug?.parent.flat()).toHaveLength(1)
   })
 
   it('operator - mergeMap', () => {
@@ -24,9 +24,9 @@ describe('debug', () => {
     expect(observable.__debug).toBeTruthy()
     expect(observable.__debug?.id).toEqual(expect.any(String))
     expect(observable.__debug?.name).toEqual('mergeMap')
-    expect(observable.__debug?.parent).toHaveLength(2)
-    expect(observable.__debug?.parent[0]).toBeInstanceOf(Rx.Observable)
-    expect(observable.__debug?.parent[1]).toBeInstanceOf(Rx.Observable)
+    expect(observable.__debug?.parent.flat()).toHaveLength(2)
+    expect(observable.__debug?.parent.flat()[0]).toBeInstanceOf(Rx.Observable)
+    expect(observable.__debug?.parent.flat()[1]).toBeInstanceOf(Rx.Observable)
   })
 
   it('of', () => {
