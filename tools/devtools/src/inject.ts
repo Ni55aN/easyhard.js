@@ -7,7 +7,7 @@ type Parent = (EhObservable | EhMeta | Parent)[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type EhObservable = Observable<unknown> & { __debug: { id: string, parent: Parent[], name: string } }
-type EhMeta = { __easyhard?: { id: string, attrs?: Attrs<TagName>, parent?: EhObservable[], observable?: EhObservable }}
+type EhMeta = { __easyhard?: { id: string, attrs?: Attrs<TagName>, indirect?: boolean, parent?: EhObservable[], observable?: EhObservable }}
 type EhNode = Node & EhMeta
 
 
@@ -105,6 +105,8 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
   ehNode.childNodes.forEach(item => {
     const childNode = pushNode(item, graph)
 
+    if (!childNode) return
+    if ((item as EhMeta).__easyhard?.indirect) return
     graph.edges.push({
       source: node.id,
       target: childNode.id,
