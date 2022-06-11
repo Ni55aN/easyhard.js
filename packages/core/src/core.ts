@@ -68,7 +68,15 @@ function resolveChild(child: Child): DomElement {
         return
       }
       anchor.edge && anchor.edge.remove()
-      anchor.edge = (v instanceof Comment || v instanceof HTMLElement || v instanceof Text) ? v : debugElement(new Text(v as string), {})
+
+      if (v instanceof Comment || v instanceof HTMLElement || v instanceof Text) {
+        anchor.edge = v
+      } else {
+        const element = debugElement(document.createTextNode(''), {})
+
+        element.textContent = v as string
+        anchor.edge = element
+      }
 
       insertNode(anchor.edge, anchor.parentNode as Node, anchor)
     }, null, () => {
