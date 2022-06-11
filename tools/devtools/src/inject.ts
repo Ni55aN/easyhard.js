@@ -7,7 +7,7 @@ type Parent = (EhObservable | EhMeta | Parent)[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type EhObservable = Observable<unknown> & { __debug: { id: string, parent: Parent[], name: string } }
-type EhMeta = { __easyhard?: { id: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', parent?: EhObservable[], observable?: EhObservable }}
+type EhMeta = { __easyhard?: { id: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', parent?: (EhMeta | EhObservable)[] }}
 type EhNode = Node & EhMeta
 
 
@@ -88,18 +88,21 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
       }
     }
   }
-  // const parent = ehNode.__easyhard?.parent
+  const parent = ehNode.__easyhard?.parent
 
-  // if (parent) {
-  //   parent.flat().forEach(p => {
-  //     pushObservableNodes(graph, p, node)
-  //   })
-  // }
-
-  if (ehNode.__easyhard && ehNode.__easyhard.observable) {
-    const ob = ehNode.__easyhard.observable
-
-    pushObservableNodes(graph, ob, node)
+  if (parent) {
+    parent.flat().forEach(item => {
+      if ('subscribe' in item) {
+        pushObservableNodes(graph, item, node)
+      } else if (item.__easyhard) {
+        graph.edges.push({
+          source: item.__easyhard.id,
+          target: node.id,
+          id: [item.__easyhard.id, node.id].join('_'),
+          type: 'bind'
+        })
+      }
+    })
   }
 
   graph.nodes.push(node)
