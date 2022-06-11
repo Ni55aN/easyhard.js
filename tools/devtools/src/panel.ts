@@ -114,7 +114,7 @@ const cy = cytoscape({
         'shape': 'round-rectangle',
         'border-width': 2,
         'border-color': 'white',
-        'background-color': '#5e86ff'
+        'background-color': '#a9a9a9'
       }
     },
     {
@@ -141,7 +141,7 @@ const cy = cytoscape({
         'shape': 'round-rectangle',
         'border-width': 1,
         'border-color': 'black',
-        'background-color': '#a9a9a9'
+        'background-color': '#5e86ff'
       }
     },
     {
@@ -155,11 +155,26 @@ const cy = cytoscape({
       }
     },
     {
+      selector: 'node[type="fragment"]',
+      style: {
+        'shape': 'ellipse',
+        'border-width': 1,
+        'border-color': 'black',
+        'background-color': '#5e86ff',
+        width: 20,
+        height: 20
+      }
+    },
+    {
       selector: 'edge',
       style: {
         'curve-style': 'unbundled-bezier',
-        'source-endpoint': '20px 0',
-        'target-endpoint': '-20px 0',
+        'source-endpoint'(el: EdgeSingular) {
+          return `${el.connectedNodes()[0].width() / 2}px 0`
+        },
+        'target-endpoint'(el: EdgeSingular) {
+          return `-${el.connectedNodes()[1].width() / 2}px 0`
+        },
         'width': 2
       }
     },
@@ -168,6 +183,13 @@ const cy = cytoscape({
       style: {
         'line-color': '#f1c82a',
         'width': 1.5
+      }
+    },
+    {
+      selector: 'edge[type="bind"]',
+      style: {
+        'line-style': 'dashed',
+        'line-dash-pattern': [3,1]
       }
     },
   ]
