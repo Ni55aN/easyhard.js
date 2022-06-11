@@ -1,4 +1,5 @@
 import { appendChild } from './core'
+import { debugFragment, debugFragmentChild } from './devtools'
 import { Anchor, Child, DomElement } from './types'
 import { createAnchor, getEdge } from './utils'
 
@@ -6,13 +7,16 @@ export function createFragment(): { anchor: Anchor; insert: (item: Child, i?: nu
   const anchor = createAnchor()
   const elements: DomElement[] = []
 
+  debugFragment(anchor)
+
   return {
     anchor,
     insert(item: Child, i = elements.length): void {
+      if (i < 0) { throw new Error('index is invalid') }
       if (!anchor.parentElement) { throw new Error('Attempt to add Child, but the anchor has been removed') }
       const el = appendChild(item, anchor.parentElement as ChildNode, getEdge(elements[i - 1]) || anchor)
 
-      if (i < 0) { throw new Error('index is invalid') }
+      debugFragmentChild(el, anchor)
 
       elements.splice(i, 0, el)
       anchor.edge = elements[elements.length - 1]

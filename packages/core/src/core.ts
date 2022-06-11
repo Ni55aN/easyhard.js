@@ -1,9 +1,8 @@
 import { Observable, Subject } from 'rxjs'
-import { distinctUntilChanged } from 'rxjs/operators'
 import { DomElement, Attrs, Child, PropAttrs, TagName, EventAttrs, EventHandler, EventName, ElementType, NestedChild } from './types'
 import { insertNode, createAnchor } from './utils'
 import { untilExist } from './operators/until-exist'
-import { debugAnchor, debugElement } from './devtools'
+import { debugFragment, debugElement, debugFragmentChild } from './devtools'
 
 export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: NestedChild[]): ElementType<K> {
   const element = document.createElement(tag)
@@ -60,7 +59,7 @@ function resolveChild(child: Child): DomElement {
   if (child instanceof Observable) {
     const anchor = createAnchor()
 
-    debugAnchor(anchor, child)
+    debugFragment(anchor, child)
 
     child.pipe(untilExist(anchor)).subscribe(v => {
       if (typeof v !== 'object' && anchor.edge instanceof Text) { // performance optimization
@@ -77,6 +76,8 @@ function resolveChild(child: Child): DomElement {
         element.textContent = v as string
         anchor.edge = element
       }
+
+      debugFragmentChild(anchor.edge, anchor)
 
       insertNode(anchor.edge, anchor.parentNode as Node, anchor)
     }, null, () => {

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getUID } from 'easyhard-common'
 import { Observable, OperatorFunction } from 'rxjs'
-import { Anchor, Attrs, TagName } from './types'
+import { Attrs, DomElement, TagName } from './types'
 
 const debugWindow = <Window & { __easyhardDebug?: boolean }>window
 
@@ -20,12 +21,14 @@ export function debugElement(element: Comment | HTMLElement | Text, attrs: Attrs
   return element
 }
 
-export function debugAnchor(anchor: Anchor, observable: Observable<unknown>) {
+export function debugFragment(anchor: DomElement, observable?: Observable<unknown>) {
   if (debugWindow.__easyhardDebug) {
     Object.defineProperty(anchor, '__easyhard', {
       value: {
         id: getUID(),
-        observable
+        observable,
+        parent: observable ? [observable] : [],
+        type: 'fragment'
       },
       writable: false,
       configurable: false
@@ -33,7 +36,21 @@ export function debugAnchor(anchor: Anchor, observable: Observable<unknown>) {
   }
 }
 
-export function debugOperator<T, K>(operator: OperatorFunction<T, K>, name: string, parent: (Node | Observable<never>)[]): OperatorFunction<T, K> {
+export function debugFragmentAddParent(anchor: DomElement & { __easyhard?: any }, parent: any) {
+  if (debugWindow.__easyhardDebug) {
+    anchor.__easyhard.parent.push(parent)
+  }
+}
+
+export function debugFragmentChild(element: DomElement, parent: DomElement) {
+  if (debugWindow.__easyhardDebug && element !== null) {
+    type T = { __easyhard?: any }
+    ;(element as T).__easyhard.parent.push(parent)
+    ;(element as T).__easyhard.indirect = true
+  }
+}
+
+export function debugOperator<T, K, R extends OperatorFunction<T, K> | Observable<T>>(operator: R, name: string, parent: (Node | Observable<any>)[]): R {
   if (debugWindow.__easyhardDebug) {
     Object.defineProperty(operator, '__debug', {
       value: {
