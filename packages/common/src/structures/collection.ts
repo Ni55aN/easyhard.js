@@ -1,4 +1,5 @@
 import { Subject, Subscriber, Subscription, ObjectUnsubscribedError } from 'rxjs'
+import { debugObservable } from '../devtools'
 
 export type InsertReturn<T> = { insert: true, item: T, batch?: boolean }
 export type RemoveReturn<T> = { remove: true, item: T }
@@ -11,6 +12,7 @@ export function getCollectionItemId<T>(item: T): T | unknown {
 export class CollectionSubject<T> extends Subject<Return<T>> {
   constructor(private _value: T[]) {
     super()
+    debugObservable(this, 'CollectionSubject')
   }
 
   get value(): T[] {
