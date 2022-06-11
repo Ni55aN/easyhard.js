@@ -62,7 +62,7 @@ function resolveChild(child: Child): DomElement {
 
     debugAnchor(anchor, child)
 
-    child.pipe(untilExist(anchor), distinctUntilChanged()).subscribe(v => {
+    child.pipe(untilExist(anchor)).subscribe(v => {
       if (typeof v !== 'object' && anchor.edge instanceof Text) { // performance optimization
         anchor.edge.textContent = v as string
         return
