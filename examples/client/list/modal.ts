@@ -35,10 +35,10 @@ function useModal(component: ModalComponent = Modal) {
     },
     provide() {
       return [
-        $if(opened, map(() => component(
+        $if(opened, () => component(
           modal.pipe(mergeMap(m => m.title)),
           modal.pipe(mergeMap(m => m.content || of(null)))
-        )))
+        ))
       ]
     }
   }

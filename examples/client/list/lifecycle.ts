@@ -29,7 +29,7 @@ function App() {
 
   return h('div', {},
     h('button', { click: toggle }, 'toggle'),
-    $if(mount, map(() => Child(text)))
+    $if(mount, () => Child(text))
   )
 }
 

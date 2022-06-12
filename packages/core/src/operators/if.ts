@@ -1,14 +1,13 @@
-import { Observable, of, OperatorFunction } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+import { Child } from '../types'
 
-type Pipe<T> = OperatorFunction<boolean, T>;
-
-export function $if<T>(state: Observable<boolean>, pipe: Pipe<T>, elsePipe?: Pipe<T>): Observable<T | null> {
+export function $if(state: Observable<boolean>, then: () => Child, another?: () => Child): Observable<Child> {
   return state.pipe(
-    switchMap(v => {
-      if (v) return of(v).pipe(pipe)
-      if (elsePipe) return of(v).pipe(elsePipe)
-      return of(null)
+    map(v => {
+      if (v) return then()
+      if (another) return another()
+      return null
     })
   )
 }

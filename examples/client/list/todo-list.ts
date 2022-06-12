@@ -10,8 +10,8 @@ function Editable(el: (toggle: () => void) => HTMLElement, input: (toggle: () =>
   const toggle = () => edited.next(!edited.value)
 
   return $if(edited,
-    map(() => input(toggle)),
-    map(() => el(toggle))
+    () => input(toggle),
+    () => el(toggle)
   )
 }
 

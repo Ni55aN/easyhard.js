@@ -20,9 +20,9 @@ function useTabs(list: $$<TabItem>, component: TabHeaderComponent = TabComponent
     },
     header: $for(list, item => {
       const isActive = active.pipe(map(activeItem => item === activeItem))
-      const label = map(() => component(item, isActive, () => active.next(item)))
+      const label = () => component(item, isActive, () => active.next(item))
 
-      return item ? $if(item.hidden || of(false), map(() => null), label) : of(null)
+      return item ? $if(item.hidden || of(false), () => null, label) : of(null)
     }),
     content: active.pipe(mergeMap(tab => {
       if (!tab) return of(null)

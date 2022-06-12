@@ -10,7 +10,7 @@ describe('operators', () => {
   it('$if - true/false', async () => {
     const is = $(false)
     const div = h('div', {},
-      $if(is, map(() => 'test'))
+      $if(is, () => 'test')
     )
     document.body.appendChild(div)
 
@@ -27,9 +27,9 @@ describe('operators', () => {
   it('$if - nested', async () => {
     const is = $(false)
     const div = h('div', {},
-      $if(is, map(() => h('div', {},
-        $if(is, map(() => 'test'))
-      )))
+      $if(is, () => h('div', {},
+        $if(is, () => 'test')
+      ))
     )
     document.body.appendChild(div)
 
@@ -43,7 +43,7 @@ describe('operators', () => {
   it('$if - else', async () => {
     const is = $(false)
     const div = h('div', {},
-      $if(is, map(() => h('div', {}, '111')), map(() => h('div', {}, '222')))
+      $if(is, () => h('div', {}, '111'), () => h('div', {}, '222'))
     )
     document.body.appendChild(div)
 
@@ -148,7 +148,7 @@ describe('operators', () => {
     function Parent<T>(props: { showChild: $<boolean>, state: $<T>, content: HTMLElement }) {
       return h('div', {},
         $provide(StateKey, props.state),
-        $if(showChild, map(() => props.content))
+        $if(showChild, () => props.content)
       )
     }
 

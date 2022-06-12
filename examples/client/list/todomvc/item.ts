@@ -30,7 +30,7 @@ export function TodoItem({ todo }: { todo: Todo }): HTMLElement {
       h('label', { dblclick: tap(() => editing.next(true))}, todo.label),
       h('button', { className: 'destroy', click: pipe(mapTo(todo.id), deleteTodo) })
     ),
-    $if(editing, map(() =>
+    $if(editing, () =>
       Input({
         className: 'edit',
         value: todo.label,
@@ -39,6 +39,5 @@ export function TodoItem({ todo }: { todo: Todo }): HTMLElement {
         keypress: pipe(filter(e => e.key === 'Enter'), tap(onSave))
       })
     ))
-    )
   )
 }

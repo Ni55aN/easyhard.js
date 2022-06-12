@@ -78,7 +78,7 @@ function TodoList({ todos, filter: todosFilter }: { todos: Observable<$$Return<T
           input: tap(e => input.next((e.target as HTMLInputElement).value || ''))
         })
       ),
-      $if(hasTodos, map(() =>
+      $if(hasTodos, () =>
         h('section', { className: 'main' },
           h('input', {
             id: 'toggle-all',
@@ -89,13 +89,13 @@ function TodoList({ todos, filter: todosFilter }: { todos: Observable<$$Return<T
           }),
           h('label', { htmlFor: 'toggle-all' }),
           h('ul', { className: 'todo-list'},
-            $for(visibleTodos, map(todo =>  (
+            $for(visibleTodos, todo =>  (
               TodoItem({ todo })
-            )))
+            ))
           )
         )
-      )),
-      $if(hasTodos, map(() =>
+      ),
+      $if(hasTodos, () =>
         h('footer', { className: 'footer'},
           h('span', { className: 'todo-count'},
             h('strong', {}, activeCount), activeCount.pipe(map(count => ` item${count === 1 ? '' : 's'} left`)),
@@ -117,16 +117,16 @@ function TodoList({ todos, filter: todosFilter }: { todos: Observable<$$Return<T
               ),
             )
           ),
-          $if(anyDone, map(() =>  (
+          $if(anyDone, () =>  (
             h('button', {
               className: 'clear-completed',
               click: clearCompleted$
             },
             'Clear completed'
             )
-          )))
+          ))
         )
-      ))
+      )
     )
   )
 }
@@ -140,7 +140,7 @@ function App() {
   return h('div', {},
     provideStore,
     TodoList({ todos, filter }),
-    $if(hasTodos, map(Footer))
+    $if(hasTodos, Footer)
   )
 }
 
