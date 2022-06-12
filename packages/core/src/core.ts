@@ -70,6 +70,10 @@ function resolveChild(child: Child): DomElement {
 
       if (v instanceof Comment || v instanceof HTMLElement || v instanceof Text) {
         anchor.edge = v
+      } else if (v instanceof Observable) {
+        const element = resolveChild(v)
+
+        anchor.edge = element
       } else {
         const element = debugElement(document.createTextNode(''), {})
 
@@ -79,7 +83,9 @@ function resolveChild(child: Child): DomElement {
 
       debugFragmentChild(anchor.edge, anchor)
 
-      insertNode(anchor.edge, anchor.parentNode as Node, anchor)
+      if (anchor.edge) {
+        insertNode(anchor.edge, anchor.parentNode as Node, anchor)
+      }
     }, null, () => {
       anchor.edge && anchor.edge.remove()
       anchor.remove()

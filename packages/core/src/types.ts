@@ -3,7 +3,7 @@ import { Observable, OperatorFunction, Subject } from 'rxjs'
 export type Anchor = Text & { edge?: DomElement };
 export type DomElement = Anchor | Comment | HTMLElement | Text | null;
 export type SimpleType = number | string | boolean | null | void;
-export type Child = DomElement | SimpleType | Observable<SimpleType | DomElement>;
+export type Child = DomElement | SimpleType | Observable<Child>;
 export type NestedChild = Child | NestedChild[];
 
 export type TagName = keyof HTMLElementTagNameMap;
