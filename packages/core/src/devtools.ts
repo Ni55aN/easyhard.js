@@ -43,8 +43,10 @@ export function debugFragmentAddParent(anchor: DomElement & { __easyhard?: any }
 }
 
 export function debugFragmentChild(element: DomElement, parent: DomElement) {
-  if (debugWindow.__easyhardDebug && element !== null) {
-    type T = { __easyhard?: any }
+  type T = { __easyhard?: any }
+  if (debugWindow.__easyhardDebug) {
+    if (element === null) return
+    if (!(element as T).__easyhard) debugElement(element, {})
     ;(element as T).__easyhard.parent.push(parent)
     ;(element as T).__easyhard.indirect = true
   }
