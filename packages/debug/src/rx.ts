@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs-alias'
-import { decorateClass, decorateObservable, decorateObservableFactory, decorateOperator } from './utils'
+import { decorateAsObservable, decorateClass, decorateObservable, decorateObservableFactory, decorateOperator } from './utils'
 import './setup'
 
 export * from 'rxjs-alias'
@@ -132,8 +132,16 @@ export const NEVER = decorateObservable(Rx.NEVER, 'NEVER')
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 export const Observable = decorateClass(Rx.Observable)
-export const Subject = decorateClass(Rx.Subject)
-export const BehaviorSubject = decorateClass(Rx.BehaviorSubject)
-export const ReplaySubject = decorateClass(Rx.ReplaySubject)
-export const AsyncSubject = decorateClass(Rx.AsyncSubject)
+export const Subject = decorateClass(Rx.Subject, {
+  asObservable: decorateAsObservable
+})
+export const BehaviorSubject = decorateClass(Rx.BehaviorSubject, {
+  asObservable: decorateAsObservable
+})
+export const ReplaySubject = decorateClass(Rx.ReplaySubject, {
+  asObservable: decorateAsObservable
+})
+export const AsyncSubject = decorateClass(Rx.AsyncSubject, {
+  asObservable: decorateAsObservable
+})
 /* eslint-enable @typescript-eslint/no-unsafe-argument */

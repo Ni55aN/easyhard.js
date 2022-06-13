@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getUID } from 'easyhard-common-alias'
@@ -85,20 +86,38 @@ export function decorateObservable(ob: Observable<any>, name: string) {
   return ob
 }
 
-export function decorateClass<T extends { pipe: any } & DebugMeta>(ident: DebugClass<T>): { new (): T } {
+type Method = (ctx: any, method: (...args: any[]) => any, args: any[]) => any
+
+export function decorateClass<T extends { pipe: any } & DebugMeta>(ident: DebugClass<T>, methods?: {[key in keyof T]?: Method}): { new (): T } {
   return new Proxy(ident, {
     construct(target, args) {
       const parent: MestedDebugObject[] = []
       const processedArgs = decorateArguments(args, {
         observable: value => parent.push(value)
       })
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const instance = new target(...processedArgs)
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       assignMeta(instance as any, ident.name, parent)
+
+      methods && Object.entries(methods).forEach(([key, newMethod]: [string, Method]) => {
+        const method = (instance as any)[key]
+
+        ;(instance as any)[key] = (...args: any[]) => {
+          return newMethod(instance, method, args)
+        }
+      })
 
       return instance
     }
   })
+}
+
+export const decorateAsObservable: Method = (ctx, method, args) => {
+  const ob = method.call(ctx, args)
+
+  if (ob instanceof Observable) {
+    assignMeta(ob, 'Observable', [ctx])
+  }
+
+  return ob
 }
