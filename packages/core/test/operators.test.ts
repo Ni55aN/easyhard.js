@@ -167,6 +167,17 @@ describe('operators', () => {
       await waitAnimationFrame()
       expect(document.body.textContent).toBe('state')
     })
+
+    it('nullable value', async () => {
+      const showChild = $(false)
+      const state = $(0)
+      const div = Parent({ showChild, state, content: ChildComponent('test') })
+      document.body.appendChild(div)
+
+      showChild.next(true)
+      await waitAnimationFrame()
+      expect(document.body.textContent).toBe('0')
+    })
   })
 
   describe('untilExist', () => {

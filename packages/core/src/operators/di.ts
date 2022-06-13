@@ -34,8 +34,11 @@ class Injections {
     return m as DiInjection<T>
   }
 
-  static find<T>(el: Node | null, data: DiInjection<T>): T | null {
-    return el && data.get(el) || el && this.find(el.parentElement, data)
+  static find<T>(el: Node | null, data: DiInjection<T>): { value: T } | null {
+    if (!el) return null
+    if (data.has(el)) return { value: data.get(el) as T }
+
+    return this.find<T>(el.parentElement, data)
   }
 }
 
@@ -54,16 +57,16 @@ export function $provide<T, K>(id: DiKey<K>, value: DiValue<T>): Child {
 
 export function $inject<T, K>(id: DiKey<K>, act: DiValue<T>): Child {
   const anchor = createAnchor()
-  const injection = injections.observe(id)
+  const injection = injections.observe<T, K>(id)
 
   injection.pipe(untilExist(anchor)).subscribe(injectionValue => {
     const target = anchor.parentNode
     if (!target) return
 
-    const value = Injections.find(target.parentElement, injectionValue)
+    const result = Injections.find(target.parentElement, injectionValue)
 
-    if (value) {
-      act.next(value as T)
+    if (result) {
+      act.next(result.value)
     }
   })
 
