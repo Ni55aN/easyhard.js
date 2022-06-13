@@ -88,6 +88,7 @@ document.body.appendChild(sidebar)
 
 const cy = cytoscape({
   container,
+  wheelSensitivity: 0.25,
   style: [
     {
       'selector': 'node[label]',
