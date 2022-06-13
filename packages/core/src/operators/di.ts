@@ -4,6 +4,7 @@ import { map } from 'rxjs/operators'
 import { untilExist } from './until-exist'
 import { Child } from '../types'
 import { createAnchor } from '../utils'
+import { debugFragment } from '../devtools'
 
 type DiKey<T> = { new(): unknown } | { (...args: T[]): unknown } | Record<string, unknown>;
 type DiValue<T> = Subject<T>;
@@ -47,6 +48,8 @@ const injections = new Injections()
 export function $provide<T, K>(id: DiKey<K>, value: DiValue<T>): Child {
   const anchor = createAnchor()
 
+  debugFragment(anchor, value)
+
   value.pipe(untilExist(anchor)).subscribe(value => {
     if (!anchor.parentNode) throw new Error('parentNode is undefined')
     injections.next(id, anchor.parentNode, value)
@@ -58,6 +61,8 @@ export function $provide<T, K>(id: DiKey<K>, value: DiValue<T>): Child {
 export function $inject<T, K>(id: DiKey<K>, act: DiValue<T>): Child {
   const anchor = createAnchor()
   const injection = injections.observe<T, K>(id)
+
+  debugFragment(anchor, act)
 
   injection.pipe(untilExist(anchor)).subscribe(injectionValue => {
     const target = anchor.parentNode
