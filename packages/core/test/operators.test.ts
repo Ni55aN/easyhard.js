@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { $, $$, $for, $if, $inject, $provide, $show, h, untilExist } from '../src/index'
+import { $, $$, $for, $if, $inject, $provide, $show, Child, h, untilExist } from '../src/index'
 import { delay, waitAnimationFrame } from './utils/timers'
 
 describe('operators', () => {
@@ -138,33 +138,35 @@ describe('operators', () => {
     expect(document.body.textContent).toBe('13')
   })
 
-  it('$inject/$provide', async () => {
+  describe('$inject/$provide', () => {
     const StateKey = {}
 
-    function Child() {
-      const state = $(null)
+    function ChildComponent<T extends Child>(initial: T | null = null) {
+      const state = $(initial)
       return h('div', {}, $inject(StateKey, state), state)
     }
     function Parent<T>(props: { showChild: $<boolean>, state: $<T>, content: HTMLElement }) {
       return h('div', {},
         $provide(StateKey, props.state),
-        $if(showChild, () => props.content)
+        $if(props.showChild, () => props.content)
       )
     }
 
-    const showChild = $(false)
-    const state = $('test')
-    const div = Parent({ showChild, state, content: Child() })
-    document.body.appendChild(div)
+    it('basic', async () => {
+      const showChild = $(false)
+      const state = $('test')
+      const div = Parent({ showChild, state, content: ChildComponent() })
+      document.body.appendChild(div)
 
-    await waitAnimationFrame()
-    expect(document.body.textContent).toBe('')
-    showChild.next(true)
-    await waitAnimationFrame()
-    expect(document.body.textContent).toBe('test')
-    state.next('state')
-    await waitAnimationFrame()
-    expect(document.body.textContent).toBe('state')
+      await waitAnimationFrame()
+      expect(document.body.textContent).toBe('')
+      showChild.next(true)
+      await waitAnimationFrame()
+      expect(document.body.textContent).toBe('test')
+      state.next('state')
+      await waitAnimationFrame()
+      expect(document.body.textContent).toBe('state')
+    })
   })
 
   describe('untilExist', () => {
