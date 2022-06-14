@@ -28,11 +28,14 @@ connection.addListener(async message => {
       rankDir: 'LR',
       ranker: 'tight-tree',
       spacingFactor: 0.56,
-      minLen(edge: any) {
+      minLen(edge: EdgeSingular) {
         const nodes = edge.connectedNodes().map((n: any) => n.data())
 
         if ((nodes[0].type === 'observable') !== (nodes[1].type === 'observable')) {
           return 6
+        }
+        if (edge.data('type') === 'argument') {
+          return 2
         }
 
         return 1
@@ -182,18 +185,20 @@ const cy = cytoscape({
         'target-endpoint'(el: EdgeSingular) {
           return `-${el.connectedNodes()[1].width() / 2}px 0`
         },
-        'width': 2
+        'line-color'(edge: EdgeSingular) {
+          const nodes = edge.connectedNodes()
+
+          return nodes[0].data('type') === 'observable' ? '#f1c82a' : ''
+        },
+        'width'(edge: EdgeSingular) {
+          const nodes = edge.connectedNodes()
+
+          return nodes[0].data('type') === 'observable' ? 1.5 : 2
+        }
       }
     },
     {
-      selector: 'edge[type="pipe"]',
-      style: {
-        'line-color': '#f1c82a',
-        'width': 1.5
-      }
-    },
-    {
-      selector: 'edge[type="bind"]',
+      selector: 'edge[type="argument"]',
       style: {
         'line-style': 'dashed',
         'line-dash-pattern': [3,1]

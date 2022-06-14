@@ -5,7 +5,8 @@ import { getUID } from 'easyhard-common-alias'
 import { Observable, OperatorFunction, UnaryFunction } from 'rxjs'
 
 export type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[] } }
-export type MestedDebugObject = DebugObject | MestedDebugObject[]
+export type Parent = { type: 'argument' | 'other', link: DebugObject }
+export type MestedDebugObject = Parent | MestedDebugObject[]
 export type DebugOperator = OperatorFunction<any, any> & DebugMeta
 export type DebugObservable = Observable<any> & DebugMeta
 export type DebugClass<T extends { pipe: any }> = ({ new(...args: any[]): T } & DebugMeta)
@@ -49,15 +50,13 @@ export function decorateOperator<Args extends any[], OperatorDeclaration extends
   return <OperatorDeclaration>((...args: Args) => {
     const parent: MestedDebugObject[] = []
     const processedArgs = decorateArguments(args, {
-      observable: value => {
-        parent.push(value)
-      }
+      observable: value => parent.push({ type: 'argument', link: value })
     })
     const operator = operatorDeclaration(...processedArgs)
 
     const op = (source: Observable<unknown> & DebugMeta) => {
       const observable = operator(source)
-      assignMeta(observable, operatorDeclaration.name, [source, parent])
+      assignMeta(observable, operatorDeclaration.name, [{ type: 'other', link: source }, parent])
       return observable
     }
 
@@ -69,9 +68,8 @@ export function decorateObservableFactory<Ob extends (...args: any[]) => Observa
   return <Ob>((...args) => {
     const parent: MestedDebugObject[] = []
     const processedArgs = decorateArguments(args, {
-      observable: value => parent.push(value)
+      observable: value => parent.push({ type: 'argument', link: value })
     })
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const ob = factory(...processedArgs)
 
     assignMeta(ob, factory.name, parent)
@@ -93,7 +91,7 @@ export function decorateClass<T extends { pipe: any } & DebugMeta>(ident: DebugC
     construct(target, args) {
       const parent: MestedDebugObject[] = []
       const processedArgs = decorateArguments(args, {
-        observable: value => parent.push(value)
+        observable: value => parent.push({ type: 'argument', link: value })
       })
       const instance = new target(...processedArgs)
 

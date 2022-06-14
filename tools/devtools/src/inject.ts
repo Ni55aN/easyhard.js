@@ -1,13 +1,14 @@
 import { Attrs, TagName } from 'easyhard'
 import { nanoid } from 'nanoid'
 import { Observable } from 'rxjs'
-import { Graph, GraphNode } from './types'
+import { EdgeType, Graph, GraphNode } from './types'
 
-type Parent = (EhObservable | EhMeta | Parent)[]
+type Parent = { type: EdgeType, link: EhObservable | EhMeta }
+type NestedParent = Parent | NestedParent[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-type EhObservable = Observable<unknown> & { __debug: { id: string, parent: Parent[], name: string } }
-type EhMeta = { __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', parent?: (EhMeta | EhObservable)[] }}
+type EhObservable = Observable<unknown> & { __debug: { id: string, parent: NestedParent[], name: string } }
+type EhMeta = { __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', parent?: NestedParent[] }}
 type EhNode = Node & EhMeta
 
 
@@ -22,24 +23,24 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
         type: 'observable'
       })
 
-      ;(ob.__debug.parent.flat() as (EhObservable | EhMeta)[]).forEach(parent => {
-        initParentObservableNodes(graph, parent)
+      ;(ob.__debug.parent.flat() as Parent[]).forEach(parent => {
+        initParentObservableNodes(graph, parent.link)
 
         if (!ob.__debug.id) throw new Error('__debug id is undefined')
 
-        if ('__debug' in parent) {
+        if ('__debug' in parent.link) {
           graph.edges.push({
-            id: [ob.__debug.id, parent.__debug.id].join('_'),
-            source: parent.__debug.id,
+            id: [ob.__debug.id, parent.link.__debug.id].join('_'),
+            source: parent.link.__debug.id,
             target: ob.__debug.id,
-            type: 'pipe'
+            type: parent.type
           })
-        } else if ('__easyhard' in parent && parent.__easyhard) {
+        } else if ('__easyhard' in parent.link && parent.link.__easyhard) {
           graph.edges.push({
-            id: [ob.__debug.id, parent.__easyhard.id].join('_'),
-            source: parent.__easyhard.id,
+            id: [ob.__debug.id, parent.link.__easyhard.id].join('_'),
+            source: parent.link.__easyhard.id,
             target: ob.__debug.id,
-            type: 'pipe'
+            type: parent.type
           })
         } else {
           throw new Error('not found __debug or __easyhard property')
@@ -52,7 +53,7 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
   }
 }
 
-function pushObservableNodes(graph: Graph, ob: EhObservable, dependentNode: GraphNode) {
+function pushObservableNodes(graph: Graph, ob: EhObservable, type: EdgeType, dependentNode: GraphNode) {
   initParentObservableNodes(graph, ob)
 
   if (!dependentNode.id) throw new Error('dependentNode id is undefined')
@@ -61,7 +62,7 @@ function pushObservableNodes(graph: Graph, ob: EhObservable, dependentNode: Grap
     id: [ob.__debug.id, dependentNode.id].join('_'),
     source: ob.__debug.id,
     target: dependentNode.id,
-    type: 'pipe'
+    type
   })
 }
 
@@ -84,22 +85,22 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
       if (typeof attr === 'object' && 'subscribe' in attr) {
         const ob = attr as EhObservable
 
-        pushObservableNodes(graph, ob, node)
+        pushObservableNodes(graph, ob, 'argument', node)
       }
     }
   }
   const parent = ehNode.__easyhard?.parent
 
   if (parent) {
-    parent.flat().forEach(item => {
-      if ('subscribe' in item) {
-        pushObservableNodes(graph, item, node)
-      } else if (item.__easyhard) {
+    (parent.flat() as Parent[]).forEach(item => {
+      if ('subscribe' in item.link) {
+        pushObservableNodes(graph, item.link, item.type, node)
+      } else if (item.link.__easyhard) {
         graph.edges.push({
-          source: item.__easyhard.id,
+          source: item.link.__easyhard.id,
           target: node.id,
-          id: [item.__easyhard.id, node.id].join('_'),
-          type: 'bind'
+          id: [item.link.__easyhard.id, node.id].join('_'),
+          type: item.type
         })
       }
     })

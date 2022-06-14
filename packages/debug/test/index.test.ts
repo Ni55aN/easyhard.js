@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs'
-import { DebugObservable, decorateObservable, decorateObservableFactory, decorateOperator } from '../src/utils'
+import { DebugObservable, decorateObservable, decorateObservableFactory, decorateOperator, Parent } from '../src/utils'
 
 describe('debug', () => {
   it('operator - map', () => {
@@ -25,8 +25,8 @@ describe('debug', () => {
     expect(observable.__debug?.id).toEqual(expect.any(String))
     expect(observable.__debug?.name).toEqual('mergeMap')
     expect(observable.__debug?.parent.flat()).toHaveLength(2)
-    expect(observable.__debug?.parent.flat()[0]).toBeInstanceOf(Rx.Observable)
-    expect(observable.__debug?.parent.flat()[1]).toBeInstanceOf(Rx.Observable)
+    expect((observable.__debug?.parent.flat()[0] as Parent).link).toBeInstanceOf(Rx.Observable)
+    expect((observable.__debug?.parent.flat()[1] as Parent).link).toBeInstanceOf(Rx.Observable)
   })
 
   it('of', () => {
@@ -56,8 +56,8 @@ describe('debug', () => {
 
     const ob = instance.pipe(map(() => true), map(() => true)) as DebugObservable
 
-    const parent1 = ob.__debug?.parent.flat()[0] as DebugObservable
-    const parent2 = (ob.__debug?.parent.flat()[0] as DebugObservable).__debug?.parent.flat()[0] as DebugObservable
+    const parent1 = (ob.__debug?.parent.flat()[0] as Parent).link
+    const parent2 = ((ob.__debug?.parent.flat()[0] as Parent).link.__debug?.parent.flat()[0] as Parent).link as DebugObservable
 
     expect(ob.__debug?.name).toEqual('map')
     expect(parent1.__debug?.name).toEqual('map')
@@ -73,8 +73,8 @@ describe('debug', () => {
 
     expect(observable.__debug).toBeTruthy()
     expect(observable.__debug?.parent).toHaveLength(3)
-    expect(observable.__debug?.parent[0]).toEqual(a)
-    expect(observable.__debug?.parent[1]).toEqual(b)
-    expect(observable.__debug?.parent[2]).toEqual(c)
+    expect((observable.__debug?.parent[0] as Parent).link).toEqual(a)
+    expect((observable.__debug?.parent[1] as Parent).link).toEqual(b)
+    expect((observable.__debug?.parent[2] as Parent).link).toEqual(c)
   })
 })

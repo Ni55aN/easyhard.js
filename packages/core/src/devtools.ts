@@ -4,9 +4,9 @@ import { Observable, OperatorFunction } from 'rxjs'
 import { Attrs, DomElement, TagName } from './types'
 
 type ObservableDebugMeta = { __debug?: { fragment?: string } }
-type Parent = Observable<any> | DomElement
+type Parent = { type: 'argument' | 'other', link: Observable<any> | DomElement } | Parent[]
 type ElementDebugMeta = { __easyhard?: { id: string, attrs: Attrs<TagName>, parent: Parent[], indirect?: boolean } }
-type FragmentDebugMeta = { __easyhard?: { id: string, observable: Observable<any>, label: string, parent: Parent[], type: string } }
+type FragmentDebugMeta = { __easyhard?: { id: string, label: string, parent: Parent[], type: string } }
 
 const debugWindow = <Window & { __easyhardDebug?: boolean }>window
 
@@ -26,14 +26,13 @@ export function debugElement(element: Comment | HTMLElement | Text, attrs: Attrs
   return element
 }
 
-export function debugFragment(anchor: DomElement, label: string, observable?: Observable<unknown> & ObservableDebugMeta) {
+export function debugFragment(anchor: DomElement, label: string, parent?: Observable<unknown> & ObservableDebugMeta) {
   if (debugWindow.__easyhardDebug) {
     Object.defineProperty(anchor, '__easyhard', {
-      value: {
+      value: <FragmentDebugMeta['__easyhard']>{
         id: getUID(),
-        observable, // TODO unused
-        parent: observable ? [observable] : [],
-        label: label || observable?.__debug?.fragment || '',
+        parent: parent ? [{ type: 'other', link: parent }] : [],
+        label: label || parent?.__debug?.fragment || '',
         type: 'fragment'
       },
       writable: false,
@@ -51,7 +50,7 @@ export function debugFragmentLabel(anchor: DomElement & FragmentDebugMeta, label
 export function debugFragmentAddParent(anchor: DomElement & FragmentDebugMeta, parent: Observable<any> | DomElement) {
   if (debugWindow.__easyhardDebug) {
     if (!anchor.__easyhard) throw new Error('anchor should have __debug propery')
-    anchor.__easyhard.parent.push(parent)
+    anchor.__easyhard.parent.push({ type: 'other', link: parent })
   }
 }
 
@@ -60,7 +59,7 @@ export function debugFragmentChild(element: DomElement & (null | ElementDebugMet
     if (element === null) return
     if (!element.__easyhard) debugElement(element, {})
     if (!element.__easyhard) throw new Error('element should have __debug propery')
-    element.__easyhard.parent.push(parent)
+    element.__easyhard.parent.push({ type: 'other', link: parent })
     element.__easyhard.indirect = true
   }
 }
@@ -71,7 +70,7 @@ export function debugOperator<T, K, R extends OperatorFunction<T, K> | Observabl
       value: {
         id: getUID(),
         name,
-        parent
+        parent: parent.map(link => ({ type: 'other', link }))
       },
       writable: false,
       configurable: false
