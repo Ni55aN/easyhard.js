@@ -163,7 +163,9 @@ const cy = cytoscape({
         'border-color': 'black',
         'background-color': '#5e86ff',
         width: 20,
-        height: 20
+        height: 20,
+        label: 'data(label)',
+        'font-size': 8
       }
     },
     {

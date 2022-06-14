@@ -3,7 +3,7 @@ import { Child, DomElement } from '../types'
 import { Observable } from 'rxjs'
 import { untilExist } from '../operators/until-exist'
 import { createFragment } from '../fragment'
-import { debugFragmentAddParent } from '../devtools'
+import { debugFragmentAddParent, debugFragmentLabel } from '../devtools'
 
 type Comparator<T> = (a: T, b: T) => boolean
 
@@ -20,6 +20,7 @@ export function $for<T>(collection: $$Observable<T>, render: (item: T) =>  Child
   const fragment = createFragment()
   const list: T[] = []
 
+  debugFragmentLabel(fragment.anchor, '$for')
   debugFragmentAddParent(fragment.anchor, collection)
 
   collection.pipe(untilExist(fragment.anchor)).subscribe({

@@ -7,7 +7,7 @@ export function createFragment(): { anchor: Anchor; insert: (item: Child, i?: nu
   const anchor = createAnchor()
   const elements: DomElement[] = []
 
-  debugFragment(anchor)
+  debugFragment(anchor, '')
 
   return {
     anchor,

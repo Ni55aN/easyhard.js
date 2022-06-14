@@ -59,7 +59,7 @@ function resolveChild(child: Child): DomElement {
   if (child instanceof Observable) {
     const anchor = createAnchor()
 
-    debugFragment(anchor, child)
+    debugFragment(anchor, '', child)
 
     child.pipe(untilExist(anchor)).subscribe(v => {
       if (typeof v !== 'object' && anchor.edge instanceof Text) { // performance optimization
