@@ -85,6 +85,20 @@ const sidebarStyles = css({
 const sidebar =  h('div', {}, injectStyles(sidebarStyles), 'Sidebar')
 document.body.appendChild(sidebar)
 
+function getLabelStyle(key: string, maxLength: number, sizes: [number, number]) {
+  return {
+    label(ele: cytoscape.NodeSingular) {
+      const label = String(ele.data(key))
+
+      return label.length > maxLength ? label.substring(0, maxLength + 1) + '...' : label
+    },
+    'font-size'(ele: cytoscape.NodeSingular) {
+      const label = String(ele.data('label'))
+
+      return label.length > maxLength ? sizes[0] : sizes[1]
+    },
+  }
+}
 
 const cy = cytoscape({
   container,
@@ -93,20 +107,11 @@ const cy = cytoscape({
     {
       'selector': 'node[label]',
       'style': {
-        label(ele: cytoscape.NodeSingular) {
-          const label = String(ele.data('label'))
-
-          return label.length > 6 ? label.substring(0, 7) + '...' : label
-        },
         'text-valign': 'center',
         'text-halign': 'center',
-        'font-size'(ele: cytoscape.NodeSingular) {
-          const label = String(ele.data('label'))
-
-          return label.length > 6 ? 8 : 10
-        },
         width: 45,
-        height: 25
+        height: 25,
+        ...getLabelStyle('label', 6, [8, 10])
       }
     },
     {
