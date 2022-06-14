@@ -84,9 +84,9 @@ export function decorateObservable(ob: Observable<any>, name: string) {
   return ob
 }
 
-type Method = (ctx: any, method: (...args: any[]) => any, args: any[]) => any
+type Method = (ctx: Observable<any>, method: (...args: any[]) => any, args: any[]) => any
 
-export function decorateClass<T extends { pipe: any } & DebugMeta>(ident: DebugClass<T>, methods?: {[key in keyof T]?: Method}): { new (): T } {
+export function decorateClass<T extends Observable<any> & DebugMeta>(ident: DebugClass<T>, methods?: {[key in keyof T]?: Method}): { new (): T } {
   return new Proxy(ident, {
     construct(target, args) {
       const parent: MestedDebugObject[] = []
@@ -114,7 +114,7 @@ export const decorateAsObservable: Method = (ctx, method, args) => {
   const ob = method.call(ctx, args)
 
   if (ob instanceof Observable) {
-    assignMeta(ob, 'Observable', [ctx])
+    assignMeta(ob, 'Observable', [{ type: 'other', link: ctx }])
   }
 
   return ob
