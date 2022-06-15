@@ -1,4 +1,5 @@
 import { h, $, EventAttrs } from 'easyhard'
+import { MonoTypeOperatorFunction, Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
 type Props<T, Type> = {
@@ -10,11 +11,19 @@ type Props<T, Type> = {
   events?: EventAttrs
 };
 
+type Tap = <T>(
+  next?: ((value: T) => void) | null,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error?: ((error: any) => void) | null,
+  complete?: (() => void) | null,
+  parent?: Observable<unknown>
+) => MonoTypeOperatorFunction<T>
+
 export function Input(props: Props<number, 'number'> | Props<string, 'text'>): HTMLInputElement {
   const el = h('input', {
     value: props.value || props.model,
     type: props.type,
-    input: tap((v: Event) => {
+    input: (tap as Tap)((v: Event) => {
       const value = (v.target as HTMLInputElement).value
       if (props.type === 'number') {
         if (props.model) props.model.next(+value)
@@ -25,7 +34,7 @@ export function Input(props: Props<number, 'number'> | Props<string, 'text'>): H
       } else {
         throw new Error('unknown type')
       }
-    }),
+    }, null, null, props.model),
     ...(props.events || {})
   })
   if (props.autofocus) requestAnimationFrame(() => el.focus())
