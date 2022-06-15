@@ -1,21 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getUID } from 'easyhard-common'
 import { Observable, OperatorFunction } from 'rxjs'
-import { Attrs, DomElement, TagName } from './types'
+import { DomElement } from './types'
 
 type ObservableDebugMeta = { __debug?: { fragment?: string } }
 type Parent = { type: 'argument' | 'other', link: Observable<any> | DomElement } | Parent[]
-type ElementDebugMeta = { __easyhard?: { id: string, attrs: Attrs<TagName>, parent: Parent[], indirect?: boolean } }
+type ElementDebugMeta = { __easyhard?: { id: string, attrs: Record<string, Observable<any>>, parent: Parent[], indirect?: boolean } }
 type FragmentDebugMeta = { __easyhard?: { id: string, label: string, parent: Parent[], type: string } }
 
 const debugWindow = <Window & { __easyhardDebug?: boolean }>window
 
-export function debugElement(element: Comment | HTMLElement | Text, attrs: Attrs<TagName>) {
+export function debugElement(element: Comment | HTMLElement | Text) {
   if (debugWindow.__easyhardDebug) {
     Object.defineProperty(element, '__easyhard', {
       value: <ElementDebugMeta['__easyhard']>{
         id: getUID(),
-        attrs,
+        attrs: {},
         parent: []
       },
       writable: false,
@@ -24,6 +24,13 @@ export function debugElement(element: Comment | HTMLElement | Text, attrs: Attrs
   }
 
   return element
+}
+
+export function debugElementAttr(element: (Comment | HTMLElement | Text) & ElementDebugMeta, name: string, ob: Observable<any>) {
+  if (debugWindow.__easyhardDebug) {
+    if (!element.__easyhard) throw new Error('element should have __debug property')
+    element.__easyhard.attrs[name] = ob
+  }
 }
 
 export function debugFragment(anchor: DomElement, label: string, parent?: Observable<unknown> & ObservableDebugMeta) {
@@ -57,7 +64,7 @@ export function debugFragmentAddParent(anchor: DomElement & FragmentDebugMeta, p
 export function debugFragmentChild(element: DomElement & (null | ElementDebugMeta), parent: DomElement) {
   if (debugWindow.__easyhardDebug) {
     if (element === null) return
-    if (!element.__easyhard) debugElement(element, {})
+    if (!element.__easyhard) debugElement(element)
     if (!element.__easyhard) throw new Error('element should have __debug propery')
     element.__easyhard.parent.push({ type: 'other', link: parent })
     element.__easyhard.indirect = true

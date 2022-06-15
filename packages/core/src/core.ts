@@ -2,12 +2,12 @@ import { Observable, Subject } from 'rxjs'
 import { DomElement, Attrs, Child, PropAttrs, TagName, EventAttrs, EventHandler, EventName, ElementType, NestedChild } from './types'
 import { insertNode, createAnchor } from './utils'
 import { untilExist } from './operators/until-exist'
-import { debugFragment, debugElement, debugFragmentChild } from './devtools'
+import { debugFragment, debugElement, debugElementAttr, debugFragmentChild } from './devtools'
 
 export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: NestedChild[]): ElementType<K> {
   const element = document.createElement(tag)
 
-  debugElement(element, attrs)
+  debugElement(element)
 
   for (const name in attrs) {
     if (name && attrs.hasOwnProperty(name)) {
@@ -17,11 +17,14 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
 
         if (attr instanceof Subject) {
           element.addEventListener(attrName, ((e: HTMLElementEventMap[EventName]) => attr.next(e)) as EventListener)
+          debugElementAttr(element, name, attr)
         } else if (attr) {
           const subject = new Subject<HTMLElementEventMap[EventName]>()
+          const observable = subject.pipe(attr)
 
-          subject.pipe(untilExist(element), attr).subscribe()
+          observable.pipe(untilExist(element)).subscribe()
           element.addEventListener(attrName, ((e: HTMLElementEventMap[EventName]) => subject.next(e)) as EventListener)
+          debugElementAttr(element, name, observable)
         }
       } else {
         const attrName = name as keyof PropAttrs<K>
@@ -33,6 +36,7 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
           attr.pipe(untilExist(element)).subscribe(value => {
             element[attrName] = value as unknown as HTMLElementTagNameMap[K][typeof attrName]
           })
+          debugElementAttr(element, name, attr)
         } else if (attr !== false && attr != null) {
           element[attrName] = attr as unknown as HTMLElementTagNameMap[K][typeof attrName]
         }
@@ -75,7 +79,7 @@ function resolveChild(child: Child): DomElement {
 
         anchor.edge = element
       } else {
-        const element = debugElement(document.createTextNode(''), {})
+        const element = debugElement(document.createTextNode(''))
 
         element.textContent = v as string
         anchor.edge = element
