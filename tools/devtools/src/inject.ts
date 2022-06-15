@@ -53,7 +53,7 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
   }
 }
 
-function pushObservableNodes(graph: Graph, ob: EhObservable, type: EdgeType, dependentNode: GraphNode) {
+function pushObservableNodes(graph: Graph, ob: EhObservable, edge: { type: EdgeType, label?: string }, dependentNode: GraphNode) {
   initParentObservableNodes(graph, ob)
 
   if (!dependentNode.id) throw new Error('dependentNode id is undefined')
@@ -62,7 +62,8 @@ function pushObservableNodes(graph: Graph, ob: EhObservable, type: EdgeType, dep
     id: [ob.__debug.id, dependentNode.id].join('_'),
     source: ob.__debug.id,
     target: dependentNode.id,
-    type
+    type: edge.type,
+    label: edge.label
   })
 }
 
@@ -85,7 +86,7 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
       if (typeof attr === 'object' && 'subscribe' in attr) {
         const ob = attr as EhObservable
 
-        pushObservableNodes(graph, ob, 'argument', node)
+        pushObservableNodes(graph, ob, { type: 'argument', label: name }, node)
       }
     }
   }
@@ -94,7 +95,7 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
   if (parent) {
     (parent.flat() as Parent[]).forEach(item => {
       if ('subscribe' in item.link) {
-        pushObservableNodes(graph, item.link, item.type, node)
+        pushObservableNodes(graph, item.link, { type: item.type }, node)
       } else if (item.link.__easyhard) {
         graph.edges.push({
           source: item.link.__easyhard.id,

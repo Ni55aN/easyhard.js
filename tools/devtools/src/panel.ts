@@ -178,6 +178,11 @@ const cy = cytoscape({
     {
       selector: 'edge',
       style: {
+        'label': 'data(label)',
+        'font-size': 10,
+        'color': '#f1c82a',
+        'text-background-opacity': 1,
+        'text-background-color': '#ffffff',
         'curve-style': 'unbundled-bezier',
         'source-endpoint'(el: EdgeSingular) {
           return `${el.connectedNodes()[0].width() / 2}px 0`
