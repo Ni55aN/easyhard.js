@@ -8,7 +8,7 @@ type NestedParent = Parent | NestedParent[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type EhObservable = Observable<unknown> & { __debug: { id: string, parent: NestedParent[], name: string } }
-type EhMeta = { __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', parent?: NestedParent[] }}
+type EhMeta = { __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', static?: boolean, parent?: NestedParent[] }}
 type EhNode = Node & EhMeta
 
 
@@ -70,12 +70,14 @@ function pushObservableNodes(graph: Graph, ob: EhObservable, edge: { type: EdgeT
 function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
   if (!ehNode.__easyhard && ehNode.nodeName == '#text' && !ehNode.textContent?.trim()) return null
 
+  const meta = ehNode.__easyhard || (ehNode.__easyhard = { id: nanoid(), static: true })
+
   const node: GraphNode = {
-    id: ehNode.__easyhard?.id || nanoid(),
-    type: ehNode.__easyhard
-      ? (ehNode.__easyhard.type || (ehNode.nodeName == '#text' ? 'eh-text' : 'eh-node'))
-      : (ehNode.nodeName == '#text' ? 'text' : 'node'),
-    label: ehNode.__easyhard && ehNode.__easyhard.label || (ehNode.nodeName == '#text' ? ehNode.textContent : ehNode.nodeName),
+    id: meta.id,
+    type: meta.static
+      ? (ehNode.nodeName == '#text' ? 'text' : 'node')
+      : (meta.type || (ehNode.nodeName == '#text' ? 'eh-text' : 'eh-node')),
+    label: meta?.label || (ehNode.nodeName == '#text' ? ehNode.textContent : ehNode.nodeName),
   }
 
   const attrs = ehNode.__easyhard?.attrs
