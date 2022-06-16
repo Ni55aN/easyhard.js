@@ -1,4 +1,4 @@
-import { Graph, Services } from './types'
+import { Services } from './types'
 import { Connection } from './utils/communication'
 import { injectScript } from './utils/script'
 
@@ -14,8 +14,8 @@ window.addEventListener('load', () => {
   window.postMessage({ type: 'GET_GRAPH' })
 })
 
-window.addEventListener('message', ({ data }: MessageEvent<{ type: 'GRAPH', data: Graph }>)  => {
-  if(data.type === 'GRAPH') {
+window.addEventListener('message', ({ data }: MessageEvent<Services['easyhard-devtools']>)  => {
+  if(['GRAPH', 'ADDED', 'REMOVED', 'TEXT'].includes(data.type)) {
     connection.postMessage('easyhard-devtools', data)
   }
 })

@@ -1,7 +1,7 @@
 import { Attrs, TagName } from 'easyhard'
 import { nanoid } from 'nanoid'
 import { Observable } from 'rxjs'
-import { EdgeType, Graph, GraphNode } from './types'
+import { EdgeType, Graph, GraphNode, Services } from './types'
 
 type Parent = { type: EdgeType, link: EhObservable | EhMeta }
 type NestedParent = Parent | NestedParent[]
@@ -127,6 +127,10 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
   return node
 }
 
+function send(message: Services['easyhard-devtools']) {
+  window.postMessage(message)
+}
+
 window.addEventListener('message', ({ data }) => {
   console.log({ data })
   if (data.type === 'GET_GRAPH') {
@@ -135,7 +139,45 @@ window.addEventListener('message', ({ data }) => {
 
       pushNode(document.body, graph)
 
-      window.postMessage({ type: 'GRAPH', data: graph })
+      send({ type: 'GRAPH', data: graph })
     }, 1000)
   }
+})
+
+function traverseSubtree(node: Node): Node[] {
+  return [node, ...Array.from(node.childNodes).map(traverseSubtree)].flat()
+}
+
+const m = new MutationObserver(mutationsList => {
+  mutationsList.reverse().forEach(item => {
+    if (item.type === 'childList') {
+      const graph: Graph = { edges: [], nodes: [] }
+
+      item.addedNodes.forEach(node => pushNode(node, graph))
+
+      send({ type: 'ADDED', data: graph })
+
+      const removedNodes = Array.from(item.removedNodes).map(traverseSubtree).flat()
+      const removedNodesIds = removedNodes.map((removed: EhNode) => {
+        return removed.__easyhard?.id
+      }).filter((id): id is string => Boolean(id))
+
+      if (removedNodesIds.length > 0) {
+        send({ type: 'REMOVED', data: removedNodesIds })
+      }
+    } else if (item.type === 'characterData') {
+      const target: EhNode = item.target
+      const meta = target.__easyhard
+
+      if (!meta) throw new Error('should have __easyhard property')
+      send({ type: 'TEXT', data: { id: meta.id, text: target.textContent || '' }})
+    }
+  })
+})
+
+m.observe(document.body, {
+  characterData: true,
+  attributes: true,
+  childList: true,
+  subtree: true,
 })
