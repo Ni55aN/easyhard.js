@@ -193,7 +193,7 @@ const cy = cytoscape({
         'line-color'(edge: EdgeSingular) {
           const nodes = edge.connectedNodes()
 
-          return nodes[0].data('type') === 'observable' ? '#f1c82a' : ''
+          return nodes[0].data('type') === 'observable' ? '#f1c82a' : '#7e7e7e'
         },
         'width'(edge: EdgeSingular) {
           const nodes = edge.connectedNodes()
