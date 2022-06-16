@@ -68,10 +68,35 @@ export class Hub<Services extends {[key: string]: unknown}> {
 
 export class Connection<Services extends {[key: string]: unknown}, Key extends keyof Services> {
   private port: chrome.runtime.Port
+  private buffer: { to: keyof Services, message: Services[keyof Services] }[] = []
 
   // tabId needs to be defined in sender is undefined (e.g. from devtools panel)
-  constructor(name: Key, tabId?: number) {
-    this.port = chrome.runtime.connect({ name: PortIdSerializer.stringify<Services>(name, tabId) })
+  constructor(private name: Key, private tabId?: number) {
+    this.port = this.connect(name, tabId)
+
+    this.flush()
+  }
+
+  private reconnect() {
+    console.log(`reconnect ${String(this.name)} for tab ${this.tabId || 'unknown'}`)
+    this.port = this.connect(this.name, this.tabId)
+  }
+
+  private connect(name: Key, tabId?: number) {
+    return chrome.runtime.connect({ name: PortIdSerializer.stringify<Services>(name, tabId) })
+  }
+
+  private flush() {
+    while (this.buffer.length) {
+      try {
+        this.port.postMessage(this.buffer[0])
+        this.buffer.shift()
+      } catch(e) {
+        console.error(e)
+        this.reconnect()
+      }
+    }
+    requestAnimationFrame(() => this.flush())
   }
 
   addListener(handler: (message: Services[Key]) => void) {
@@ -79,6 +104,6 @@ export class Connection<Services extends {[key: string]: unknown}, Key extends k
   }
 
   postMessage<ID extends keyof Services>(to: ID, message: Services[ID]) {
-    this.port.postMessage(<ToMessage<ID, Services[ID]>>{ to, message })
+    this.buffer.push({ to, message })
   }
 }
