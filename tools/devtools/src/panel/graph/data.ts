@@ -1,5 +1,6 @@
 import { Core, ElementGroup } from 'cytoscape'
 import { Graph } from '../../types'
+import { setupTooltips } from './tooltip'
 
 export function setData(cy: Core, data: Graph) {
   cy.elements().remove()
@@ -7,6 +8,7 @@ export function setData(cy: Core, data: Graph) {
     ...data.nodes.map(data => ({ group: 'nodes' as ElementGroup, data })),
     ...data.edges.map(data => ({ group: 'edges' as ElementGroup, data }))
   ])
+  setupTooltips(cy)
 }
 
 export function removeNodes(cy: Core, idsToRemove: string[]) {

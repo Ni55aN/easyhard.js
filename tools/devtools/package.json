@@ -9,8 +9,10 @@
     "@types/chrome": "^0.0.188",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.7.1",
     "eslint-webpack-plugin": "^3.1.1",
     "html-webpack-plugin": "^5.5.0",
+    "style-loader": "^3.3.1",
     "ts-loader": "^9.3.0",
     "typescript": "^4.7.2",
     "webpack": "^5.72.1",
@@ -23,11 +25,13 @@
     "@types/cytoscape": "^3.19.4",
     "cytoscape": "^3.21.1",
     "cytoscape-dagre": "^2.4.0",
+    "cytoscape-popper": "^2.0.0",
     "easyhard": "^0.7.2",
     "easyhard-common": "^0.1.5",
     "easyhard-styles": "^0.3.1",
     "gl-matrix": "^3.4.3",
     "nanoid": "^3.3.4",
-    "rxjs": "^7.5.5"
+    "rxjs": "^7.5.5",
+    "tippy.js": "^6.3.7"
   }
 }
