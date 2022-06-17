@@ -11,7 +11,7 @@ module.exports = {
   devtool: 'source-map',
   entry: {
     index: path.resolve(__dirname, 'src', 'index.ts'),
-    panel: path.resolve(__dirname, 'src', 'panel.ts'),
+    panel: path.resolve(__dirname, 'src', 'panel/index.ts'),
     popup: path.resolve(__dirname, 'src', 'popup.ts'),
     content: path.resolve(__dirname, 'src', 'content.ts'),
     background: path.resolve(__dirname, 'src', 'background.ts'),
