@@ -3,9 +3,7 @@ import cytoscape, { EdgeSingular } from 'cytoscape'
 function getLabelStyle(key: string, maxLength: number, sizes: [number, number]) {
   return {
     label(ele: cytoscape.NodeSingular) {
-      const label = String(ele.data(key))
-
-      return label.length > maxLength ? label.substring(0, maxLength + 1) + '...' : label
+      return ele.data(key)
     },
     'font-size'(ele: cytoscape.NodeSingular) {
       const label = String(ele.data('label'))
@@ -23,6 +21,8 @@ export function createGraph(container: HTMLElement) {
       {
         'selector': 'node[label]',
         'style': {
+          'text-wrap': 'ellipsis',
+          'text-max-width': '40',
           'text-valign': 'center',
           'text-halign': 'center',
           width: 45,
