@@ -17,7 +17,8 @@ export function debugObservable(observable: Observable<any>, name: string) {
       value: {
         id: getUID(),
         name,
-        parent: []
+        parent: [],
+        onNext: []
       },
       writable: false,
       configurable: false

@@ -77,7 +77,8 @@ export function debugOperator<T, K, R extends OperatorFunction<T, K> | Observabl
       value: {
         id: getUID(),
         name,
-        parent: parent.map(link => ({ type: 'other', link }))
+        parent: parent.map(link => ({ type: 'other', link })),
+        onNext: []
       },
       writable: false,
       configurable: false
