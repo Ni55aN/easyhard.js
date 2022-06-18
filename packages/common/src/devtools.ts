@@ -2,7 +2,14 @@
 import { Observable } from 'rxjs'
 import { getUID } from '.'
 
-const debugWindow = <Window & { __easyhardDebug?: boolean }>window
+function getGlobal() {
+  if (typeof self !== 'undefined') { return self }
+  if (typeof window !== 'undefined') { return window }
+  if (typeof global !== 'undefined') { return global }
+  throw new Error('unable to locate global object')
+}
+
+const debugWindow = <{ __easyhardDebug?: boolean }>getGlobal()
 
 export function debugObservable(observable: Observable<any>, name: string) {
   if (debugWindow.__easyhardDebug) {
