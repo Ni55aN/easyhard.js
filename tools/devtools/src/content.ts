@@ -15,7 +15,7 @@ window.addEventListener('load', () => {
 })
 
 window.addEventListener('message', ({ data }: MessageEvent<Services['easyhard-devtools']>)  => {
-  if(['GRAPH', 'ADDED', 'REMOVED', 'TEXT'].includes(data.type)) {
+  if(['GRAPH', 'ADDED', 'REMOVED', 'TEXT', 'NEXT'].includes(data.type)) {
     connection.postMessage('easyhard-devtools', data)
   }
 })

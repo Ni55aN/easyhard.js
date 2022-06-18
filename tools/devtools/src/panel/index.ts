@@ -11,6 +11,7 @@ import { Sidebar } from './sidebar'
 import { Main } from './main'
 import { layout } from './graph/layout'
 import { addNodes, removeNodes, setData, updateNodeText } from './graph/data'
+import { showObservableEmittedValue } from './graph/tooltip'
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
@@ -55,6 +56,9 @@ connection.addListener(async message => {
   }
   if (message.type === 'TEXT') {
     updateNodeText(cy, message.data.id, message.data.text)
+  }
+  if (message.type === 'NEXT') {
+    showObservableEmittedValue(cy, message.data.id, message.data.value)
   }
 })
 

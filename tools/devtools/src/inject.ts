@@ -7,23 +7,35 @@ type Parent = { type: EdgeType, link: EhObservable | EhMeta }
 type NestedParent = Parent | NestedParent[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-type EhObservable = Observable<unknown> & { __debug: { id: string, parent: NestedParent[], name: string } }
+type EhObservable = Observable<unknown> & { __debug: { id: string, parent: NestedParent[], name: string, onNext: ((value: any) => void)[] } }
 type EhMeta = { __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', static?: boolean, parent?: NestedParent[] }}
 type EhNode = Node & EhMeta
 
+const onNextListeners = new WeakMap<object, (value: any) => void>()
 
 function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
   if ('__easyhard' in ob) {
     // TODO
   } else if ('__debug' in ob) {
-    if (!graph.nodes.find(n => n.id === ob.__debug.id)) {
+    const id = ob.__debug.id
+    if (!graph.nodes.find(n => n.id === id)) {
       graph.nodes.push({
-        id: ob.__debug.id,
+        id,
         label: ob.__debug.name,
         type: 'observable'
       })
 
-      ;(ob.__debug.parent.flat() as Parent[]).forEach(parent => {
+      if (!onNextListeners.has(ob.__debug)) {
+        const callback = (value: any) => {
+          send({ type: 'NEXT', data: { id, value }})
+        }
+        ob.__debug.onNext.push(callback)
+        onNextListeners.set(ob.__debug, callback)
+      }
+
+      const flatParent = ob.__debug.parent.flat() as Parent[]
+
+      flatParent.forEach(parent => {
         initParentObservableNodes(graph, parent.link)
 
         if (!ob.__debug.id) throw new Error('__debug id is undefined')
@@ -132,7 +144,7 @@ function send(message: Services['easyhard-devtools']) {
 }
 
 window.addEventListener('message', ({ data }) => {
-  console.log({ data })
+  // console.log({ data })
   if (data.type === 'GET_GRAPH') {
     setTimeout(() => {
       const graph: Graph = { edges: [], nodes: [] }

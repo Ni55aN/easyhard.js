@@ -14,5 +14,6 @@ export type Services = {
   | { type: 'ADDED', data: Graph }
   | { type: 'REMOVED', data: string[] }
   | { type: 'TEXT', data: { id: string, text: string }}
+  | { type: 'NEXT', data: { id: string, value: object | string | number | boolean }}
   'easyhard-content':  { type: 'GET_GRAPH' }
 }
