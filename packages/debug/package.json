@@ -2,10 +2,18 @@
   "name": "easyhard-debug",
   "version": "0.1.0",
   "peerDependencies": {
-    "rxjs": ">= 6.x <=7.x",
-    "easyhard-common": "^0.3.0"
+    "easyhard-common": "^0.3.0",
+    "rxjs": ">= 6.x <=7.x"
   },
   "rollup": {
-    "inputs": ["rx", "core", "common", "webpack"]
+    "inputs": [
+      "rx",
+      "core",
+      "common",
+      "webpack"
+    ]
+  },
+  "dependencies": {
+    "fast-safe-stringify": "^2.1.1"
   }
 }

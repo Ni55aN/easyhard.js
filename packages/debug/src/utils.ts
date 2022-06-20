@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getUID } from 'easyhard-common-alias'
 import { Observable, Observer, OperatorFunction, UnaryFunction } from 'rxjs'
+import stringify from 'fast-safe-stringify'
 
 export type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[], onNext: ((value: any) => void)[] } }
 export type Parent = { type: 'argument' | 'other', link: DebugObject }
@@ -51,9 +52,11 @@ function decorateNext<T, V>(ctx: T, source: DebugObservable, _next: (value: V) =
 
   return (value: any) => {
     if (!source.__debug) throw new Error('source should have __debug property')
+    const sanitizedValue = JSON.parse(stringify(value))
+
     source.__debug.onNext.forEach(cb => {
       try {
-        cb(value)
+        cb(sanitizedValue)
       } catch (e: any) {
         console.error(e)
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
