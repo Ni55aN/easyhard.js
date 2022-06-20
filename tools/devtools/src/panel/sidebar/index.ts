@@ -8,5 +8,5 @@ const sidebarStyles = css({
 })
 
 export function Sidebar(props: { styles?: RootStyleDeclaration }) {
-  return h('div', {}, injectStyles(sidebarStyles), props.styles && injectStyles(props.styles), 'Sidebar')
+  return h('div', {}, injectStyles(sidebarStyles), props.styles ? injectStyles(props.styles) : null, 'Sidebar')
 }

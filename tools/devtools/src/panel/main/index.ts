@@ -8,5 +8,5 @@ const scontainerStyles = css({
 })
 
 export function Main(props: { styles?: RootStyleDeclaration }) {
-  return h('div', {}, injectStyles(scontainerStyles), props.styles && injectStyles(props.styles))
+  return h('div', {}, injectStyles(scontainerStyles), props.styles ? injectStyles(props.styles) : null)
 }

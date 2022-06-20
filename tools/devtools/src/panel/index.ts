@@ -12,6 +12,7 @@ import { Main } from './main'
 import { layout } from './graph/layout'
 import { addNodes, removeNodes, setData, updateNodeText } from './graph/data'
 import { showObservableEmittedValue } from './graph/tooltip'
+import { Splitter } from './splitter'
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
@@ -24,8 +25,8 @@ const bodyStyles = css({
   margin: 0,
   display: 'grid',
   gridTemplateRows: '3em 1fr',
-  gridTemplateColumns: '1fr 12em',
-  gridTemplateAreas: '"a a" "b c"',
+  gridTemplateColumns: '1fr',
+  gridTemplateAreas: '"a" "b"',
   height: '100vh',
   width: '100vw'
 })
@@ -33,12 +34,13 @@ const bodyStyles = css({
 document.body.classList.add(bodyStyles.className)
 
 const header = Header({ click: onClick, styles: { gridArea: 'a' }})
-const container = Main({ styles: { gridArea: 'b' }})
-const sidebar = Sidebar({ styles: { gridArea: 'c' }})
+const container = Main({})
+const sidebar = Sidebar({})
+
+const main = Splitter({ sizes: [75, 25] }, container, sidebar)
 
 document.body.appendChild(header)
-document.body.appendChild(container)
-document.body.appendChild(sidebar)
+document.body.appendChild(main)
 
 const cy = createGraph(container)
 
