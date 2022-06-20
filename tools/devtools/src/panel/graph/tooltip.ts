@@ -60,6 +60,14 @@ popperStyle.innerHTML = `
 `
 document.head.appendChild(popperStyle)
 
+function renderJSON(object: object) {
+  const data = JSON.stringify(object, null, 2)
+
+  if (data.length > 25) return data.substring(0, 22) + '...'
+
+  return data
+}
+
 export function showObservableEmittedValue(cy: Core, id: string, value: object | string | number | boolean, props?: { duration?: number }) {
   const node = cy.getElementById(id) as (CollectionReturnValue & PopperNode)
   if (!node) throw new Error('cannot find node')
@@ -76,7 +84,7 @@ export function showObservableEmittedValue(cy: Core, id: string, value: object |
     theme: 'observable'
   })
 
-  tipp.setContent(String(value))
+  tipp.setContent(typeof value === 'object' ? renderJSON(value) : String(value))
   tipp.show()
 
   setTimeout(() => {
