@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "build": "PRODUCTION=true webpack",
-    "dev": "webpack --watch"
+    "dev": "DEBUG=true webpack --watch"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.188",

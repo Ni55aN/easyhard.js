@@ -1,19 +1,26 @@
 import cytoscape, { EdgeSingular } from 'cytoscape'
 
-function getLabelStyle(key: string, maxLength: number, sizes: [number, number]) {
+function getLabelStyle(key: string, maxLength: number, sizes: [number, number], debug?: boolean) {
   return {
     label(ele: cytoscape.NodeSingular) {
-      return ele.data(key)
+      const label = ele.data(key)
+
+      if (debug) {
+        return [label, ele.data('id')].join('\n')
+      }
+
+      return label
     },
     'font-size'(ele: cytoscape.NodeSingular) {
       const label = String(ele.data('label'))
+      const scale = debug ? 0.7 : 1
 
-      return label.length > maxLength ? sizes[0] : sizes[1]
+      return (label.length > maxLength ? sizes[0] : sizes[1]) * scale
     },
   }
 }
 
-export function createGraph(container: HTMLElement) {
+export function createGraph(container: HTMLElement, props: { debug?: boolean } = {}) {
   return cytoscape({
     container,
     wheelSensitivity: 0.25,
@@ -21,13 +28,13 @@ export function createGraph(container: HTMLElement) {
       {
         'selector': 'node[label]',
         'style': {
-          'text-wrap': 'ellipsis',
+          'text-wrap': props.debug ? 'wrap' : 'ellipsis',
           'text-max-width': '40',
           'text-valign': 'center',
           'text-halign': 'center',
           width: 45,
           height: 25,
-          ...getLabelStyle('label', 6, [8, 10])
+          ...getLabelStyle('label', 6, [8, 10], props.debug)
         }
       },
       {
