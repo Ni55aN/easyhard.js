@@ -13,6 +13,7 @@ import { layout } from './graph/layout'
 import { addNodes, removeNodes, setData, updateNodeText } from './graph/data'
 import { showObservableEmittedValue } from './graph/tooltip'
 import { Splitter } from './splitter'
+import { createMarbles } from './marbles'
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
@@ -35,7 +36,10 @@ document.body.classList.add(bodyStyles.className)
 
 const header = Header({ click: onClick, styles: { gridArea: 'a' }})
 const container = Main({})
-const sidebar = Sidebar({})
+
+const marbles = createMarbles()
+const sidebar = Sidebar({}, marbles.container)
+
 
 const main = Splitter({ sizes: [75, 25] }, container, sidebar)
 
@@ -60,7 +64,15 @@ connection.addListener(async message => {
     updateNodeText(cy, message.data.id, message.data.text)
   }
   if (message.type === 'NEXT') {
-    showObservableEmittedValue(cy, message.data.id, message.data.value)
+    const { id, value } = message.data
+
+    showObservableEmittedValue(cy, id, value)
+
+    const incomers = cy.getElementById(id).incomers()
+      .filter((n): n is cytoscape.NodeSingular => n.isNode())
+    const incomersIds = incomers.map(incomer => incomer.data('id') as string)
+
+    marbles.add(value, id, incomersIds, Date.now())
   }
 })
 
