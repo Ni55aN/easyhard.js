@@ -2,17 +2,22 @@
 import { $, $for, h } from 'easyhard'
 import { injectStyles } from 'easyhard-styles'
 import { timer } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators'
+import { ControlButton } from './ControlPanel'
 import { Table } from './table'
 import { Timeline } from './Timeline'
+
 
 export function createMarbles<T extends string | number | boolean | object>() {
   const table = new Table<T>()
   const scale = $(0.05)
   const start = table.getStart()
   const now = timer(0, 1000/30).pipe(map(() => Date.now()))
-  const container = h('div', {}, injectStyles({ overflow: 'auto', maxHeight: '100%' }),
-    $for(table.asObservable(), map(item => h('div', {}, Timeline({ scale, now, start, ...item }))))
+  const container = h('div', {},
+    ControlButton({ click: tap(() => table.clear())}),
+    h('div', {}, injectStyles({ overflow: 'auto', maxHeight: '100%' }),
+      $for(table.asObservable(), map(item => h('div', {}, Timeline({ scale, now, start, ...item }))))
+    )
   )
 
   container.addEventListener('wheel', e => {

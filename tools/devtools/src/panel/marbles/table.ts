@@ -26,4 +26,10 @@ export class Table<T> {
 
     return d.pipe(map(v => Math.min(...v.flat().map(item => item.time))))
   }
+
+  clear() {
+    this.data.getValue().forEach(item => {
+      item.data.clear()
+    })
+  }
 }
