@@ -13,9 +13,14 @@ const nodeStyles = css({
   height: '20px',
   textAlign: 'center',
   verticalAlign: 'middle',
-  margin: '0.5em'
+  margin: '0.5em',
+  boxSizing: 'border-box'
 })
 
-export function Node(props: { id: string }) {
-  return h('div', {}, injectStyles(nodeStyles), props.id)
+export function Node(props: { id: string, height: number, width: number, margin: number }) {
+  return h('div', {},
+    injectStyles(nodeStyles),
+    injectStyles({ height: `${props.height}px`, width: `${props.width}px`, margin: `${props.margin}px` }),
+    props.id
+  )
 }

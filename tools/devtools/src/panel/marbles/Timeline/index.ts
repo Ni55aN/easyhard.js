@@ -2,7 +2,7 @@ import { $$, $for, h } from 'easyhard'
 import { css, injectStyles } from 'easyhard-styles'
 import { combineLatest, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { marbleSize } from '../consts'
+import { marbleSize, nodeMargin, nodeSize } from '../consts'
 import { TableItem } from '../table'
 import { Arrow } from './arrow'
 import { Node } from './node'
@@ -42,7 +42,8 @@ const timelineItemStyles = css({
   height: marbleSize,
   top: '5px',
   textAlign: 'center',
-  lineHeight: '30px'
+  lineHeight: '30px',
+  transform: 'translate(-50%, 0)'
 })
 
 export function Timeline<T>(props: { id: string, scale: Observable<number>, now: Observable<number>, start: Observable<number>, data: $$<TableItem<T>> }) {
@@ -50,8 +51,8 @@ export function Timeline<T>(props: { id: string, scale: Observable<number>, now:
 
   return h('div', {},
     injectStyles(timelineContainerStyles),
-    h('div', {}, injectStyles(stickyLeftBlockStyles),
-      Node(props)
+    h('div', {}, injectStyles(stickyLeftBlockStyles), injectStyles({ marginRight: `${nodeMargin}px` }),
+      Node({ id: props.id, width: nodeSize * 0.8, height: nodeSize * 0.4, margin: nodeSize * 0.1 })
     ),
     h('div', {},
       injectStyles(timelineStyles),
