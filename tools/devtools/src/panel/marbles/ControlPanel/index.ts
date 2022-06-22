@@ -10,7 +10,14 @@ const buttonStyles = css({
   borderRadius: '4px',
   padding: '0.2em 0.5em',
   cursor: 'pointer',
-  margin: '1em',
+  margin: '1em 0.5em',
+  color: 'white',
+  ':first-child': {
+    marginLeft: '1em'
+  },
+  ':last-child': {
+    marginRight: '1em'
+  },
   ':active': {
     background: '#669c66',
   }
