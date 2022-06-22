@@ -16,13 +16,15 @@ export function createMarbles<T extends string | number | boolean | object>() {
   const start = table.getStart()
   const now = interval(0, animationFrameScheduler).pipe(map(() => Date.now())).pipe(shareReplay())
 
-  const timelineArea = h('div', {}, injectStyles({ overflow: 'auto', maxHeight: '100%', paddingRight: '0.5em' }),
+  const timelineArea = h('div', {}, injectStyles({ overflow: 'auto', paddingRight: '0.5em' }),
     $for(table.asObservable(), map(item => h('div', {}, Timeline({ scale, now, start, ...item }))))
   )
 
-  const container = h('div', {},
-    ControlButton({ label: 'Clear', click: tap(() => table.clear())}),
-    ControlButton({ label: 'Follow', active: follow, click: tap(() => follow.next(!follow.value))}),
+  const container = h('div', {}, injectStyles({ display: 'flex', flexDirection: 'column', maxHeight: '100%' }),
+    h('div', {},
+      ControlButton({ label: 'Clear', click: tap(() => table.clear())}),
+      ControlButton({ label: 'Follow', active: follow, click: tap(() => follow.next(!follow.value))}),
+    ),
     combineLatest([follow, now]).pipe(tap(([follow]) => follow && scrollToRight(timelineArea)), mapTo(null)),
     fromEvent(timelineArea, 'wheel').pipe(map(e => e as WheelEvent), map(e => {
       e.preventDefault()
