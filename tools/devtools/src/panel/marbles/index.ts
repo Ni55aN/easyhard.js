@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { $, $for, h } from 'easyhard'
 import { injectStyles } from 'easyhard-styles'
-import { animationFrameScheduler, combineLatest, interval } from 'rxjs'
+import { animationFrameScheduler, combineLatest, fromEvent, interval } from 'rxjs'
 import { map, mapTo, shareReplay, tap } from 'rxjs/operators'
+import { nodeMargin, nodeSize } from './consts'
 import { ControlButton } from './ControlPanel'
 import { Table } from './table'
 import { Timeline } from './Timeline'
-import { scrollToRight } from './utils'
+import { scrollToRight, zoomArea } from './utils'
 
 export function createMarbles<T extends string | number | boolean | object>() {
   const table = new Table<T>()
@@ -23,13 +24,17 @@ export function createMarbles<T extends string | number | boolean | object>() {
     ControlButton({ label: 'Clear', click: tap(() => table.clear())}),
     ControlButton({ label: 'Follow', active: follow, click: tap(() => follow.next(!follow.value))}),
     combineLatest([follow, now]).pipe(tap(([follow]) => follow && scrollToRight(timelineArea)), mapTo(null)),
+    fromEvent(timelineArea, 'wheel').pipe(map(e => e as WheelEvent), map(e => {
+      e.preventDefault()
+      const { newInnerOffset, delta } = zoomArea(timelineArea, e, { intensity: 0.1, deadZone: { left: nodeSize + nodeMargin } })
+
+      scale.next(scale.value * (1 + delta))
+      timelineArea.scrollTo(newInnerOffset, 0)
+
+      return null
+    })),
     timelineArea
   )
-
-  container.addEventListener('wheel', e => {
-    e.preventDefault()
-    scale.next(scale.value * (1 - e.deltaY / 1000))
-  })
 
   return {
     container,
