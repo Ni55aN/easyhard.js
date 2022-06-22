@@ -64,7 +64,7 @@ connection.addListener(async message => {
     updateNodeText(cy, message.data.id, message.data.text)
   }
   if (message.type === 'NEXT') {
-    const { id, value } = message.data
+    const { id, value, time } = message.data
 
     showObservableEmittedValue(cy, id, value)
 
@@ -72,7 +72,7 @@ connection.addListener(async message => {
       .filter((n): n is cytoscape.NodeSingular => n.isNode())
     const incomersIds = incomers.map(incomer => incomer.data('id') as string)
 
-    marbles.add(value, id, incomersIds, Date.now())
+    marbles.add(value, id, incomersIds, time)
   }
 })
 

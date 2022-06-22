@@ -27,7 +27,7 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
 
       if (!onNextListeners.has(ob.__debug)) {
         const callback = (value: any) => {
-          send({ type: 'NEXT', data: { id, value }})
+          send({ type: 'NEXT', data: { id, time: Date.now(), value }})
         }
         ob.__debug.onNext.push(callback)
         onNextListeners.set(ob.__debug, callback)
