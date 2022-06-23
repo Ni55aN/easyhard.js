@@ -2,6 +2,7 @@ import { $$, $for, h } from 'easyhard'
 import { css, injectStyles } from 'easyhard-styles'
 import { combineLatest, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import stringify from 'fast-safe-stringify'
 import { marbleSize, nodeMargin, nodeSize } from '../consts'
 import { TableItem } from '../table'
 import { Arrow } from './arrow'
@@ -43,7 +44,8 @@ const timelineItemStyles = css({
   top: '5px',
   textAlign: 'center',
   lineHeight: '30px',
-  transform: 'translate(-50%, 0)'
+  transform: 'translate(-50%, 0)',
+  overflow: 'hidden'
 })
 
 export function Timeline<T>(props: { id: string, scale: Observable<number>, now: Observable<number>, start: Observable<number>, data: $$<TableItem<T>> }) {
@@ -64,7 +66,7 @@ export function Timeline<T>(props: { id: string, scale: Observable<number>, now:
         return h('span', {},
           injectStyles(timelineItemStyles),
           injectStyles({ left: offset }),
-          String(item.emission)
+          stringify(item.emission)
         )
       }))
     )
