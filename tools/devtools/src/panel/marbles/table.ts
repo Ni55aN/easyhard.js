@@ -13,6 +13,14 @@ export class Table<T> {
     this.data.getValue().find(v => v.id === id)?.data.insert(data)
   }
 
+  remove(id: string) {
+    const index = this.data.getValue().findIndex(el => el.id === id)
+
+    if (index >= 0) {
+      this.data.removeAt(index)
+    }
+  }
+
   asObservable() {
     return this.data
   }

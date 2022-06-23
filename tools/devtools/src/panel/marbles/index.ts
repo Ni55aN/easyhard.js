@@ -51,6 +51,9 @@ export function createMarbles<T extends string | number | boolean | object>() {
           return { id: parentId, index: parentEmits.data.getValue().length - 1 }
         })
       table.add(id, { emission: value, time, references })
+    },
+    remove(id: string) {
+      table.remove(id)
     }
   }
 }

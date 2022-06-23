@@ -77,6 +77,13 @@ cy.on('layoutstop', () => {
 cy.on('drag', (el: EventObjectNode) => {
   el.target.connectedEdges().forEach(edge => adjustEdgeCurve(edge))
 })
+cy.on('remove', e => {
+  if (e.target.isNode()) {
+    const id: string = e.target.data('id')
+
+    marbles.remove(id)
+  }
+})
 
 onMount(container, () => {
   setTimeout(() => {
