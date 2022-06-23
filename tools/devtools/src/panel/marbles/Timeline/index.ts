@@ -3,7 +3,7 @@ import { css, injectStyles } from 'easyhard-styles'
 import { combineLatest, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import stringify from 'fast-safe-stringify'
-import { marbleSize, nodeMargin, nodeSize } from '../consts'
+import { marbleSize, nodeMargin, nodeSize, timelineHeight } from '../consts'
 import { TableItem } from '../table'
 import { Arrow } from './arrow'
 import { Node } from './node'
@@ -18,7 +18,8 @@ const stickyLeftBlockStyles = css({
 
 const timelineContainerStyles = css({
   whiteSpace: 'nowrap',
-  display: 'inline-block'
+  display: 'inline-block',
+  height: `${timelineHeight}px`
 })
 
 const timelineStyles = css({
@@ -26,7 +27,6 @@ const timelineStyles = css({
   display: 'inline-block',
   color: 'white',
   position: 'relative',
-  height: '35px',
   verticalAlign: 'middle',
   paddingRight: marbleSize
 })
@@ -41,10 +41,10 @@ const timelineItemStyles = css({
   position: 'absolute',
   width: marbleSize,
   height: marbleSize,
-  top: '5px',
+  top: '50%',
   textAlign: 'center',
   lineHeight: '30px',
-  transform: 'translate(-50%, 0)',
+  transform: 'translate(-50%, -50%)',
   overflow: 'hidden'
 })
 

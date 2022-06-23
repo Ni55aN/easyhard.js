@@ -2,15 +2,18 @@ import { $$ } from 'easyhard-common'
 import { combineLatest, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 
-export type TableItem<T> =  { emission: T, time: number, references: { id: string, index: number }[] }
+export type TableItem<T> =  { emission: T, time: number, parents: string[] }
+export type TableObservable<T> = { id: string, data: $$<TableItem<T>> }
 
 export class Table<T> {
-  data = $$<{ id: string, data: $$<TableItem<T>> }>([])
+  data = $$<TableObservable<T>>([])
 
   add(id: string, data: TableItem<T>) {
-    if (!this.data.getValue().find(v => v.id === id)) this.data.insert({ id, data: $$<TableItem<T>>([]) })
-
-    this.data.getValue().find(v => v.id === id)?.data.insert(data)
+    if (!this.data.getValue().find(v => v.id === id)) {
+      this.data.insert({ id, data: $$<TableItem<T>>([data]) })
+    } else {
+      this.data.getValue().find(v => v.id === id)?.data.insert(data)
+    }
   }
 
   remove(id: string) {
