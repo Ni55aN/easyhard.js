@@ -1,5 +1,5 @@
 export function scrollToRight(element: Element) {
-  return element.scrollTo(element.scrollWidth, 0)
+  return element.scrollTo(element.scrollWidth, element.scrollTop)
 }
 
 export function zoomArea(element: HTMLElement, e: WheelEvent, props: { deadZone: { left: number }, intensity: number }) {

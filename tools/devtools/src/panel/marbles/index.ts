@@ -31,7 +31,7 @@ export function createMarbles<T extends string | number | boolean | object>() {
       const { newInnerOffset, delta } = zoomArea(timelineArea, e, { intensity: 0.1, deadZone: { left: nodeSize + nodeMargin } })
 
       scale.next(scale.value * (1 + delta))
-      timelineArea.scrollTo(newInnerOffset, 0)
+      timelineArea.scrollTo(newInnerOffset, timelineArea.scrollTop)
 
       return null
     })),
