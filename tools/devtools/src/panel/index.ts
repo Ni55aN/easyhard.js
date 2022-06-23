@@ -1,7 +1,6 @@
 import { EventObjectNode } from 'cytoscape'
 import { onMount } from 'easyhard'
 import { css } from 'easyhard-styles'
-import { tap } from 'rxjs'
 import { Services } from '../types'
 import { Connection } from '../utils/communication'
 import { adjustEdgeCurve } from './edges'
@@ -18,10 +17,6 @@ import { createMarbles } from './marbles'
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
 
-const onClick = tap(() => {
-  connection.postMessage('easyhard-content', { type: 'GET_GRAPH' })
-})
-
 const bodyStyles = css({
   margin: 0,
   display: 'grid',
@@ -34,7 +29,7 @@ const bodyStyles = css({
 
 document.body.classList.add(bodyStyles.className)
 
-const header = Header({ click: onClick, styles: { gridArea: 'a' }})
+const header = Header({ styles: { gridArea: 'a' }})
 const container = Main({})
 
 const marbles = createMarbles()
