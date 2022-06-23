@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Observable } from 'rxjs'
+import { Observable, ReplaySubject } from 'rxjs'
 import { getUID } from '.'
 
 function getGlobal() {
@@ -18,7 +18,7 @@ export function debugObservable(observable: Observable<any>, name: string) {
         id: getUID(),
         name,
         parent: [],
-        onNext: []
+        nextBuffer: new ReplaySubject()
       },
       writable: false,
       configurable: false

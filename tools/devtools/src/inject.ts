@@ -1,19 +1,17 @@
 import { Attrs, TagName } from 'easyhard'
 import { nanoid } from 'nanoid'
-import { Observable } from 'rxjs'
+import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { EdgeType, Graph, GraphNode, Services } from './types'
 
 type Parent = { type: EdgeType, link: EhObservable | EhMeta }
 type NestedParent = Parent | NestedParent[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-type EhObservable = Observable<unknown> & { __debug: { id: string, parent: NestedParent[], name: string, onNext: ((value: any) => void)[] } }
+type EhObservable = Observable<unknown> & { __debug: { id: string, parent: NestedParent[], name: string, nextBuffer: ReplaySubject<{ value: any, time: number }> } }
 type EhMeta = { __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', static?: boolean, parent?: NestedParent[] }}
 type EhNode = Node & EhMeta
 
-const onNextListeners = new WeakMap<object, (value: any) => void>()
-
-function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
+function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta, onAdd: (arg: EhNode | EhObservable) => void) {
   if ('__easyhard' in ob) {
     // TODO
   } else if ('__debug' in ob) {
@@ -24,19 +22,12 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
         label: ob.__debug.name,
         type: 'observable'
       })
-
-      if (!onNextListeners.has(ob.__debug)) {
-        const callback = (value: any) => {
-          send({ type: 'NEXT', data: { id, time: Date.now(), value }})
-        }
-        ob.__debug.onNext.push(callback)
-        onNextListeners.set(ob.__debug, callback)
-      }
+      onAdd(ob)
 
       const flatParent = ob.__debug.parent.flat() as Parent[]
 
       flatParent.forEach(parent => {
-        initParentObservableNodes(graph, parent.link)
+        initParentObservableNodes(graph, parent.link, onAdd)
 
         if (!ob.__debug.id) throw new Error('__debug id is undefined')
 
@@ -65,8 +56,8 @@ function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta) {
   }
 }
 
-function pushObservableNodes(graph: Graph, ob: EhObservable, edge: { type: EdgeType, label?: string }, dependentNode: GraphNode) {
-  initParentObservableNodes(graph, ob)
+function pushObservableNodes(graph: Graph, ob: EhObservable, onAdd: (arg: EhNode | EhObservable) => void, edge: { type: EdgeType, label?: string }, dependentNode: GraphNode) {
+  initParentObservableNodes(graph, ob, onAdd)
 
   if (!dependentNode.id) throw new Error('dependentNode id is undefined')
 
@@ -79,7 +70,7 @@ function pushObservableNodes(graph: Graph, ob: EhObservable, edge: { type: EdgeT
   })
 }
 
-function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
+function pushNode(ehNode: EhNode, graph: Graph, onAdd: (arg: EhNode | EhObservable) => void): GraphNode | null {
   if (!ehNode.__easyhard && ehNode.nodeName == '#text' && !ehNode.textContent?.trim()) return null
 
   const meta = ehNode.__easyhard || (ehNode.__easyhard = { id: nanoid(), static: true })
@@ -100,7 +91,7 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
       if (typeof attr === 'object' && 'subscribe' in attr) {
         const ob = attr as EhObservable
 
-        pushObservableNodes(graph, ob, { type: 'argument', label: name }, node)
+        pushObservableNodes(graph, ob, onAdd, { type: 'argument', label: name }, node)
       }
     }
   }
@@ -109,7 +100,7 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
   if (parent) {
     (parent.flat() as Parent[]).forEach(item => {
       if ('subscribe' in item.link) {
-        pushObservableNodes(graph, item.link, { type: item.type }, node)
+        pushObservableNodes(graph, item.link, onAdd, { type: item.type }, node)
       } else if (item.link.__easyhard) {
         graph.edges.push({
           source: item.link.__easyhard.id,
@@ -124,7 +115,7 @@ function pushNode(ehNode: EhNode, graph: Graph): GraphNode | null {
   graph.nodes.push(node)
 
   ehNode.childNodes.forEach(item => {
-    const childNode = pushNode(item, graph)
+    const childNode = pushNode(item, graph, onAdd)
 
     if (!childNode) return
     if ((item as EhMeta).__easyhard?.indirect) return
@@ -143,16 +134,40 @@ function send(message: Services['easyhard-devtools']) {
   window.postMessage(message)
 }
 
+function emissionTracker(onNext: (arg: { id: string, time: number,  value: any}) => void) {
+  const observables: EhObservable[] = []
+  const subscriptions = new Map<string, Subscription>()
+
+  return {
+    add(ob: EhObservable) {
+      observables.push(ob)
+    },
+    remove(id: string) {
+      subscriptions.get(id)?.unsubscribe()
+    },
+    flush() {
+      while (observables.length) {
+        const ob = observables.shift()
+        if (!ob) return
+        const id = ob.__debug.id
+        const sub = ob.__debug.nextBuffer.subscribe(arg => onNext({ id, ...arg }))
+
+        subscriptions.set(id, sub)
+      }
+    }
+  }
+}
+
+const emissions = emissionTracker(data => send({ type: 'NEXT', data }))
+
 window.addEventListener('message', ({ data }) => {
-  // console.log({ data })
   if (data.type === 'GET_GRAPH') {
-    setTimeout(() => {
-      const graph: Graph = { edges: [], nodes: [] }
+    const graph: Graph = { edges: [], nodes: [] }
 
-      pushNode(document.body, graph)
+    pushNode(document.body, graph, arg => '__debug' in arg && emissions.add(arg))
 
-      send({ type: 'GRAPH', data: graph })
-    }, 1000)
+    send({ type: 'GRAPH', data: graph })
+    emissions.flush()
   }
 })
 
@@ -165,7 +180,7 @@ const m = new MutationObserver(mutationsList => {
     if (item.type === 'childList') {
       const graph: Graph = { edges: [], nodes: [] }
 
-      item.addedNodes.forEach(node => pushNode(node, graph))
+      item.addedNodes.forEach(node => pushNode(node, graph, arg => '__debug' in arg && emissions.add(arg)))
 
       send({ type: 'ADDED', data: graph })
 
@@ -176,6 +191,8 @@ const m = new MutationObserver(mutationsList => {
 
       if (removedNodesIds.length > 0) {
         send({ type: 'REMOVED', data: removedNodesIds })
+
+        removedNodesIds.forEach(emissions.remove)
       }
     } else if (item.type === 'characterData') {
       const target: EhNode = item.target
@@ -185,6 +202,8 @@ const m = new MutationObserver(mutationsList => {
       send({ type: 'TEXT', data: { id: meta.id, text: target.textContent || '' }})
     }
   })
+
+  emissions.flush()
 })
 
 m.observe(document.body, {

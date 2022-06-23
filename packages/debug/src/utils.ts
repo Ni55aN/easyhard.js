@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getUID } from 'easyhard-common-alias'
+import { ReplaySubject } from 'rxjs-alias'
 import { Observable, Observer, OperatorFunction, UnaryFunction } from 'rxjs'
 import stringify from 'fast-safe-stringify'
 
-export type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[], onNext: ((value: any) => void)[] } }
+export type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[], nextBuffer: ReplaySubject<{ value: any, time: number }> } }
 export type Parent = { type: 'argument' | 'other', link: DebugObject }
 export type MestedDebugObject = Parent | MestedDebugObject[]
 export type DebugOperator = OperatorFunction<any, any> & DebugMeta
@@ -20,7 +21,7 @@ export function assignMeta(object: DebugObject, name: string | symbol, parent: M
       id: getUID(),
       name,
       parent,
-      onNext: []
+      nextBuffer: new ReplaySubject()
     }
   }
   return object.__debug
@@ -54,15 +55,7 @@ function decorateNext<T, V>(ctx: T, source: DebugObservable, _next: (value: V) =
     if (!source.__debug) throw new Error('source should have __debug property')
     const sanitizedValue = JSON.parse(stringify(value))
 
-    source.__debug.onNext.forEach(cb => {
-      try {
-        cb(sanitizedValue)
-      } catch (e: any) {
-        console.error(e)
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        cb('[error]')
-      }
-    })
+    source.__debug.nextBuffer.next({ value: sanitizedValue, time: Date.now() })
 
     return next.call(ctx, value)
   }

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getUID } from 'easyhard-common'
-import { Observable, OperatorFunction } from 'rxjs'
+import { Observable, OperatorFunction, ReplaySubject } from 'rxjs'
 import { DomElement } from './types'
 
 type ObservableDebugMeta = { __debug?: { fragment?: string } }
@@ -78,7 +78,7 @@ export function debugOperator<T, K, R extends OperatorFunction<T, K> | Observabl
         id: getUID(),
         name,
         parent: parent.map(link => ({ type: 'other', link })),
-        onNext: []
+        nextBuffer: new ReplaySubject()
       },
       writable: false,
       configurable: false
