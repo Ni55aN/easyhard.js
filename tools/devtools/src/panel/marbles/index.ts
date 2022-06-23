@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { $, $for, h } from 'easyhard'
 import { injectStyles } from 'easyhard-styles'
-import { animationFrameScheduler, combineLatest, fromEvent, interval } from 'rxjs'
+import { combineLatest, fromEvent, interval } from 'rxjs'
 import { map, mapTo, shareReplay, tap } from 'rxjs/operators'
 import { nodeMargin, nodeSize } from './consts'
 import { ControlButton } from './ControlPanel'
@@ -14,7 +14,7 @@ export function createMarbles<T extends string | number | boolean | object>() {
   const scale = $(0.05)
   const follow = $(false)
   const start = table.getStart()
-  const now = interval(0, animationFrameScheduler).pipe(map(() => Date.now())).pipe(shareReplay())
+  const now = interval(200).pipe(map(() => Date.now())).pipe(shareReplay())
 
   const timelineArea = h('div', {}, injectStyles({ overflow: 'auto', paddingRight: '0.5em' }),
     $for(table.asObservable(), map(item => h('div', {}, Timeline({ scale, now, start, ...item }))))
