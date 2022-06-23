@@ -1,4 +1,4 @@
-import cytoscape, { CollectionReturnValue, Core, SingularElementReturnValue } from 'cytoscape'
+import cytoscape, { CollectionReturnValue, Core, NodeCollection, SingularElementReturnValue } from 'cytoscape'
 import tippy, { Instance } from 'tippy.js'
 import popper from 'cytoscape-popper'
 import 'tippy.js/dist/tippy.css'
@@ -6,7 +6,7 @@ import 'tippy.js/dist/tippy.css'
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 cytoscape.use(popper)
 
-type PopperNode = { popperRef: () => any, tippy: Instance<any> }
+type PopperNode = { popperRef: () => any }
 
 function makePopperWithTippy(node: PopperNode & SingularElementReturnValue) {
   if (!node.isNode()) return
@@ -38,6 +38,9 @@ export function setupTooltips(cy: Core) {
   })
 }
 
+
+const tippyEmissionStore = new WeakMap<NodeCollection, { tippy: Instance, timeout: NodeJS.Timeout }>()
+
 const popperStyle = document.createElement('style')
 
 popperStyle.innerHTML = `
@@ -60,6 +63,7 @@ popperStyle.innerHTML = `
 `
 document.head.appendChild(popperStyle)
 
+
 function renderJSON(object: object) {
   const data = JSON.stringify(object, null, 2)
 
@@ -70,25 +74,29 @@ function renderJSON(object: object) {
 
 export function showObservableEmittedValue(cy: Core, id: string, value: object | string | number | boolean, props?: { duration?: number }) {
   const node = cy.getElementById(id) as (CollectionReturnValue & PopperNode)
-  if (!node) throw new Error('cannot find node')
+  if (!node.length) throw new Error('cannot find node')
 
   const type = node.data('type')
   if (type !== 'observable') throw new Error('type isnt observable')
 
   const ref = node.popperRef()
+  const existTippy = tippyEmissionStore.get(node)
 
-  const tipp = tippy(document.createElement('div'), {
+  const tippyInstance = existTippy?.tippy || tippy(document.createElement('div'), {
     getReferenceClientRect: ref.getBoundingClientRect,
     trigger: 'manual',
     placement: 'bottom',
     theme: 'observable'
   })
 
-  tipp.setContent(typeof value === 'object' ? renderJSON(value) : String(value))
-  tipp.show()
+  tippyInstance.setContent(typeof value === 'object' ? renderJSON(value) : String(value))
+  tippyInstance.show()
 
-  setTimeout(() => {
-    tipp.hide()
-    tipp.destroy()
+  if (existTippy?.timeout) clearTimeout(existTippy.timeout)
+
+  const timeout = setTimeout(() => {
+    tippyInstance.hide()
   }, props?.duration || 1000)
+
+  tippyEmissionStore.set(node, { tippy: tippyInstance, timeout })
 }
