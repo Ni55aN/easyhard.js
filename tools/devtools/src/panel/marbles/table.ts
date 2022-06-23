@@ -14,10 +14,10 @@ export class Table<T> {
   }
 
   remove(id: string) {
-    const index = this.data.getValue().findIndex(el => el.id === id)
+    const item = this.data.getValue().find(el => el.id === id)
 
-    if (index >= 0) {
-      this.data.removeAt(index)
+    if (item) {
+      this.data.remove(item)
     }
   }
 
