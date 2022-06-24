@@ -30,7 +30,7 @@ const bodyStyles = css({
 
 document.body.classList.add(bodyStyles.className)
 
-const marblesMode = $<MarblesMode>('timeline')
+const marblesMode = $<MarblesMode>('graph')
 const hederRightContent = h('div', {},
   Switch({ model: marblesMode, options: [{ key: 'timeline', label: 'Timeline' }, { key: 'graph', label: 'Graph' }]})
 )
