@@ -5,7 +5,7 @@ import { Table, TableItem } from '../../table'
 import { injectStyles } from 'easyhard-styles'
 import { combineLatest, NEVER, of, Subject } from 'rxjs'
 import { delay, filter, map, mergeMap, tap, throttleTime } from 'rxjs/operators'
-import { getUID } from 'easyhard-common'
+import { nanoid } from 'nanoid'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
 import { InsertReturn } from 'easyhard-common/structures/collection'
@@ -82,7 +82,7 @@ export function Graph<T>(props: { table: Table<T> }) {
       }),
       filter((args): args is [string, InsertReturn<TableItem<T>>] => 'insert' in args[1]),
       map(([id, item]) => {
-        const currentId = getUID()
+        const currentId = nanoid()
 
         const currentTime = item.item.time
 
@@ -109,7 +109,7 @@ export function Graph<T>(props: { table: Table<T> }) {
         })
 
         nestedNodes.forEach(({ last }) => {
-          cy.add({ group: 'edges', data: { id: getUID(), source: last.data('id'), target: currentId }})
+          cy.add({ group: 'edges', data: { id: nanoid(), source: last.data('id'), target: currentId }})
         })
 
         triggerLayout.next(null)
