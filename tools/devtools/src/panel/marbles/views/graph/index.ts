@@ -4,7 +4,7 @@ import stringify from 'fast-safe-stringify'
 import { Table, TableItem } from '../../table'
 import { injectStyles } from 'easyhard-styles'
 import { combineLatest, NEVER, of, Subject } from 'rxjs'
-import { delay, filter, map, mergeMap, tap, throttleTime } from 'rxjs/operators'
+import { debounceTime, delay, filter, map, mergeMap, tap } from 'rxjs/operators'
 import { nanoid } from 'nanoid'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
@@ -93,7 +93,7 @@ export function Graph<T>(props: { table: Table<T> }) {
         })
         return { currentId, item }
       }),
-      delay(200),
+      delay(100),
       tap(({ currentId, item }) => {
         if (!('insert' in item)) return
 
@@ -115,9 +115,10 @@ export function Graph<T>(props: { table: Table<T> }) {
         triggerLayout.next(null)
       })
     ).subscribe()
+
     const triggerLayout = new Subject()
     const layoutSub = triggerLayout.pipe(
-      throttleTime(200),
+      debounceTime(200),
       tap(() => {
         timelineLayout(cy, { fit: true, spacing: 5, field: 'time', scale: 0.05, start: now })
       })
