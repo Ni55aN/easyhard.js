@@ -4,7 +4,7 @@ import { combineLatest, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import stringify from 'fast-safe-stringify'
 import { marbleSize, nodeMargin, nodeSize, timelineHeight } from '../consts'
-import { TableItem } from '../table'
+import { TableItem } from '../../../table'
 import { Arrow } from './arrow'
 import { Node } from './node'
 
@@ -48,7 +48,7 @@ const timelineItemStyles = css({
   overflow: 'hidden'
 })
 
-export function Timeline<T>(props: { id: string, scale: Observable<number>, now: Observable<number>, start: Observable<number>, data: $$<TableItem<T>> }) {
+export function TimelineItem<T>(props: { id: string, scale: Observable<number>, now: Observable<number>, start: Observable<number>, data: $$<TableItem<T>> }) {
   const width = combineLatest([props.now, props.scale, props.start]).pipe(map(([now, scale, min]) => `${(now - min) * scale}px`))
 
   return h('div', {},

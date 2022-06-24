@@ -1,5 +1,5 @@
 import { h, EventAttrs } from 'easyhard'
-import { css, injectStyles } from 'easyhard-styles'
+import { css, injectStyles, RootStyleDeclaration } from 'easyhard-styles'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -12,23 +12,20 @@ const buttonStyles = css({
   borderRadius: '4px',
   padding: '0.2em 0.5em',
   cursor: 'pointer',
-  margin: '1em 0.5em',
+  margin: '0.5em',
   color: 'white',
-  ':first-child': {
-    marginLeft: '1em'
-  },
-  ':last-child': {
-    marginRight: '1em'
-  },
   ':active': {
     background: '#669c66',
   }
 })
 
-export function ControlButton(props: { label: string, active?: Observable<boolean>, click: EventAttrs['click'] }) {
+export function Button(props: { label: string, active?: Observable<boolean>, click: EventAttrs['click'], style?: RootStyleDeclaration }) {
   return h('button', { click: props.click },
     injectStyles(buttonStyles),
-    injectStyles({ background: props.active?.pipe(map(active => active ? '#468c46' : '')) }),
+    injectStyles({
+      background: props.active?.pipe(map(active => active ? '#468c46' : ''))
+    }),
+    props.style ? injectStyles(props.style) : null,
     props.label
   )
 }

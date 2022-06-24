@@ -5,8 +5,8 @@ import { combineLatest, Observable, pipe } from 'rxjs'
 import { delay, map } from 'rxjs/operators'
 import { Connection } from './Connection'
 import { timelineHeight } from './consts'
-import { Table, TableObservable } from './table'
-import { Timeline } from './Timeline'
+import { Table, TableObservable } from '../../table'
+import { TimelineItem } from './TimelineItem'
 
 
 function sortByReferences<T>(a: TableObservable<T>, b: TableObservable<T>) {
@@ -31,7 +31,7 @@ export function TimelineArea<T>(props: { data: Table<T>, scale: Observable<numbe
 
   return h('div', {}, injectStyles({ overflow: 'auto', paddingRight: '0.5em', position: 'relative' }),
     $for(data.asObservable(), map(item => {
-      return h('div', { id: `timeline_${String(item.id)}` }, Timeline({ scale, now, start, ...item }))
+      return h('div', { id: `timeline_${String(item.id)}` }, TimelineItem({ scale, now, start, ...item }))
     }), {
       comparator: sortByReferences
     }),

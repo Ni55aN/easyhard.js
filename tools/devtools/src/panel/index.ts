@@ -1,5 +1,5 @@
 import { EventObjectNode } from 'cytoscape'
-import { onMount } from 'easyhard'
+import { $, h, onMount } from 'easyhard'
 import { css } from 'easyhard-styles'
 import { Services } from '../types'
 import { Connection } from '../utils/communication'
@@ -12,7 +12,8 @@ import { layout } from './graph/layout'
 import { addNodes, removeNodes, setData, updateNodeText } from './graph/data'
 import { showObservableEmittedValue } from './graph/tooltip'
 import { Splitter } from './splitter'
-import { createMarbles } from './marbles'
+import { createMarbles, MarblesMode } from './marbles'
+import { Switch } from './shared/Switch'
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
@@ -29,10 +30,14 @@ const bodyStyles = css({
 
 document.body.classList.add(bodyStyles.className)
 
-const header = Header({ styles: { gridArea: 'a' }})
+const marblesMode = $<MarblesMode>('timeline')
+const hederRightContent = h('div', {},
+  Switch({ model: marblesMode, options: [{ key: 'timeline', label: 'Timeline' }, { key: 'graph', label: 'Graph' }]})
+)
+const header = Header({ styles: { gridArea: 'a' }, content: { right: hederRightContent }})
 const container = Main({})
 
-const marbles = createMarbles()
+const marbles = createMarbles({ mode: marblesMode })
 const sidebar = Sidebar({}, marbles.container)
 
 
