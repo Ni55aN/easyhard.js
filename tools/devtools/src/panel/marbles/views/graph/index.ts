@@ -1,14 +1,14 @@
 import { h, onLife } from 'easyhard'
 import cytoscape from 'cytoscape'
 import stringify from 'fast-safe-stringify'
-import { Table, TableItem } from '../../table'
+import { Table } from '../../table'
 import { injectStyles } from 'easyhard-styles'
-import { combineLatest, NEVER, of, Subject } from 'rxjs'
-import { debounceTime, delay, filter, map, mergeMap, tap } from 'rxjs/operators'
+import { combineLatest, of, Subject } from 'rxjs'
+import { debounceTime, delay, map, mergeMap, tap } from 'rxjs/operators'
 import { nanoid } from 'nanoid'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
-import { InsertReturn } from 'easyhard-common/structures/collection'
+import { collectionInsert } from './utils'
 
 export function Graph<T>(props: { table: Table<T> }) {
   const container = h('div', {}, injectStyles({ height: '100%' }))
@@ -73,33 +73,25 @@ export function Graph<T>(props: { table: Table<T> }) {
 
     const now = Date.now()
     const sub =  props.table.asObservable().pipe(
-      mergeMap(value => {
-        if ('insert' in value) {
-          cy.add({ group: 'nodes', data: { id: value.item.id }})
-          return combineLatest(of(value.item.id), value.item.data)
-        }
-        return NEVER
-      }),
-      filter((args): args is [string, InsertReturn<TableItem<T>>] => 'insert' in args[1]),
+      collectionInsert(),
+      tap(item => cy.add({ group: 'nodes', data: { id: item.id }})),
+      mergeMap(item => combineLatest(of(item.id), item.data.pipe(collectionInsert()))),
       map(([id, item]) => {
         const currentId = nanoid()
-
-        const currentTime = item.item.time
+        const currentTime = item.time
 
         cy.add({
           group: 'nodes',
-          data: { id: currentId, time: currentTime, parent: id, label: stringify(item.item.emission) },
+          data: { id: currentId, time: currentTime, parent: id, label: stringify(item.emission) },
           position: { x: (currentTime - now) / 100, y: 0 }
         })
         return { currentId, item }
       }),
       delay(100),
       tap(({ currentId, item }) => {
-        if (!('insert' in item)) return
-
-        const currentTime = item.item.time
+        const currentTime = item.time
         const parentNodes = cy.nodes().filter((n: cytoscape.NodeSingular) => {
-          return item.item.parents.includes(n.data('id') as string)
+          return item.parents.includes(n.data('id') as string)
         })
         const nestedNodes = parentNodes.map((parentNode: cytoscape.NodeSingular) => {
           return {
