@@ -10,7 +10,7 @@ import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
 import { collectionInsert } from './utils'
 
-export function Graph<T>(props: { table: Table<T>, tap?: (id: string, parentId?: string) => void }) {
+export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: string, parentId?: string) => void }) {
   const container = h('div', {}, injectStyles({ height: '100%' }))
 
   onLife(container, () => {
@@ -45,7 +45,7 @@ export function Graph<T>(props: { table: Table<T>, tap?: (id: string, parentId?:
             'text-valign': 'center',
             'shape': 'round-rectangle',
             'text-halign': 'left',
-            'content': 'data(id)',
+            'content': props.debug ? 'data(id)' : '',
             'color': 'grey'
           }
         },

@@ -6,13 +6,13 @@ import { Graph } from './views/graph'
 
 export type MarblesMode = 'timeline' | 'graph'
 
-export function createMarbles<T extends string | number | boolean | object>(props: { mode: $<MarblesMode>, lineSelect: (id: string) => void }) {
+export function createMarbles<T extends string | number | boolean | object>(props: { mode: $<MarblesMode>, debug?: boolean, lineSelect: (id: string) => void }) {
   const table = new Table<T>()
 
   const container = $if(
     props.mode.pipe(map(m => m === 'timeline')),
     map(() => Timeline({ table })),
-    map(() => Graph({ table, tap(id, parentId) { props.lineSelect(parentId || id) }}))
+    map(() => Graph({ table, debug: props.debug, tap(id, parentId) { props.lineSelect(parentId || id) }}))
   )
 
   return {
