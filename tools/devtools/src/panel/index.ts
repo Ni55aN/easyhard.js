@@ -43,7 +43,21 @@ const marbles = createMarbles({
   mode: marblesMode,
   debug,
   lineSelect(id) {
-    cy.fit(cy.getElementById(id), 230)
+    const element = cy.getElementById(id)
+    const delay = 500
+
+    element.animated()
+    element
+      .delay(delay)
+      .animate({ style: { borderWidth: 2.5 }}, { easing: 'ease-out', duration: 300 })
+      .animate({ style: { borderWidth: 1 }}, { easing: 'ease-in', duration: 200 })
+    cy.animate({
+      fit: {
+        eles: element,
+        padding: 230
+      },
+      duration: delay
+    })
   }
 })
 const sidebar = Sidebar({}, marbles.container)
