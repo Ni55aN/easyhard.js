@@ -54,7 +54,7 @@ const marbles = createMarbles({
     cy.animate({
       fit: {
         eles: element,
-        padding: 230
+        padding: Math.min(cy.height(), cy.width()) * 0.42
       },
       duration: delay
     })
