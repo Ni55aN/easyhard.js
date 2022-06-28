@@ -10,7 +10,7 @@ import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
 import { collectionInsert } from './utils'
 
-export function Graph<T>(props: { table: Table<T> }) {
+export function Graph<T>(props: { table: Table<T>, tap?: (id: string, parentId?: string) => void }) {
   const container = h('div', {}, injectStyles({ height: '100%' }))
 
   onLife(container, () => {
@@ -124,6 +124,14 @@ export function Graph<T>(props: { table: Table<T> }) {
       const screenOffsetX = e.clientX - container.offsetLeft
 
       scale.apply(zoom, screenOffsetX)
+    })
+
+    cy.on('tap', 'node', e => {
+      const node = e.target as cytoscape.NodeSingular
+      const id: string = node.data('id')
+      const parentId: string | undefined = node.parent()?.first().data('id')
+
+      props.tap && props.tap(id, parentId)
     })
 
     return () => {

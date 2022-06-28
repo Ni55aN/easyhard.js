@@ -37,7 +37,12 @@ const hederRightContent = h('div', {},
 const header = Header({ styles: { gridArea: 'a' }, content: { right: hederRightContent }})
 const container = Main({})
 
-const marbles = createMarbles({ mode: marblesMode })
+const marbles = createMarbles({
+  mode: marblesMode,
+  lineSelect(id) {
+    cy.fit(cy.getElementById(id), 230)
+  }
+})
 const sidebar = Sidebar({}, marbles.container)
 
 
