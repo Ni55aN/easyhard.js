@@ -49,7 +49,7 @@ const marbles = createMarbles({
     element.animated()
     element
       .delay(delay)
-      .animate({ style: { borderWidth: 2.5 }}, { easing: 'ease-out', duration: 300 })
+      .animate({ style: { borderWidth: 0 }}, { easing: 'ease-out', duration: 300 })
       .animate({ style: { borderWidth: 1 }}, { easing: 'ease-in', duration: 200 })
     cy.animate({
       fit: {

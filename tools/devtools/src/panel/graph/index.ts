@@ -41,7 +41,7 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
         selector: 'node[type="node"]',
         style: {
           'shape': 'round-rectangle',
-          'border-width': 2,
+          'border-width': 1,
           'border-color': 'white',
           'background-color': '#a9a9a9'
         }
@@ -50,7 +50,7 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
         selector: 'node[type="text"]',
         style: {
           'shape': 'round-rectangle',
-          'border-width': 2,
+          'border-width': 1,
           'border-color': 'white',
           'background-color': '#a9a9a9'
         }
