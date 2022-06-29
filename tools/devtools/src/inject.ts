@@ -2,6 +2,8 @@ import { Attrs, TagName } from 'easyhard'
 import { nanoid } from 'nanoid'
 import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { EdgeType, Graph, GraphNode, Services } from './types'
+import 'luna-dom-highlighter/luna-dom-highlighter.css'
+import LunaDomHighlighter from 'luna-dom-highlighter'
 
 type Parent = { type: EdgeType, link: EhObservable | EhMeta }
 type NestedParent = Parent | NestedParent[]
@@ -165,7 +167,17 @@ function emissionTracker(onNext: (arg: { id: string, time: number,  value: any})
 
 const emissions = emissionTracker(data => send({ type: 'NEXT', data }))
 
-window.addEventListener('message', ({ data }) => {
+const highligherContainer = document.createElement('div') as EhMeta & HTMLDivElement
+
+highligherContainer.__easyhardIgnore = true
+document.body.appendChild(highligherContainer)
+
+const domHighlighter = new LunaDomHighlighter(highligherContainer, {
+  showAccessibilityInfo: false,
+  showStyles: false
+})
+
+window.addEventListener('message', ({ data }: { data: Services['easyhard-content']}) => {
   if (data.type === 'GET_GRAPH') {
     const graph: Graph = { edges: [], nodes: [] }
 
@@ -174,7 +186,26 @@ window.addEventListener('message', ({ data }) => {
     send({ type: 'GRAPH', data: graph })
     emissions.flush()
   }
+  if (data.type === 'INSPECT') {
+    if (data.data === null) return domHighlighter.hide()
+
+    const el = findElementByDebugId(document.body, data.data.id)
+
+    domHighlighter.hide()
+    if (el) domHighlighter.highlight(el)
+  }
 })
+
+function findElementByDebugId(node: (HTMLElement | Text) & EhMeta, id: string): HTMLElement | Text | null { // TODO performance
+  if (node?.__easyhard?.id === id) return node
+
+  for (const child of Array.from(node.childNodes)) {
+    const found = findElementByDebugId(child as (HTMLElement | Text) & EhMeta, id)
+
+    if (found) return found
+  }
+  return null
+}
 
 function traverseSubtree(node: Node): Node[] {
   return [node, ...Array.from(node.childNodes).map(traverseSubtree)].flat()

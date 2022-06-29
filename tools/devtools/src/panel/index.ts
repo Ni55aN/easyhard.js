@@ -1,4 +1,4 @@
-import { EventObjectNode } from 'cytoscape'
+import cytoscape, { EventObjectNode } from 'cytoscape'
 import { $, h, onMount } from 'easyhard'
 import { css } from 'easyhard-styles'
 import { Services } from '../types'
@@ -110,6 +110,15 @@ cy.on('remove', e => {
 
     marbles.remove(id)
   }
+})
+cy.on('mouseover', 'node', e => {
+  const node = e.target as cytoscape.NodeSingular
+  const id = node.data('id')
+
+  connection.postMessage('easyhard-content', { type: 'INSPECT', data: { id }})
+})
+cy.on('mouseout', 'node', () => {
+  connection.postMessage('easyhard-content', { type: 'INSPECT', data: null })
 })
 
 onMount(container, () => {
