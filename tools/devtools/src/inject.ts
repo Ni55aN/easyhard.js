@@ -8,7 +8,10 @@ type NestedParent = Parent | NestedParent[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type EhObservable = Observable<unknown> & { __debug: { id: string, parent: NestedParent[], name: string, nextBuffer: ReplaySubject<{ value: any, time: number }> } }
-type EhMeta = { __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', static?: boolean, parent?: NestedParent[] }}
+type EhMeta = {
+  __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', static?: boolean, parent?: NestedParent[] },
+  __easyhardIgnore?: true
+}
 type EhNode = Node & EhMeta
 
 function initParentObservableNodes(graph: Graph, ob: EhObservable | EhMeta, onAdd: (arg: EhNode | EhObservable) => void) {
@@ -71,7 +74,9 @@ function pushObservableNodes(graph: Graph, ob: EhObservable, onAdd: (arg: EhNode
 }
 
 function pushNode(ehNode: EhNode, graph: Graph, onAdd: (arg: EhNode | EhObservable) => void): GraphNode | null {
+  if (ehNode.__easyhardIgnore) return null
   if (!ehNode.__easyhard && ehNode.nodeName == '#text' && !ehNode.textContent?.trim()) return null
+  if (findParent(ehNode, node => Boolean(node && node.__easyhardIgnore))) return null
 
   const meta = ehNode.__easyhard || (ehNode.__easyhard = { id: nanoid(), static: true })
 
@@ -173,6 +178,13 @@ window.addEventListener('message', ({ data }) => {
 
 function traverseSubtree(node: Node): Node[] {
   return [node, ...Array.from(node.childNodes).map(traverseSubtree)].flat()
+}
+
+function findParent(node: Node, cb: (node: EhNode) => boolean): Node | null {
+  if (!node.parentNode) return null
+  if (cb(node.parentNode as EhNode)) return node.parentNode
+
+  return findParent(node.parentNode, cb)
 }
 
 const m = new MutationObserver(mutationsList => {
