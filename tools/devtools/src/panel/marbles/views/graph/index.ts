@@ -4,11 +4,11 @@ import stringify from 'fast-safe-stringify'
 import { Table } from '../../table'
 import { injectStyles } from 'easyhard-styles'
 import { combineLatest, of, Subject } from 'rxjs'
-import { debounceTime, delay, map, mergeMap, tap } from 'rxjs/operators'
+import { debounceTime, delay, map, mergeMap, pluck, tap } from 'rxjs/operators'
 import { nanoid } from 'nanoid'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
-import { collectionInsert } from './utils'
+import { collectionInsert, collectionRemove } from './utils'
 
 export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: string, parentId?: string) => void }) {
   const container = h('div', {}, injectStyles({ height: '100%' }))
@@ -72,7 +72,7 @@ export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: s
     })
 
     const now = Date.now()
-    const sub =  props.table.asObservable().pipe(
+    const insertSub = props.table.asObservable().pipe(
       collectionInsert(),
       tap(item => cy.add({ group: 'nodes', data: { id: item.id }})),
       mergeMap(item => combineLatest(of(item.id), item.data.pipe(collectionInsert()))),
@@ -108,6 +108,13 @@ export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: s
       })
     ).subscribe()
 
+    const removeSub = props.table.asObservable().pipe(
+      collectionRemove(),
+      pluck('id'),
+      map(cy.getElementById.bind(cy)),
+      tap(node => node.remove())
+    ).subscribe()
+
     const triggerLayout = new Subject()
     const layoutSub = triggerLayout.pipe(
       debounceTime(200),
@@ -135,7 +142,8 @@ export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: s
     })
 
     return () => {
-      sub.unsubscribe()
+      insertSub.unsubscribe()
+      removeSub.unsubscribe(),
       layoutSub.unsubscribe()
     }
   })

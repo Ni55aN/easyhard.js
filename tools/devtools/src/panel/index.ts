@@ -71,6 +71,7 @@ const cy = createGraph(container, { debug })
 
 connection.addListener(async message => {
   if (message.type === 'GRAPH') {
+    marbles.clear()
     setData(cy, message.data)
     await layout(cy, true)
   }

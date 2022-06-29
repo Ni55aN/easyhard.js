@@ -22,6 +22,9 @@ export function createMarbles<T extends string | number | boolean | object>(prop
     },
     remove(id: string) {
       table.remove(id)
+    },
+    clear() {
+      table.clear()
     }
   }
 }
