@@ -16,7 +16,7 @@ module.exports = {
     popup: path.resolve(__dirname, 'src', 'popup.ts'),
     content: path.resolve(__dirname, 'src', 'content.ts'),
     background: path.resolve(__dirname, 'src', 'background.ts'),
-    inject: path.resolve(__dirname, 'src', 'inject.ts'),
+    inject: path.resolve(__dirname, 'src', 'inject/index.ts'),
   },
   output: {
     path: path.join(__dirname, 'dist'),
