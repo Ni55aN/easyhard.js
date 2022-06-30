@@ -1,4 +1,4 @@
-import { h, EventAttrs } from 'easyhard'
+import { h, EventAttrs, Child } from 'easyhard'
 import { css, injectStyles, RootStyleDeclaration } from 'easyhard-styles'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -19,7 +19,7 @@ const buttonStyles = css({
   }
 })
 
-export function Button(props: { label: string, active?: Observable<boolean>, click: EventAttrs['click'], style?: RootStyleDeclaration }) {
+export function Button(props: { label: Child, active?: Observable<boolean>, click?: EventAttrs['click'], style?: RootStyleDeclaration }) {
   return h('button', { click: props.click },
     injectStyles(buttonStyles),
     injectStyles({
