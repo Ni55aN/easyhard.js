@@ -14,6 +14,7 @@ import { showObservableEmittedValue } from './graph/tooltip'
 import { Splitter } from './splitter'
 import { createMarbles, MarblesMode } from './marbles'
 import { Switch } from './shared/Switch'
+import { focusNode } from './graph/focus'
 
 const debug = Boolean(process.env.DEBUG)
 
@@ -43,21 +44,7 @@ const marbles = createMarbles({
   mode: marblesMode,
   debug,
   lineSelect(id) {
-    const element = cy.getElementById(id)
-    const delay = 500
-
-    element.animated()
-    element
-      .delay(delay)
-      .animate({ style: { borderWidth: 0 }}, { easing: 'ease-out', duration: 300 })
-      .animate({ style: { borderWidth: 1 }}, { easing: 'ease-in', duration: 200 })
-    cy.animate({
-      fit: {
-        eles: element,
-        padding: Math.min(cy.height(), cy.width()) * 0.42
-      },
-      duration: delay
-    })
+    focusNode(cy, id)
   }
 })
 const sidebar = Sidebar({}, marbles.container)
