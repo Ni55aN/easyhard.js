@@ -14,6 +14,9 @@ import { showObservableEmittedValue } from './graph/tooltip'
 import { Splitter } from './splitter'
 import { createMarbles, MarblesMode } from './marbles'
 import { Switch } from './shared/Switch'
+import { Button } from './shared/Button'
+import { InspectIcon } from '../assets/icons/inspect'
+import { tap } from 'rxjs'
 import { focusNode } from './graph/focus'
 
 const debug = Boolean(process.env.DEBUG)
@@ -33,11 +36,29 @@ const bodyStyles = css({
 
 document.body.classList.add(bodyStyles.className)
 
+const activeInspector = $(false)
+const headerLeftContent = h('div', {},
+  Button({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    label: InspectIcon() as any,
+    active: activeInspector,
+    click: tap(() => {
+      const active = activeInspector.value
+
+      connection.postMessage('easyhard-content', { type: 'INSPECTING', data: { action: active ? 'stop' : 'start' }})
+      activeInspector.next(!active)
+    })
+  })
+)
+
 const marblesMode = $<MarblesMode>('graph')
-const hederRightContent = h('div', {},
+const headerRightContent = h('div', {},
   Switch({ model: marblesMode, options: [{ key: 'timeline', label: 'Timeline' }, { key: 'graph', label: 'Graph' }]})
 )
-const header = Header({ styles: { gridArea: 'a' }, content: { right: hederRightContent }})
+const header = Header({ styles: { gridArea: 'a' }, content: {
+  left: headerLeftContent,
+  right: headerRightContent
+}})
 const container = Main({})
 
 const marbles = createMarbles({
@@ -82,6 +103,9 @@ connection.addListener(async message => {
     const incomersIds = incomers.map(incomer => incomer.data('id') as string)
 
     marbles.add(value, id, incomersIds, time)
+  }
+  if (message.type === 'FOCUS') {
+    focusNode(cy, message.data.id)
   }
 })
 

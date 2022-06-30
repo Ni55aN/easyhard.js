@@ -4,9 +4,17 @@ import { EhNode } from './types'
 import * as connection from './connection'
 import { findElementByDebugId, traverseSubtree } from './dom'
 import { DomToGraph } from './dom-to-graph'
+import { createInspector } from './inspector'
 
 const highlighter = createHighlighter()
 const emissions = emissionTracker(data => connection.send({ type: 'NEXT', data }))
+const inspector = createInspector(highlighter, element => {
+  const id = element.__easyhard?.id
+
+  if (id) {
+    connection.send({ type: 'FOCUS', data: { id }})
+  }
+})
 
 connection.onMessage(data => {
   if (data.type === 'GET_GRAPH') {
@@ -24,6 +32,13 @@ connection.onMessage(data => {
 
     const el = data.data && findElementByDebugId(document.body, data.data.id)
     if (el) highlighter.highlight(el)
+  }
+  if (data.type === 'INSPECTING') {
+    if (data.data.action === 'start') {
+      inspector.start()
+    } else if (data.data.action === 'stop') {
+      inspector.stop()
+    }
   }
 })
 
