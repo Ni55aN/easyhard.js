@@ -24,6 +24,7 @@
   "dependencies": {
     "@types/cytoscape": "^3.19.4",
     "cytoscape": "^3.21.1",
+    "cytoscape-canvas": "^3.0.1",
     "cytoscape-dagre": "^2.4.0",
     "cytoscape-popper": "^2.0.0",
     "easyhard": "^0.8.1",

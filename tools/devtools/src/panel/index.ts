@@ -18,6 +18,7 @@ import { Button } from './shared/Button'
 import { InspectIcon } from '../assets/icons/inspect'
 import { tap } from 'rxjs'
 import { focusNode } from './graph/focus'
+import { createAreaHighlighter } from './graph/highligher'
 
 const debug = Boolean(process.env.DEBUG)
 
@@ -65,7 +66,7 @@ const marbles = createMarbles({
   mode: marblesMode,
   debug,
   lineSelect(id) {
-    focusNode(cy, id)
+    focusNode(cy, id, areaHighligher)
   }
 })
 const sidebar = Sidebar({}, marbles.container)
@@ -76,6 +77,7 @@ document.body.appendChild(header)
 document.body.appendChild(main)
 
 const cy = createGraph(container, { debug })
+const areaHighligher = createAreaHighlighter(cy)
 
 connection.addListener(async message => {
   if (message.type === 'GRAPH') {
@@ -105,7 +107,7 @@ connection.addListener(async message => {
     marbles.add(value, id, incomersIds, time)
   }
   if (message.type === 'FOCUS') {
-    focusNode(cy, message.data.id)
+    focusNode(cy, message.data.id, areaHighligher)
   }
 })
 
@@ -130,6 +132,10 @@ cy.on('mouseover', 'node', e => {
 })
 cy.on('mouseout', 'node', () => {
   connection.postMessage('easyhard-content', { type: 'INSPECT', data: null })
+})
+
+cy.on('mousemove', () => {
+  areaHighligher.hide()
 })
 
 onMount(container, () => {
