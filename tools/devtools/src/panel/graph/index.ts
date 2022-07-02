@@ -99,6 +99,7 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
         selector: 'edge',
         style: {
           'label': 'data(label)',
+          'text-rotation': 'autorotate',
           'font-size': 10,
           'color': '#f1c82a',
           'text-background-opacity': 1,
