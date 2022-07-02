@@ -51,7 +51,9 @@ const m = new MutationObserver(mutationsList => {
 
       item.addedNodes.forEach(node => domToGraph.add(node))
 
-      connection.send({ type: 'ADDED', data: domToGraph.serialize() })
+      if (!domToGraph.isEmpty()) {
+        connection.send({ type: 'ADDED', data: domToGraph.serialize() })
+      }
 
       const removedNodes = Array.from(item.removedNodes).map(traverseSubtree).flat()
       const removedNodesIds = removedNodes.map((removed: EhNode) => {

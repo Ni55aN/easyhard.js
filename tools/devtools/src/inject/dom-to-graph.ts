@@ -152,7 +152,11 @@ export class DomToGraph {
     return node
   }
 
-  serialize() {
+  public isEmpty() {
+    return this.graph.edges.length === 0 && this.graph.edges.length === 0
+  }
+
+  public serialize() {
     return this.graph
   }
 }
