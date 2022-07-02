@@ -26,7 +26,7 @@ jobs:
       - run: npm run test
       - run: npm run build
       - name: Publish to NPM
-        run: npm publish ./build/${{github.event.inputs.folder}}
+        run: npm publish ./build/${{github.event.inputs.name}}
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
       - name: Create Release
