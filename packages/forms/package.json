@@ -1,9 +1,9 @@
 {
   "name": "easyhard-forms",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "peerDependencies": {
-    "easyhard": "^0.8.0",
-    "easyhard-common": "^0.3.0",
+    "easyhard": "^0.9.0",
+    "easyhard-common": "^0.4.0",
     "rxjs": ">= 6.x <=7.x"
   }
 }
