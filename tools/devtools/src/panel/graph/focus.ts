@@ -18,6 +18,7 @@ export function focusNode(cy: cytoscape.Core, id: string, highlighter: AreaHighl
     highlighter.highlight({ x, y, width, height })
   }, delay)
 
+  cy.stop()
   cy.animate({
     fit: {
       eles: element,
