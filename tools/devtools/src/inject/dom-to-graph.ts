@@ -74,6 +74,19 @@ export class DomToGraph {
     return ehNode.__easyhardIgnore || findParent(ehNode, node => Boolean(node && node.__easyhardIgnore))
   }
 
+  private ensure(ehNode: EhNode): GraphNode | null{
+    const id = ehNode.__easyhard?.id
+
+    if (!id) return null
+
+    const existing = this.graph.nodes.find(n => n.id === id)
+
+    if (existing) {
+      return existing
+    }
+    return this.add(ehNode)
+  }
+
   public add(ehNode: EhNode): GraphNode | null {
     if (this.isIgnored(ehNode)) return null
     if (!ehNode.__easyhard && ehNode.nodeName == '#text' && !ehNode.textContent?.trim()) return null
@@ -107,10 +120,14 @@ export class DomToGraph {
         if ('subscribe' in item.link) {
           this.addObservable(item.link, { type: item.type }, node)
         } else if (item.link.__easyhard) {
+          const linkNode = this.ensure(item.link)
+
+          if (!linkNode) throw new Error('cannot create node')
+
           this.graph.edges.push({
-            source: item.link.__easyhard.id,
+            source: linkNode.id,
             target: node.id,
-            id: [item.link.__easyhard.id, node.id].join('_'),
+            id: [linkNode.id, node.id].join('_'),
             type: item.type
           })
         }

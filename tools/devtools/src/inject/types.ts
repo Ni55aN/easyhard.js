@@ -2,7 +2,7 @@ import { Attrs, TagName } from 'easyhard'
 import { Observable, ReplaySubject } from 'rxjs'
 import { EdgeType } from '../types'
 
-export type Parent = { type: EdgeType, link: EhObservable | EhMeta }
+export type Parent = { type: EdgeType, link: EhObservable | EhNode }
 export type NestedParent = Parent | NestedParent[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
