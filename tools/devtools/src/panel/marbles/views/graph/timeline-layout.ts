@@ -1,13 +1,5 @@
 import cytoscape from 'cytoscape'
-
-function sortByReferences(a: cytoscape.NodeSingular, b: cytoscape.NodeSingular) {
-  const currentId: string = a.data('id')
-  const currentReferencesIds = a.children().incomers().parents().map(p => p.data('id'))
-  const nextId: string = b.data('id')
-  const nextReferencesIds = b.children().incomers().parents().map(p => p.data('id'))
-
-  return nextReferencesIds.includes(currentId) && !currentReferencesIds.includes(nextId) ? -1 : 1
-}
+import { dfsTopSort } from './dfs-sort'
 
 export function timelineLayout(cy: cytoscape.Core, props: { fit: boolean, field: string, spacing: number, start: number, scale: number }) {
   cy.nodes().forEach(node => {
@@ -18,10 +10,17 @@ export function timelineLayout(cy: cytoscape.Core, props: { fit: boolean, field:
   const els = cy.elements(':parent').map((parent: cytoscape.NodeSingular) => {
     return parent
   })
-  els.sort(sortByReferences)
 
-  els.forEach((parent, i) => {
-    const y = i * (props.spacing + parent.outerHeight())
+  const result = dfsTopSort(
+    () => els.map(n => n.data('id')),
+    id => cy.getElementById(id).children().incomers().parents().map(p => p.data('id'))
+  )
+
+  els.forEach(parent => {
+    const id = parent.data('id') as string
+    const index = result[id]
+    const inverseIndex = els.length - index - 1
+    const y = inverseIndex * (props.spacing + parent.outerHeight())
 
     parent.position('y', y)
   })
