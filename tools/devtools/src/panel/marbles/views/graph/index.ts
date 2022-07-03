@@ -1,14 +1,14 @@
 import { h, onLife } from 'easyhard'
 import cytoscape from 'cytoscape'
 import stringify from 'fast-safe-stringify'
-import { Table } from '../../table'
 import { injectStyles } from 'easyhard-styles'
 import { combineLatest, of, Subject } from 'rxjs'
 import { debounceTime, delay, map, mergeMap, pluck, tap } from 'rxjs/operators'
 import { nanoid } from 'nanoid'
+import { collectionInsert, collectionRemove } from '../../../shared/operators/collection'
+import { Table } from '../../table'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
-import { collectionInsert, collectionRemove } from './utils'
 
 export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: string, parentId?: string) => void }) {
   const container = h('div', {}, injectStyles({ height: '100%' }))
