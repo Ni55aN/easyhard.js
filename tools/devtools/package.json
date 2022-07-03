@@ -3,16 +3,20 @@
   "version": "0.1.0",
   "scripts": {
     "build": "PRODUCTION=true webpack",
-    "dev": "DEBUG=true webpack --watch"
+    "dev": "DEBUG=true webpack --watch",
+    "test": "jest"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.188",
+    "@types/jest": "^28.1.4",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
     "eslint-webpack-plugin": "^3.1.1",
     "html-webpack-plugin": "^5.5.0",
+    "jest": "^28.1.2",
     "style-loader": "^3.3.1",
+    "ts-jest": "^28.0.5",
     "ts-loader": "^9.3.0",
     "typescript": "^4.7.2",
     "webpack": "^5.72.1",
