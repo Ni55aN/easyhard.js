@@ -2,15 +2,17 @@ import { h, onLife } from 'easyhard'
 import cytoscape from 'cytoscape'
 import stringify from 'fast-safe-stringify'
 import { injectStyles } from 'easyhard-styles'
-import { combineLatest, of, Subject } from 'rxjs'
-import { debounceTime, delay, map, mergeMap, pluck, tap } from 'rxjs/operators'
+import { combineLatest, Observable, of, Subject, throwError } from 'rxjs'
+import { debounceTime, delay, map, retry, mergeMap, pluck, tap, catchError } from 'rxjs/operators'
 import { nanoid } from 'nanoid'
+import { createAreaHighlighter } from '../../../../panel/shared/cytoscape/highligher'
 import { collectionInsert, collectionRemove } from '../../../shared/operators/collection'
+import { focusNode } from '../../../shared/cytoscape/focus'
 import { Table } from '../../table'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
 
-export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: string, parentId?: string) => void }) {
+export function Graph<T>(props: { table: Table<T>, focus: Observable<string>, debug?: boolean, tap?: (id: string, parentId?: string) => void }) {
   const container = h('div', {}, injectStyles({ height: '100%' }))
 
   onLife(container, () => {
@@ -70,6 +72,7 @@ export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: s
         name: 'preset'
       }
     })
+    const areaHighligher = createAreaHighlighter(cy)
 
     const now = Date.now()
     const insertSub = props.table.asObservable().pipe(
@@ -123,6 +126,17 @@ export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: s
       })
     ).subscribe()
 
+    const focusSub = props.focus.pipe(
+      map(timelineId => {
+        return cy.getElementById(timelineId).children().last()
+      }),
+      tap(lastMarble => focusNode(cy, lastMarble.data('id') as string, areaHighligher)),
+      catchError(err => {
+        console.error(err)
+        return throwError(() => err)
+      }),
+      retry()
+    ).subscribe()
 
     const scale = scaleGraph(cy, 'x')
 
@@ -141,10 +155,15 @@ export function Graph<T>(props: { table: Table<T>, debug?: boolean, tap?: (id: s
       props.tap && props.tap(id, parentId)
     })
 
+    cy.on('mousemove', () => {
+      areaHighligher.hide()
+    })
+
     return () => {
       insertSub.unsubscribe()
-      removeSub.unsubscribe(),
+      removeSub.unsubscribe()
       layoutSub.unsubscribe()
+      focusSub.unsubscribe()
     }
   })
 

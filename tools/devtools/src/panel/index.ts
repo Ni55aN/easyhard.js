@@ -134,6 +134,15 @@ cy.on('mouseout', 'node', () => {
   connection.postMessage('easyhard-content', { type: 'INSPECT', data: null })
 })
 
+cy.on('tap', 'node', e => {
+  const node = e.target as cytoscape.NodeSingular
+  const id = node.data('id') as string
+
+  if (node.data('type') === 'observable') {
+    marbles.focus(id)
+  }
+})
+
 cy.on('mousemove', () => {
   areaHighligher.hide()
 })
