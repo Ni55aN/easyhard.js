@@ -28,7 +28,7 @@ jobs:
       - name: Check if version has been updated
         if: ${{github.event.workflow_run.conclusion == 'success'}}
         id: checkVersion
-        uses: EndBug/version-check@v1.6.0
+        uses: EndBug/version-check@v2.1.0
         with:
           diff-search: true
           file-name: packages/${{matrix.package.folder}}/package.json
