@@ -44,7 +44,7 @@ jobs:
           inputs: '{
             "name": "${{matrix.package.name}}",
             "folder": "${{matrix.package.folder}}",
-            "version": "${{steps.checkVersion.outputs.version}}"
+            "version": "${{steps.checkVersion.outputs.committed-version}}",
             "buildWorkflowId": "${{github.event.workflow_run.id}}"
             }'
 
