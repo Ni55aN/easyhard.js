@@ -17,8 +17,8 @@ import { Switch } from './shared/Switch'
 import { Button } from './shared/Button'
 import { InspectIcon } from '../assets/icons/inspect'
 import { tap } from 'rxjs'
-import { focusNode } from './graph/focus'
-import { createAreaHighlighter } from './graph/highligher'
+import { focusNode } from './shared/cytoscape/focus'
+import { createAreaHighlighter } from './shared/cytoscape/highligher'
 
 const debug = Boolean(process.env.DEBUG)
 

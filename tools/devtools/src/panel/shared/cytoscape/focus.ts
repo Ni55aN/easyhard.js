@@ -7,6 +7,7 @@ let timeout: NodeJS.Timeout
 
 export function focusNode(cy: cytoscape.Core, id: string, highlighter: AreaHighligher) {
   const element = cy.getElementById(id)
+  if (element.size() === 0) throw new Error('node not found')
 
   const { x, y } = element.position()
   const width = element.width() + padding * 2
