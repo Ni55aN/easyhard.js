@@ -12,6 +12,9 @@ on:
       version:
         description: 'Package version'
         required: true
+      buildWorkflowId:
+        description: 'Workflow ID with build artifact'
+        required: true
 
 jobs:
   first:
@@ -22,9 +25,12 @@ jobs:
         with:
           node-version: 14
           registry-url: https://registry.npmjs.org/
-      - run: npm install
-      - run: npm run test
-      - run: npm run build
+      - uses: dawidd6/action-download-artifact@v2
+        with:
+          name: build
+          path: build
+          workflow: CI
+          run_id: ${{github.event.inputs.buildWorkflowId}}
       - name: Publish to NPM
         run: npm publish ./build/${{github.event.inputs.name}}
         env:

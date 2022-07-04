@@ -42,5 +42,6 @@ jobs:
             "name": "${{matrix.package.name}}",
             "folder": "${{matrix.package.folder}}",
             "version": "${{steps.checkVersion.outputs.version}}"
+            "buildWorkflowId": "${{github.event.workflow_run.id}}"
             }'
 

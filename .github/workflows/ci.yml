@@ -15,10 +15,12 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 14
-      - run: npm i -g npm@8
       - run: npm install
-      - run: npm run build # npm run lint is executed internally
-      - run: npm run test
+      - run: npm run build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: build
   test:
     needs: [build]
     runs-on: ubuntu-latest
