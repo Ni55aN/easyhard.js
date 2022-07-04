@@ -28,12 +28,15 @@ jobs:
       - name: Check if version has been updated
         if: ${{github.event.workflow_run.conclusion == 'success'}}
         id: checkVersion
-        uses: EndBug/version-check@v2.1.0
+        uses: PostHog/check-package-version@v2
         with:
-          diff-search: true
-          file-name: packages/${{matrix.package.folder}}/package.json
+          path: packages/${{matrix.package.folder}}
+      - name: Versions
+        run: |
+            echo "Committed version: ${{steps.checkVersion.outputs.committed-version}}"
+            echo "Published version: ${{steps.checkVersion.outputs.published-version}}"
       - name: Dispatch publish
-        if: steps.checkVersion.outputs.changed == 'true'
+        if: steps.checkVersion.outputs.is-new-version == 'true'
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: Publish
