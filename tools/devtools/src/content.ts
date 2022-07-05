@@ -5,7 +5,7 @@ import { injectScript } from './utils/script'
 const connection = new Connection<Services, 'easyhard-content'>('easyhard-content')
 
 connection.addListener(message => {
-  if (['GET_GRAPH', 'INSPECT', 'INSPECTING'].includes(message.type)) {
+  if (['GET_GRAPH', 'INSPECT', 'INSPECTING', 'LOG_EMISSION'].includes(message.type)) {
     window.postMessage(message)
   }
 })

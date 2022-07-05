@@ -67,6 +67,9 @@ const marbles = createMarbles({
   debug,
   lineSelect(id) {
     focusNode(cy, id, areaHighligher)
+  },
+  log(valueId) {
+    connection.postMessage('easyhard-content', { type: 'LOG_EMISSION', data: { valueId }})
   }
 })
 const sidebar = Sidebar({}, marbles.container)
@@ -96,7 +99,7 @@ connection.addListener(async message => {
     updateNodeText(cy, message.data.id, message.data.text)
   }
   if (message.type === 'NEXT') {
-    const { id, value, time } = message.data
+    const { id, value, time, valueId } = message.data
 
     showObservableEmittedValue(cy, id, value)
 
@@ -104,7 +107,7 @@ connection.addListener(async message => {
       .filter((n): n is cytoscape.NodeSingular => n.isNode())
     const incomersIds = incomers.map(incomer => incomer.data('id') as string)
 
-    marbles.add(value, id, incomersIds, time)
+    marbles.add(value, id, incomersIds, time, valueId)
   }
   if (message.type === 'FOCUS') {
     focusNode(cy, message.data.id, areaHighligher)

@@ -7,12 +7,21 @@ import { debounceTime, delay, map, retry, mergeMap, pluck, tap, catchError } fro
 import { nanoid } from 'nanoid'
 import { createAreaHighlighter } from '../../../../panel/shared/cytoscape/highligher'
 import { collectionInsert, collectionRemove } from '../../../shared/operators/collection'
+import { createContextMenu } from '../../../../panel/shared/cytoscape/context-menu'
 import { focusNode } from '../../../shared/cytoscape/focus'
 import { Table } from '../../table'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
 
-export function Graph<T>(props: { table: Table<T>, focus: Observable<string>, debug?: boolean, tap?: (id: string, parentId?: string) => void }) {
+type Props<T> = {
+  table: Table<T>
+  focus: Observable<string>
+  debug?: boolean
+  tap?: (id: string, parentId?: string) => void
+  log?: (valueId: string) => void
+}
+
+export function Graph<T>(props: Props<T>) {
   const container = h('div', {}, injectStyles({ height: '100%' }))
 
   onLife(container, () => {
@@ -80,7 +89,7 @@ export function Graph<T>(props: { table: Table<T>, focus: Observable<string>, de
       tap(item => cy.add({ group: 'nodes', data: { id: item.id }})),
       mergeMap(item => combineLatest(of(item.id), item.data.pipe(collectionInsert()))),
       map(([id, item]) => {
-        const currentId = nanoid()
+        const currentId = item.valueId
         const currentTime = item.time
 
         cy.add({
@@ -158,6 +167,13 @@ export function Graph<T>(props: { table: Table<T>, focus: Observable<string>, de
     cy.on('mousemove', () => {
       areaHighligher.hide()
     })
+
+    createContextMenu(cy, 'node:child', [
+      {
+        content: h('span', {}, 'Log value'),
+        select: el => props.log && props.log(el.data('id') as string)
+      }
+    ])
 
     return () => {
       insertSub.unsubscribe()

@@ -2,7 +2,7 @@ import { $$ } from 'easyhard-common'
 import { combineLatest, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 
-export type TableItem<T> =  { emission: T, time: number, parents: string[] }
+export type TableItem<T> =  { emission: T, time: number, valueId: string, parents: string[] }
 export type TableObservable<T> = { id: string, data: $$<TableItem<T>> }
 
 export class Table<T> {

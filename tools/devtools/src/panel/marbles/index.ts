@@ -7,20 +7,33 @@ import { Graph } from './views/graph'
 
 export type MarblesMode = 'timeline' | 'graph'
 
-export function createMarbles<T extends string | number | boolean | object>(props: { mode: $<MarblesMode>, debug?: boolean, lineSelect: (id: string) => void }) {
+type Props = {
+  mode: $<MarblesMode>
+  debug?: boolean
+  lineSelect: (id: string) => void
+  log: (valueId: string) => void
+}
+
+export function createMarbles<T extends string | number | boolean | object>(props: Props) {
   const table = new Table<T>()
   const focus = new Subject<string>()
 
   const container = $if(
     props.mode.pipe(map(m => m === 'timeline')),
     map(() => Timeline({ table })),
-    map(() => Graph({ table, focus, debug: props.debug, tap(id, parentId) { props.lineSelect(parentId || id) }}))
+    map(() => Graph({
+      table,
+      focus,
+      debug: props.debug,
+      tap(id, parentId) { props.lineSelect(parentId || id) },
+      log(valueId) { props.log(valueId) }
+    }))
   )
 
   return {
     container,
-    add(value: T, id: string, parents: string[], time: number) {
-      table.add(id, { emission: value, time, parents })
+    add(value: T, id: string, parents: string[], time: number, valueId: string) {
+      table.add(id, { emission: value, time, parents, valueId })
     },
     remove(id: string) {
       table.remove(id)

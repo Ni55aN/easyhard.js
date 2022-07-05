@@ -40,6 +40,11 @@ connection.onMessage(data => {
       inspector.stop()
     }
   }
+  if (data.type === 'LOG_EMISSION') {
+    const { valueId } = data.data
+
+    console.log(emissions.get(valueId))
+  }
 })
 
 const m = new MutationObserver(mutationsList => {
