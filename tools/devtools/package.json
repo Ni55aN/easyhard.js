@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.188",
+    "@types/cytoscape-cxtmenu": "^3.4.0",
     "@types/jest": "^28.1.4",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^11.0.0",
@@ -29,6 +30,7 @@
     "@types/cytoscape": "^3.19.4",
     "cytoscape": "^3.21.1",
     "cytoscape-canvas": "^3.0.1",
+    "cytoscape-cxtmenu": "^3.4.0",
     "cytoscape-dagre": "^2.4.0",
     "cytoscape-popper": "^2.0.0",
     "easyhard": "^0.8.1",
