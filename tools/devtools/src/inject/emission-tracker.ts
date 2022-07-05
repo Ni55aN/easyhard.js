@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
 import { Subscription } from 'rxjs'
+import stringify from 'fast-safe-stringify'
 import { ObservableEmission } from '../types'
 import { EhObservable } from './types'
 
@@ -20,11 +21,12 @@ export function emissionTracker(onNext: (arg: ObservableEmission) => void) {
         const ob = observables.shift()
         if (!ob) return
         const id = ob.__debug.id
-        const sub = ob.__debug.nextBuffer.subscribe(arg => {
+        const sub = ob.__debug.nextBuffer.subscribe(({ time, value }) => {
           const valueId = nanoid()
+          const sanitizedValue = JSON.parse(stringify(value))
 
-          onNext({ id, valueId, ...arg })
-          emissions.set(valueId, arg.value)
+          onNext({ id, valueId, value: sanitizedValue, time })
+          emissions.set(valueId, value)
         })
 
         subscriptions.set(id, sub)

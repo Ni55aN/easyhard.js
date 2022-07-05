@@ -4,7 +4,6 @@
 import { getUID } from 'easyhard-common-alias'
 import { ReplaySubject } from 'rxjs-alias'
 import { Observable, Observer, OperatorFunction, UnaryFunction } from 'rxjs'
-import stringify from 'fast-safe-stringify'
 
 export type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[], nextBuffer: ReplaySubject<{ value: any, time: number }> } }
 export type Parent = { type: 'argument' | 'other', link: DebugObject }
@@ -53,9 +52,7 @@ function decorateNext<T, V>(ctx: T, source: DebugObservable, _next: (value: V) =
 
   return (value: any) => {
     if (!source.__debug) throw new Error('source should have __debug property')
-    const sanitizedValue = JSON.parse(stringify(value))
-
-    source.__debug.nextBuffer.next({ value: sanitizedValue, time: Date.now() })
+    source.__debug.nextBuffer.next({ value, time: Date.now() })
 
     return next.call(ctx, value)
   }
