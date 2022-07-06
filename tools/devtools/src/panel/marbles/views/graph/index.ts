@@ -1,6 +1,5 @@
 import { h, onLife } from 'easyhard'
 import cytoscape from 'cytoscape'
-import stringify from 'fast-safe-stringify'
 import { injectStyles } from 'easyhard-styles'
 import { combineLatest, Observable, of, Subject, throwError } from 'rxjs'
 import { debounceTime, delay, map, retry, mergeMap, pluck, tap, catchError } from 'rxjs/operators'
@@ -12,16 +11,19 @@ import { focusNode } from '../../../shared/cytoscape/focus'
 import { Table } from '../../table'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
+import { filterFullyVisibleNodes } from './utis'
 
-type Props<T> = {
-  table: Table<T>
+type Props = {
+  table: Table
   focus: Observable<string>
+  setValue: Observable<{ valueId: string, value: any }>
   debug?: boolean
   tap?: (id: string, parentId?: string) => void
   log?: (valueId: string) => void
+  fetchValue?: (id: string, valueId: string) => void
 }
 
-export function Graph<T>(props: Props<T>) {
+export function Graph(props: Props) {
   const container = h('div', {}, injectStyles({ height: '100%' }))
 
   onLife(container, () => {
@@ -94,7 +96,7 @@ export function Graph<T>(props: Props<T>) {
 
         cy.add({
           group: 'nodes',
-          data: { id: currentId, time: currentTime, parent: id, label: stringify(item.emission) },
+          data: { id: currentId, time: currentTime, parent: id, label: '...', emissionValueFetched: false },
           position: { x: (currentTime - now) / 100, y: 0 }
         })
         return { currentId, item }
@@ -147,6 +149,16 @@ export function Graph<T>(props: Props<T>) {
       retry()
     ).subscribe()
 
+    const setValueSub = props.setValue.pipe(
+      tap(args => {
+        const node = cy.getElementById(args.valueId)
+
+        if (!node || !node.isNode()) throw new Error('cannot fint node')
+
+        node.data('label', args.value)
+      })
+    ).subscribe()
+
     const scale = scaleGraph(cy, 'x')
 
     container.addEventListener('wheel', (e) => {
@@ -175,11 +187,28 @@ export function Graph<T>(props: Props<T>) {
       }
     ])
 
+    cy.on('add pan zoom', () => {
+      const { fetchValue } = props
+      if (!fetchValue) return
+
+      const nodesWithoutValue = cy.nodes(':child')
+        .filter(node => !node.data('emissionValueFetched'))
+      const visibleNodes = filterFullyVisibleNodes(cy, nodesWithoutValue, 0.9)
+
+      visibleNodes.forEach(node => {
+        const parent = node.parent().first()
+        node.data('emissionValueFetched', true)
+
+        fetchValue(String(parent.data('id')), String(node.data('id')))
+      })
+    })
+
     return () => {
       insertSub.unsubscribe()
       removeSub.unsubscribe()
       layoutSub.unsubscribe()
       focusSub.unsubscribe()
+      setValueSub.unsubscribe()
     }
   })
 

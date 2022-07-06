@@ -1,3 +1,4 @@
+import stringify from 'fast-safe-stringify'
 import { emissionTracker } from './emission-tracker'
 import { createHighlighter } from './highlighter'
 import { EhNode } from './types'
@@ -22,6 +23,7 @@ connection.onMessage(data => {
       add: arg => '__debug' in arg && emissions.add(arg)
     })
 
+    emissions.clear()
     domToGraph.add(document.body)
 
     connection.send({ type: 'GRAPH', data: domToGraph.serialize() })
@@ -44,6 +46,12 @@ connection.onMessage(data => {
     const { valueId } = data.data
 
     console.log(emissions.get(valueId))
+  }
+  if (data.type === 'GET_EMISSION_VALUE') {
+    const { valueId, id, source } = data.data
+    const value = stringify(emissions.get(valueId))
+
+    connection.send({ type: 'EMISSION_VALUE', data: { id, valueId, value, source }})
   }
 })
 

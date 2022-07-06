@@ -63,6 +63,9 @@ const marbles = createMarbles({
   },
   log(valueId) {
     connection.postMessage('easyhard-content', { type: 'LOG_EMISSION', data: { valueId }})
+  },
+  fetchValue(id, valueId) {
+    connection.postMessage('easyhard-content', { type: 'GET_EMISSION_VALUE', data: { id, valueId, source: 'marbles' }})
   }
 })
 const sidebar = Sidebar({}, marbles.container)
@@ -92,15 +95,24 @@ connection.addListener(async message => {
     updateNodeText(cy, message.data.id, message.data.text)
   }
   if (message.type === 'NEXT') {
-    const { id, value, time, valueId } = message.data
-
-    showObservableEmittedValue(cy, id, value)
+    const { id, time, valueId } = message.data
 
     const incomers = cy.getElementById(id).incomers()
       .filter((n): n is cytoscape.NodeSingular => n.isNode())
     const incomersIds = incomers.map(incomer => incomer.data('id') as string)
 
-    marbles.add(value, id, incomersIds, time, valueId)
+    marbles.add(id, incomersIds, time, valueId)
+
+    connection.postMessage('easyhard-content', { type: 'GET_EMISSION_VALUE', data: { id, valueId, source: 'tooltip' }})
+  }
+  if (message.type === 'EMISSION_VALUE') {
+    const { id, value, valueId, source } = message.data
+
+    if (source === 'tooltip') {
+      showObservableEmittedValue(cy, id, value)
+    } else if (source === 'marbles') {
+      marbles.setValue(valueId, value)
+    }
   }
   if (message.type === 'FOCUS') {
     focusNode(cy, message.data.id, areaHighligher)

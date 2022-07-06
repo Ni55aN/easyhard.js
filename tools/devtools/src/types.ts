@@ -9,7 +9,7 @@ export type EdgeType = 'argument' | 'other'
 export type GraphEdge = { id: string, source: string, target: string, type: EdgeType, label?: string }
 export type Graph = { nodes: GraphNode[], edges: GraphEdge[] }
 
-export type ObservableEmission = { id: string, time: number, value: object | string | number | boolean, valueId: string }
+export type ObservableEmission = { id: string, time: number, valueId: string }
 
 export type Services = {
   'easyhard-devtools': { type: 'GRAPH', data: Graph }
@@ -18,8 +18,10 @@ export type Services = {
   | { type: 'TEXT', data: { id: string, text: string }}
   | { type: 'NEXT', data: ObservableEmission }
   | { type: 'FOCUS', data: { id: string }}
+  | { type: 'EMISSION_VALUE', data: { id: string, valueId: string, value: object | string | number | boolean, source: 'tooltip' | 'marbles' }}
   'easyhard-content':  { type: 'GET_GRAPH' }
   | { type: 'INSPECT', data: null | { id: string }}
   | { type: 'INSPECTING', data: { action: 'start' } | { action: 'stop' } }
   | { type: 'LOG_EMISSION', data: { valueId: string } }
+  | { type: 'GET_EMISSION_VALUE', data: { id: string, valueId: string, source: 'tooltip' | 'marbles' } }
 }
