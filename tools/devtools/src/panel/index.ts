@@ -12,8 +12,7 @@ import { layout } from './graph/layout'
 import { addNodes, removeNodes, setData, updateNodeText } from './graph/data'
 import { showObservableEmittedValue } from './graph/tooltip'
 import { Splitter } from './splitter'
-import { createMarbles, MarblesMode } from './marbles'
-import { Switch } from './shared/Switch'
+import { createMarbles } from './marbles'
 import { Button } from './shared/Button'
 import { InspectIcon } from '../assets/icons/inspect'
 import { tap } from 'rxjs'
@@ -52,18 +51,12 @@ const headerLeftContent = h('div', {},
   })
 )
 
-const marblesMode = $<MarblesMode>('graph')
-const headerRightContent = h('div', {},
-  Switch({ model: marblesMode, options: [{ key: 'timeline', label: 'Timeline' }, { key: 'graph', label: 'Graph' }]})
-)
 const header = Header({ styles: { gridArea: 'a' }, content: {
-  left: headerLeftContent,
-  right: headerRightContent
+  left: headerLeftContent
 }})
 const container = Main({})
 
 const marbles = createMarbles({
-  mode: marblesMode,
   debug,
   lineSelect(id) {
     focusNode(cy, id, areaHighligher)
