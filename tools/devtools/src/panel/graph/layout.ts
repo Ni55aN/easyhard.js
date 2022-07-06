@@ -1,11 +1,12 @@
 import cytoscape, { Core, EdgeSingular } from 'cytoscape'
 import dagre from 'cytoscape-dagre'
+import debounce from 'lodash/debounce'
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 cytoscape.use(dagre)
 /* eslint-enable @typescript-eslint/no-unsafe-argument */
 
-export async function layout(cy: Core, fit = false) {
+export const layout = debounce(async function (cy: Core, fit = false) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const layoutInstance = cy.elements().makeLayout({
     name: 'dagre',
@@ -31,4 +32,4 @@ export async function layout(cy: Core, fit = false) {
 
   layoutInstance.run()
   await onStop
-}
+}, 50)
