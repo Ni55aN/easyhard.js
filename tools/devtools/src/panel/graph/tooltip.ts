@@ -47,6 +47,8 @@ popperStyle.innerHTML = `
 .tippy-box[data-theme~='observable'] {
   background-color: #f1c82a;
   color: black;
+  transform-origin: 50% -10px;
+  transform: scale(var(--tooltip-scale, 1))
 }
 .tippy-box[data-theme~='observable'][data-placement^='top'] > .tippy-arrow::before {
   border-top-color: #f1c82a;
@@ -78,6 +80,8 @@ export function showObservableEmittedValue(cy: Core, id: string, value: object |
 
   const type = node.data('type')
   if (type !== 'observable') throw new Error('type isnt observable')
+
+  document.documentElement.style.setProperty('--tooltip-scale', String(Math.min(1, cy.zoom())))
 
   const ref = node.popperRef()
   const existTippy = tippyEmissionStore.get(node)
