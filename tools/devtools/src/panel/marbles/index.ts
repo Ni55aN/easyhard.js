@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs'
+import { ObservableEmissionType } from 'src/types'
 import { Table } from './table'
 import { Graph } from './views/graph'
 
@@ -12,7 +13,7 @@ type Props = {
 export function createMarbles(props: Props) {
   const table = new Table()
   const focus = new Subject<string>()
-  const setValue = new Subject<{ valueId: string, value: any }>()
+  const setValue = new Subject<{ valueId: string, value: any, type: ObservableEmissionType }>()
 
   const container = Graph({
     table,
@@ -38,8 +39,8 @@ export function createMarbles(props: Props) {
     focus(id: string) {
       focus.next(id)
     },
-    setValue(valueId: string, value: any) {
-      setValue.next({ valueId, value })
+    setValue(valueId: string, value: any, type: ObservableEmissionType) {
+      setValue.next({ valueId, value, type })
     }
   }
 }

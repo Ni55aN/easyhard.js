@@ -1,4 +1,3 @@
-import stringify from 'fast-safe-stringify'
 import { emissionTracker } from './emission-tracker'
 import { createHighlighter } from './highlighter'
 import { EhNode } from './types'
@@ -6,6 +5,7 @@ import * as connection from './connection'
 import { findElementByDebugId, traverseSubtree } from './dom'
 import { DomToGraph } from './dom-to-graph'
 import { createInspector } from './inspector'
+import { stringify } from './stringify'
 
 const highlighter = createHighlighter()
 const emissions = emissionTracker(data => connection.send({ type: 'NEXT', data }))
@@ -49,9 +49,9 @@ connection.onMessage(data => {
   }
   if (data.type === 'GET_EMISSION_VALUE') {
     const { valueId, id, source } = data.data
-    const value = stringify(emissions.get(valueId))
+    const { value, type } = stringify(emissions.get(valueId))
 
-    connection.send({ type: 'EMISSION_VALUE', data: { id, valueId, value, source }})
+    connection.send({ type: 'EMISSION_VALUE', data: { id, valueId, value, type, source }})
   }
 })
 

@@ -106,12 +106,12 @@ connection.addListener(async message => {
     connection.postMessage('easyhard-content', { type: 'GET_EMISSION_VALUE', data: { id, valueId, source: 'tooltip' }})
   }
   if (message.type === 'EMISSION_VALUE') {
-    const { id, value, valueId, source } = message.data
+    const { id, value, type, valueId, source } = message.data
 
     if (source === 'tooltip') {
       showObservableEmittedValue(cy, id, value)
     } else if (source === 'marbles') {
-      marbles.setValue(valueId, value)
+      marbles.setValue(valueId, value, type)
     }
   }
   if (message.type === 'FOCUS') {

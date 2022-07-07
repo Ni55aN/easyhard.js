@@ -5,6 +5,7 @@ import { combineLatest, Observable, of, Subject, throwError } from 'rxjs'
 import { debounceTime, delay, map, retry, mergeMap, pluck, tap, catchError } from 'rxjs/operators'
 import { nanoid } from 'nanoid'
 import { createAreaHighlighter } from '../../../../panel/shared/cytoscape/highligher'
+import { ObservableEmissionType } from '../../../../types'
 import { collectionInsert, collectionRemove } from '../../../shared/operators/collection'
 import { createContextMenu } from '../../../../panel/shared/cytoscape/context-menu'
 import { focusNode } from '../../../shared/cytoscape/focus'
@@ -12,11 +13,12 @@ import { Table } from '../../table'
 import { timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
 import { filterFullyVisibleNodes } from './utis'
+import { theme } from './theme'
 
 type Props = {
   table: Table
   focus: Observable<string>
-  setValue: Observable<{ valueId: string, value: any }>
+  setValue: Observable<{ valueId: string, value: any, type: ObservableEmissionType }>
   debug?: boolean
   tap?: (id: string, parentId?: string) => void
   log?: (valueId: string) => void
@@ -41,9 +43,11 @@ export function Graph(props: Props) {
             'content': 'data(label)',
             'text-valign': 'center',
             'text-halign': 'center',
-            'background-color': 'grey',
-            'color': 'white',
-            'border-color': 'black',
+            'background-color': theme['background'],
+            'color'(el: cytoscape.NodeSingular) {
+              return theme[el.data('type') as ObservableEmissionType]
+            },
+            'border-color': '#ddd',
             'border-width': '1',
             'font-size': '12',
             'width': 50,
@@ -156,6 +160,7 @@ export function Graph(props: Props) {
         if (!node || !node.isNode()) throw new Error('cannot fint node')
 
         node.data('label', args.value)
+        node.data('type', args.type)
       })
     ).subscribe()
 
