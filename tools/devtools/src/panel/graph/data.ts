@@ -4,11 +4,12 @@ import { setupTooltips } from './tooltip'
 
 export function setData(cy: Core, data: Graph) {
   cy.elements().remove()
-  cy.add([
+  const els = cy.add([
     ...data.nodes.map(data => ({ group: 'nodes' as ElementGroup, data })),
     ...data.edges.map(data => ({ group: 'edges' as ElementGroup, data }))
   ])
-  setupTooltips(cy)
+
+  setupTooltips(els)
 }
 
 export function removeNodes(cy: Core, idsToRemove: string[]) {
@@ -33,10 +34,12 @@ export function removeNodes(cy: Core, idsToRemove: string[]) {
 }
 
 export function addNodes(cy: Core, data: Graph) {
-  cy.add([
+  const els = cy.add([
     ...data.nodes.map(data => ({ group: 'nodes' as ElementGroup, data })),
     ...data.edges.map(data => ({ group: 'edges' as ElementGroup, data }))
   ])
+
+  setupTooltips(els)
 }
 
 export function updateNodeText(cy: Core, id: string, text: string) {

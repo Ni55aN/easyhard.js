@@ -32,8 +32,8 @@ function makePopperWithTippy(node: PopperNode & SingularElementReturnValue) {
 }
 
 
-export function setupTooltips(cy: Core) {
-  cy.elements().forEach(ele => {
+export function setupTooltips(cy: CollectionReturnValue) {
+  cy.forEach(ele => {
     makePopperWithTippy(ele as (PopperNode & SingularElementReturnValue))
   })
 }
