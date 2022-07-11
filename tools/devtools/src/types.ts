@@ -19,6 +19,8 @@ export type Services = {
   | { type: 'REMOVED', data: string[] }
   | { type: 'TEXT', data: { id: string, text: string }}
   | { type: 'NEXT', data: ObservableEmission }
+  | { type: 'SUBSCRIBE', data: { id: string, count: number } }
+  | { type: 'UNSUBSCRIBE', data: { id: string, count: number } }
   | { type: 'FOCUS', data: { id: string }}
   | { type: 'EMISSION_VALUE', data: {
     id: string,

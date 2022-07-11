@@ -6,7 +6,16 @@ export type Parent = { type: EdgeType, link: EhObservable | EhNode }
 export type NestedParent = Parent | NestedParent[]
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export type EhObservable = Observable<unknown> & { __debug: { id: string, parent: NestedParent[], name: string, nextBuffer: ReplaySubject<{ value: any, time: number }> } }
+export type EhObservable = Observable<unknown> & {
+  __debug: {
+    id: string
+    parent: NestedParent[]
+    name: string,
+    nextBuffer: ReplaySubject<{ value: any, time: number }>
+    subscribe: ReplaySubject<number>
+    unsubscribe: ReplaySubject<number>
+  }
+}
 export type EhMeta = {
   __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', static?: boolean, parent?: NestedParent[] },
   __easyhardIgnore?: true

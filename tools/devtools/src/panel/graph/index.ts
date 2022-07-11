@@ -6,7 +6,7 @@ function getLabelStyle(key: string, maxLength: number, sizes: [number, number], 
       const label = ele.data(key)
 
       if (debug) {
-        return [label, ele.data('id')].join('\n')
+        return [label, ele.data('subscriptionsCount'), ele.data('id')].join('\n')
       }
 
       return label
@@ -80,7 +80,10 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'border-width': 1,
           'border-color': 'black',
           'background-color': '#f1c82a',
-          color: 'white'
+          color: 'white',
+          opacity(el: cytoscape.NodeSingular) {
+            return +el.data('subscriptionsCount') > 0 ? 1 : 0.4
+          },
         }
       },
       {

@@ -19,18 +19,6 @@ export function removeNodes(cy: Core, idsToRemove: string[]) {
     return idsToRemove.includes(id)
   })
   shouldBeRemovedAndDependencies.remove()
-
-  const orphanObservable = cy.elements('node')
-    .filter((n: cytoscape.NodeSingular) => n.data('type') === 'observable')
-    .filter((n: cytoscape.NodeSingular) => {
-      const t = n.successors()
-        .filter((n): n is cytoscape.NodeSingular => n.isNode())
-        .filter((n: cytoscape.NodeSingular) => n.data('type') !== 'observable')
-
-      return t.length === 0
-    })
-
-  orphanObservable.remove()
 }
 
 export function addNodes(cy: Core, data: Graph) {

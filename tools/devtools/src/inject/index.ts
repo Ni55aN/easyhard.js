@@ -8,7 +8,11 @@ import { createInspector } from './inspector'
 import { stringify } from './stringify'
 
 const highlighter = createHighlighter()
-const emissions = emissionTracker(data => connection.send({ type: 'NEXT', data }))
+const emissions = emissionTracker(
+  data => connection.send({ type: 'NEXT', data }),
+  data => connection.send({ type: 'SUBSCRIBE', data }),
+  data => connection.send({ type: 'UNSUBSCRIBE', data }),
+)
 const inspector = createInspector(highlighter, element => {
   const id = element.__easyhard?.id
 

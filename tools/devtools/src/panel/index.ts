@@ -105,6 +105,18 @@ connection.addListener(async message => {
 
     connection.postMessage('easyhard-content', { type: 'GET_EMISSION_VALUE', data: { id, valueId, source: 'tooltip' }})
   }
+  if (message.type === 'SUBSCRIBE') {
+    const node = cy.getElementById(message.data.id)
+
+    if (!node.length) throw new Error('cannot find node for SUBSCRIBE')
+    node.data('subscriptionsCount', message.data.count)
+  }
+  if (message.type === 'UNSUBSCRIBE') {
+    const node = cy.getElementById(message.data.id)
+
+    if (!node.length) throw new Error('cannot find node for UNSUBSCRIBE')
+    node.data('subscriptionsCount', message.data.count)
+  }
   if (message.type === 'EMISSION_VALUE') {
     const { id, value, type, valueId, source } = message.data
 
