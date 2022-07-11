@@ -60,7 +60,7 @@ connection.onMessage(data => {
 })
 
 const m = new MutationObserver(mutationsList => {
-  mutationsList.reverse().forEach(item => {
+  mutationsList.forEach(item => {
     if (item.type === 'childList') {
       const domToGraph = new DomToGraph({
         add: arg => '__debug' in arg && emissions.add(arg)
