@@ -1,4 +1,5 @@
 import cytoscape, { EdgeSingular } from 'cytoscape'
+import { createNodesBadge } from '../shared/cytoscape/badge'
 
 function getLabelStyle(key: string, maxLength: number, sizes: [number, number], debug?: boolean) {
   return {
@@ -6,7 +7,7 @@ function getLabelStyle(key: string, maxLength: number, sizes: [number, number], 
       const label = ele.data(key)
 
       if (debug) {
-        return [label, ele.data('subscriptionsCount'), ele.data('id')].join('\n')
+        return [label, ele.data('id')].join('\n')
       }
 
       return label
@@ -21,7 +22,7 @@ function getLabelStyle(key: string, maxLength: number, sizes: [number, number], 
 }
 
 export function createGraph(container: HTMLElement, props: { debug?: boolean } = {}) {
-  return cytoscape({
+  const cy = cytoscape({
     container,
     wheelSensitivity: 0.25,
     style: [
@@ -135,4 +136,12 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
       },
     ]
   })
+
+  createNodesBadge(cy, () => cy.elements('node[type="observable"]'), node => {
+    const count = node.data('subscriptionsCount')
+
+    return count > 0 && String(count)
+  })
+
+  return cy
 }
