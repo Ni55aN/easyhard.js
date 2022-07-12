@@ -78,7 +78,9 @@ export function debugOperator<T, K, R extends OperatorFunction<T, K> | Observabl
         id: getUID(),
         name,
         parent: parent.map(link => ({ type: 'other', link })),
-        nextBuffer: new ReplaySubject()
+        nextBuffer: new ReplaySubject(),
+        subscribe: new ReplaySubject(),
+        unsubscribe: new ReplaySubject()
       },
       writable: false,
       configurable: false
