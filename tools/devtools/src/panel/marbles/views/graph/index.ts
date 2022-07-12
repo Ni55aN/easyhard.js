@@ -134,10 +134,18 @@ export function Graph(props: Props) {
     ).subscribe()
 
     const triggerLayout = new Subject()
+    let mouseIsOver = false
     const layoutSub = triggerLayout.pipe(
       debounceTime(200),
       tap(() => {
-        timelineLayout(cy, { fit: true, spacing: 5, field: 'time', scale: 0.05, start: now })
+        timelineLayout(cy, { fit: !mouseIsOver, spacing: 5, field: 'time', scale: 0.05, start: now })
+      })
+    ).subscribe()
+    cy.on('mouseover', e => {
+      if(e.target === cy) mouseIsOver = true
+    })
+    cy.on('mouseout', e => {
+      if(e.target === cy) mouseIsOver = false
       })
     ).subscribe()
 
