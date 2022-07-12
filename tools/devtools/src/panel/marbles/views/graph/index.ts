@@ -2,7 +2,7 @@ import { h, onLife } from 'easyhard'
 import cytoscape from 'cytoscape'
 import { injectStyles } from 'easyhard-styles'
 import { combineLatest, Observable, of, Subject, throwError } from 'rxjs'
-import { debounceTime, delay, map, retry, mergeMap, pluck, tap, catchError } from 'rxjs/operators'
+import { debounceTime, delay, map, retry, mergeMap, pluck, tap, scan, catchError, distinctUntilChanged } from 'rxjs/operators'
 import { nanoid } from 'nanoid'
 import { createAreaHighlighter } from '../../../../panel/shared/cytoscape/highligher'
 import { ObservableEmissionType } from '../../../../types'
@@ -10,7 +10,7 @@ import { collectionInsert, collectionRemove } from '../../../shared/operators/co
 import { createContextMenu } from '../../../../panel/shared/cytoscape/context-menu'
 import { focusNode } from '../../../shared/cytoscape/focus'
 import { Table } from '../../table'
-import { timelineLayout } from './timeline-layout'
+import { collapseOverlayNodes, expandOverlayNodes, timelineLayout } from './timeline-layout'
 import { scaleGraph } from './scale-graph'
 import { filterFullyVisibleNodes } from './utis'
 import { theme } from './theme'
@@ -147,7 +147,35 @@ export function Graph(props: Props) {
     cy.on('mouseout', e => {
       if(e.target === cy) mouseIsOver = false
       })
+
+    const activeParent = new Subject<cytoscape.NodeSingular | null>()
+    const activeSub = activeParent.pipe(
+      distinctUntilChanged(),
+      scan((prev, curr) => {
+        if (curr === null) {
+          if (prev) {
+            prev.css('z-compound-depth', 'auto')
+            prev.children().css('z-compound-depth', 'auto')
+            collapseOverlayNodes(prev.children())
+          }
+          return null
+        }
+        curr.css('z-compound-depth', 'top')
+        curr.children().css('z-compound-depth', 'top')
+        expandOverlayNodes(curr.children())
+        return curr
+      }, null as cytoscape.NodeSingular | null)
     ).subscribe()
+
+    cy.on('mouseover', 'node', e => {
+      const node: cytoscape.NodeSingular = e.target
+      const parent = node.isParent() ? node : node.parent().first()
+
+      activeParent.next(parent)
+    })
+    cy.on('mouseout', 'node', () => {
+      activeParent.next(null)
+    })
 
     const focusSub = props.focus.pipe(
       map(timelineId => {
@@ -220,6 +248,7 @@ export function Graph(props: Props) {
       insertSub.unsubscribe()
       removeSub.unsubscribe()
       layoutSub.unsubscribe()
+      activeSub.unsubscribe()
       focusSub.unsubscribe()
       setValueSub.unsubscribe()
     }
