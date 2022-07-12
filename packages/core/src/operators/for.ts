@@ -38,7 +38,10 @@ export function $for<T>(collection: $$Observable<T>, render: (item: T) =>  Child
         fragment.remove(i)
       }
     },
-    complete() { fragment.clear() }
+    complete() {
+      fragment.clear()
+      fragment.anchor.remove()
+    }
   })
   return fragment.anchor
 }
