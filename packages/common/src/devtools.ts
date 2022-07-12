@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Observable, ReplaySubject } from 'rxjs'
+import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { getUID } from '.'
 
 function getGlobal() {
@@ -9,16 +9,27 @@ function getGlobal() {
   throw new Error('unable to locate global object')
 }
 
+type DebugProps = {
+  id: string
+  name: string
+  parent: []
+  nextBuffer: ReplaySubject<{ value: any, time: number }>
+  subscribe: ReplaySubject<number>
+  unsubscribe: ReplaySubject<number>
+}
+
 const debugWindow = <{ __easyhardDebug?: boolean }>getGlobal()
 
 export function debugObservable(observable: Observable<any>, name: string) {
   if (debugWindow.__easyhardDebug) {
     Object.defineProperty(observable, '__debug', {
-      value: {
+      value: <DebugProps>{
         id: getUID(),
         name,
         parent: [],
-        nextBuffer: new ReplaySubject()
+        nextBuffer: new ReplaySubject(),
+        subscribe: new ReplaySubject(),
+        unsubscribe: new ReplaySubject()
       },
       writable: false,
       configurable: false
@@ -26,4 +37,17 @@ export function debugObservable(observable: Observable<any>, name: string) {
   }
 
   return observable
+}
+
+export function debugNext(observable: Observable<any> & { __debug?: DebugProps }, value: unknown) {
+  if (debugWindow.__easyhardDebug) {
+    observable.__debug?.nextBuffer.next({ value, time: Date.now() })
+  }
+}
+
+export function debugSubscription(observable: Observable<any> & { __debug?: DebugProps }, subscription: Subscription, change: (k: number) => number) {
+  if (debugWindow.__easyhardDebug) {
+    subscription.add(() => observable.__debug?.unsubscribe.next(change(-1)))
+    observable.__debug?.subscribe.next(change(+1))
+  }
 }

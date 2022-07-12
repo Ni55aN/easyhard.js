@@ -1,5 +1,5 @@
 import { Subject, Subscriber, Subscription, ObjectUnsubscribedError } from 'rxjs'
-import { debugObservable } from '../devtools'
+import { debugNext, debugObservable, debugSubscription } from '../devtools'
 
 export type InsertReturn<T> = { insert: true, item: T, batch?: boolean }
 export type RemoveReturn<T> = { remove: true, item: T }
@@ -10,9 +10,11 @@ export function getCollectionItemId<T>(item: T): T | unknown {
 }
 
 export class CollectionSubject<T> extends Subject<Return<T>> {
+  subscriptionsCount: number
   constructor(private _value: T[]) {
     super()
     debugObservable(this, 'CollectionSubject')
+    this.subscriptionsCount = 0
   }
 
   get value(): T[] {
@@ -22,7 +24,10 @@ export class CollectionSubject<T> extends Subject<Return<T>> {
   _subscribe(subscriber: Subscriber<Return<T>>): Subscription {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const subscription = super._subscribe(subscriber)
+    const subscription: Subscription = super._subscribe(subscriber)
+
+    debugSubscription(this, subscription, k => this.subscriptionsCount += k)
+
     if (subscription && !subscription.closed) {
       subscriber.next({ initial: true })
       this._value.forEach(item => {
@@ -44,6 +49,7 @@ export class CollectionSubject<T> extends Subject<Return<T>> {
   }
 
   next(value: Return<T>): void {
+    debugNext(this, value)
     if ('insert' in value) return this.insert(value.item)
     if ('remove' in value) return this.remove(value.item)
     throw new Error('Argument type is invalid')
