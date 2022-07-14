@@ -21,6 +21,19 @@ function getLabelStyle(key: string, maxLength: number, sizes: [number, number], 
   }
 }
 
+function getBackground(color: string, props: (el: cytoscape.NodeSingular) => { leftGradient: boolean, rightGradient: boolean }) {
+  return {
+    'background-color': color,
+    'background-fill': 'linear-gradient',
+    'background-gradient-stop-colors': (el: cytoscape.NodeSingular) => {
+      const { leftGradient, rightGradient } = props(el)
+      return `${leftGradient ? 'white' : color} ${color} ${rightGradient ? 'white' : color}`
+    },
+    'background-gradient-stop-positions': '0 50 100',
+    'background-gradient-direction': 'to-right'
+  }
+}
+
 export function createGraph(container: HTMLElement, props: { debug?: boolean } = {}) {
   const cy = cytoscape({
     container,
@@ -44,7 +57,10 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'shape': 'round-rectangle',
           'border-width': 1,
           'border-color': 'white',
-          'background-color': '#a9a9a9'
+          ...getBackground('#a9a9a9', () => ({
+            leftGradient: false,
+            rightGradient: false
+          }))
         }
       },
       {
@@ -62,7 +78,10 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'shape': 'round-rectangle',
           'border-width': 1,
           'border-color': 'black',
-          'background-color': '#5e86ff'
+          ...getBackground('#5e86ff', () => ({
+            leftGradient: false,
+            rightGradient: false
+          }))
         }
       },
       {
@@ -80,7 +99,10 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'shape': 'round-rectangle',
           'border-width': 1,
           'border-color': 'black',
-          'background-color': '#f1c82a',
+          ...getBackground('#f1c82a', () => ({
+            leftGradient: false,
+            rightGradient: false
+          })),
           color: 'white',
           opacity(el: cytoscape.NodeSingular) {
             return +el.data('subscriptionsCount') > 0 ? 1 : 0.4
@@ -93,7 +115,10 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'shape': 'ellipse',
           'border-width': 1,
           'border-color': 'black',
-          'background-color': '#5e86ff',
+          ...getBackground('#5e86ff', () => ({
+            leftGradient: false,
+            rightGradient: false
+          })),
           width: 20,
           height: 20,
           ...getLabelStyle('label', 4, [5, 8], props.debug)
