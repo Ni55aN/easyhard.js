@@ -96,7 +96,7 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'background-color': '#5e86ff',
           width: 20,
           height: 20,
-          ...getLabelStyle('label', 4, [5, 8])
+          ...getLabelStyle('label', 4, [5, 8], props.debug)
         }
       },
       {
