@@ -12,6 +12,8 @@ export function createNodesBadge(cy: cytoscape.Core, getNodes: () => cytoscape.C
     getNodes().forEach(node => {
       const value = content(node)
       if (!value) return
+      const visible = node.css('display') !== 'none'
+      if (!visible) return
       const { x, y } = node.position()
       const position = {
         x: x + node.width() / 2,
