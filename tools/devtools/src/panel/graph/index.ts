@@ -1,5 +1,9 @@
+import { h } from 'easyhard'
 import cytoscape, { EdgeSingular } from 'cytoscape'
 import { createNodesBadge } from '../shared/cytoscape/badge'
+import { createContextMenu } from '../shared/cytoscape/context-menu'
+import { toggleObservables, TogglerKey, toggleSubGraph } from './toggler'
+import * as selectors from './selectors'
 
 function getLabelStyle(key: string, maxLength: number, sizes: [number, number], debug?: boolean) {
   return {
@@ -34,6 +38,18 @@ function getBackground(color: string, props: (el: cytoscape.NodeSingular) => { l
   }
 }
 
+function isChildrenHidden(node: cytoscape.NodeSingular) {
+  return Boolean(node.data(TogglerKey.ChildrenHidden))
+}
+
+function isObservablesHidden(node: cytoscape.NodeSingular) {
+  return Boolean(node.data(TogglerKey.ObservablesHidden))
+}
+
+function isParentsHidden(node: cytoscape.NodeSingular) {
+  return Boolean(node.data(TogglerKey.ParentsHidden))
+}
+
 export function createGraph(container: HTMLElement, props: { debug?: boolean } = {}) {
   const cy = cytoscape({
     container,
@@ -57,9 +73,9 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'shape': 'round-rectangle',
           'border-width': 1,
           'border-color': 'white',
-          ...getBackground('#a9a9a9', () => ({
-            leftGradient: false,
-            rightGradient: false
+          ...getBackground('#a9a9a9', el => ({
+            leftGradient: isObservablesHidden(el),
+            rightGradient: isChildrenHidden(el)
           }))
         }
       },
@@ -74,13 +90,13 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
       },
       {
         selector: 'node[type="eh-node"]',
-        style: {
+        style: <any>{
           'shape': 'round-rectangle',
           'border-width': 1,
           'border-color': 'black',
-          ...getBackground('#5e86ff', () => ({
-            leftGradient: false,
-            rightGradient: false
+          ...getBackground('#5e86ff', el => ({
+            leftGradient: isObservablesHidden(el),
+            rightGradient: isChildrenHidden(el)
           }))
         }
       },
@@ -99,8 +115,8 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'shape': 'round-rectangle',
           'border-width': 1,
           'border-color': 'black',
-          ...getBackground('#f1c82a', () => ({
-            leftGradient: false,
+          ...getBackground('#f1c82a', el => ({
+            leftGradient: isParentsHidden(el),
             rightGradient: false
           })),
           color: 'white',
@@ -115,9 +131,9 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
           'shape': 'ellipse',
           'border-width': 1,
           'border-color': 'black',
-          ...getBackground('#5e86ff', () => ({
-            leftGradient: false,
-            rightGradient: false
+          ...getBackground('#5e86ff', el => ({
+            leftGradient: isObservablesHidden(el),
+            rightGradient: isChildrenHidden(el)
           })),
           width: 20,
           height: 20,
@@ -166,6 +182,44 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
     const count = node.data('subscriptionsCount')
 
     return count > 0 && String(count)
+  })
+
+  createContextMenu(cy, selectors.elements, element => {
+    const node = cy.getElementById(element.data('id') as string)
+    const observablesHidden = isObservablesHidden(node)
+    const childrenHidden = isChildrenHidden(node)
+
+    return [
+      {
+        content:  h('span', {}, observablesHidden ? 'Show observables' : 'Hide observables'),
+        select: () => {
+          node.data(TogglerKey.ObservablesHidden, !observablesHidden)
+          toggleObservables(cy, node, !observablesHidden)
+        }
+      },
+      {
+        content:  h('span', {}, childrenHidden ? 'Show children' : 'Hide children'),
+        select: () => {
+          node.data(TogglerKey.ChildrenHidden, !childrenHidden)
+          toggleSubGraph(cy, node, !childrenHidden)
+        }
+      }
+    ]
+  })
+
+  createContextMenu(cy, selectors.observable, element => {
+    const node = cy.getElementById(element.data('id') as string)
+    const parentsHidden = isParentsHidden(node)
+
+    return [
+      {
+        content:  h('span', {}, parentsHidden ? 'Show parents' : 'Hide parents'),
+        select: () => {
+          node.data(TogglerKey.ParentsHidden, !parentsHidden)
+          toggleObservables(cy, node, !parentsHidden)
+        }
+      }
+    ]
   })
 
   return cy
