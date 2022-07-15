@@ -19,6 +19,7 @@ type Props = {
   table: Table
   focus: Observable<string>
   setValue: Observable<{ valueId: string, value: any, type: ObservableEmissionType }>
+  toggle: Observable<{ id: string, hidden: boolean }>
   debug?: boolean
   tap?: (id: string, parentId?: string) => void
   log?: (valueId: string) => void
@@ -189,6 +190,16 @@ export function Graph(props: Props) {
       retry()
     ).subscribe()
 
+    const toggleSub = props.toggle.pipe(
+      tap(({ id, hidden }) => {
+        const node = cy.getElementById(id)
+
+        if (!node) return
+
+        node.css('opacity', hidden ? '0.2' : '1')
+      })
+    ).subscribe()
+
     const setValueSub = props.setValue.pipe(
       tap(args => {
         const node = cy.getElementById(args.valueId)
@@ -250,6 +261,7 @@ export function Graph(props: Props) {
       layoutSub.unsubscribe()
       activeSub.unsubscribe()
       focusSub.unsubscribe()
+      toggleSub.unsubscribe()
       setValueSub.unsubscribe()
     }
   })

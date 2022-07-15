@@ -50,7 +50,7 @@ function isParentsHidden(node: cytoscape.NodeSingular) {
   return Boolean(node.data(TogglerKey.ParentsHidden))
 }
 
-export function createGraph(container: HTMLElement, props: { debug?: boolean } = {}) {
+export function createGraph(container: HTMLElement, props: { toggle?: (id: string, hidden: boolean) => void, debug?: boolean } = {}) {
   const cy = cytoscape({
     container,
     wheelSensitivity: 0.25,
@@ -194,14 +194,14 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
         content:  h('span', {}, observablesHidden ? 'Show observables' : 'Hide observables'),
         select: () => {
           node.data(TogglerKey.ObservablesHidden, !observablesHidden)
-          toggleObservables(cy, node, !observablesHidden)
+          toggleObservables(cy, node, !observablesHidden, props.toggle)
         }
       },
       {
         content:  h('span', {}, childrenHidden ? 'Show children' : 'Hide children'),
         select: () => {
           node.data(TogglerKey.ChildrenHidden, !childrenHidden)
-          toggleSubGraph(cy, node, !childrenHidden)
+          toggleSubGraph(cy, node, !childrenHidden, props.toggle)
         }
       }
     ]
@@ -216,7 +216,7 @@ export function createGraph(container: HTMLElement, props: { debug?: boolean } =
         content:  h('span', {}, parentsHidden ? 'Show parents' : 'Hide parents'),
         select: () => {
           node.data(TogglerKey.ParentsHidden, !parentsHidden)
-          toggleObservables(cy, node, !parentsHidden)
+          toggleObservables(cy, node, !parentsHidden, props.toggle)
         }
       }
     ]

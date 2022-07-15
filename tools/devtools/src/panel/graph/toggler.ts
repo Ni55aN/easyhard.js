@@ -10,10 +10,14 @@ export enum TogglerKey {
   ChildrenHidden = 'childrenHidden'
 }
 
-function toggleVisibility(target: CollectionReturnValue | NodeSingular, hidden: boolean) {
+function toggleVisibility(target: CollectionReturnValue | NodeSingular, hidden: boolean, toggle?: (id: string, hidden: boolean) => void) {
   const displayValue = hidden ? 'none' : 'element'
 
   if (target.css('display') === displayValue) return
+
+  target.nodes().forEach(node => {
+    toggle && toggle(node.data('id') as string, hidden)
+  })
 
   target.css('display', displayValue)
   target.connectedEdges().css('display', displayValue)
@@ -27,25 +31,25 @@ function isObservableOrphan(n: NodeSingular) {
   return withoutHiddenSubgraph.length === 0
 }
 
-export function toggleObservables(cy: Core, node: CollectionReturnValue | NodeSingular, hidden: boolean) {
+export function toggleObservables(cy: Core, node: CollectionReturnValue | NodeSingular, hidden: boolean, toggle?: (id: string, hidden: boolean) => void) {
   predecessorsUntil(cy, node, selectors.observable, n => {
     const isOrphan = isObservableOrphan(n)
     if (hidden && isOrphan) {
-      toggleVisibility(n, true)
+      toggleVisibility(n, true, toggle)
       return true
     } else if (!isOrphan) {
-      toggleVisibility(n, false)
+      toggleVisibility(n, false, toggle)
       return true
     }
     return false
   })
 }
 
-export function toggleSubGraph(cy: Core, node: NodeSingular, hidden: boolean) {
+export function toggleSubGraph(cy: Core, node: NodeSingular, hidden: boolean, toggle?: (id: string, hidden: boolean) => void) {
   if (!['node', 'eh-node', 'fragment'].includes(node.data('type') as string)) throw new Error('cannot toggle non-element nodes')
 
   const successors = successorsUntil(cy, node, selectors.dom, el => !el.data(TogglerKey.ChildrenHidden))
 
-  toggleVisibility(successors, hidden)
-  toggleObservables(cy, successors, hidden)
+  toggleVisibility(successors, hidden, toggle)
+  toggleObservables(cy, successors, hidden, toggle)
 }

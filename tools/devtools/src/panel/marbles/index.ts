@@ -13,12 +13,14 @@ type Props = {
 export function createMarbles(props: Props) {
   const table = new Table()
   const focus = new Subject<string>()
+  const toggle = new Subject<{ id: string, hidden: boolean }>()
   const setValue = new Subject<{ valueId: string, value: any, type: ObservableEmissionType }>()
 
   const container = Graph({
     table,
     focus,
     setValue,
+    toggle,
     debug: props.debug,
     tap(id, parentId) { props.lineSelect(parentId || id) },
     log(valueId) { props.log(valueId) },
@@ -41,6 +43,9 @@ export function createMarbles(props: Props) {
     },
     setValue(valueId: string, value: any, type: ObservableEmissionType) {
       setValue.next({ valueId, value, type })
+    },
+    toggle(id: string, hidden: boolean) {
+      toggle.next({ id, hidden })
     }
   }
 }

@@ -75,7 +75,7 @@ const main = Splitter({ sizes: [75, 25] }, container, sidebar)
 document.body.appendChild(header)
 document.body.appendChild(main)
 
-const cy = createGraph(container, { debug })
+const cy = createGraph(container, { toggle: marbles.toggle, debug })
 const areaHighligher = createAreaHighlighter(cy)
 
 connection.addListener(async message => {
