@@ -1,5 +1,5 @@
 
-import { CollectionReturnValue, CollectionStyle, Core, NodeSingular } from 'cytoscape'
+import { CollectionReturnValue, Core, NodeSingular } from 'cytoscape'
 import { predecessorsUntil, successorsUntil } from '../shared/cytoscape/collection'
 import * as selectors from './selectors'
 
@@ -10,10 +10,13 @@ export enum TogglerKey {
   ChildrenHidden = 'childrenHidden'
 }
 
-function toggleVisibility(target: CollectionStyle, hidden: boolean) {
+function toggleVisibility(target: CollectionReturnValue | NodeSingular, hidden: boolean) {
   const displayValue = hidden ? 'none' : 'element'
 
+  if (target.css('display') === displayValue) return
+
   target.css('display', displayValue)
+  target.connectedEdges().css('display', displayValue)
 }
 function isObservableOrphan(n: NodeSingular) {
   const s = n.successors(selectors.dom)
