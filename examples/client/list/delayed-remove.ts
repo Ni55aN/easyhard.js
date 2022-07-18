@@ -1,6 +1,6 @@
 import { $$, h, $for } from 'easyhard'
-import { Observable, of } from 'rxjs'
-import { map, filter, mergeMap, delay, startWith, mapTo } from 'rxjs/operators'
+import { merge, Observable } from 'rxjs'
+import { map, filter, delay, shareReplay } from 'rxjs/operators'
 
 
 function applyOpacity(removed: Observable<boolean>): Observable<string> {
@@ -8,10 +8,14 @@ function applyOpacity(removed: Observable<boolean>): Observable<string> {
 }
 
 function delayedRemove<T>(list: $$<T>, ms: number) {
+  const sharedList = list.pipe(shareReplay())
+  const remove = sharedList.pipe(filter(item => 'remove' in item))
+  const other = sharedList.pipe(filter(item => !('remove' in item)))
+
   return {
-    list: list.pipe(mergeMap(item => 'remove' in item ? of(item).pipe(delay(ms)) : of(item))),
+    list: merge(remove.pipe(delay(ms)), other),
     isRemoved(element: T) {
-      return list.pipe(filter(n => 'remove' in n && n.item === element), mapTo(true), startWith(false))
+      return sharedList.pipe(filter(n => 'initial' in n || 'remove' in n && n.item === element), map(item => !('initial' in item)))
     }
   }
 }
