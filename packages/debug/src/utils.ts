@@ -5,7 +5,16 @@ import { getUID } from 'easyhard-common-alias'
 import { ReplaySubject } from 'rxjs-alias'
 import { Observable, Observer, OperatorFunction, UnaryFunction } from 'rxjs'
 
-export type DebugMeta = { __debug?: { id: string, name: string | symbol, parent: MestedDebugObject[], nextBuffer: ReplaySubject<{ value: any, time: number }> } }
+export type DebugMeta = {
+  __debug?: {
+    id: string,
+    name: string | symbol,
+    parent: MestedDebugObject[],
+    nextBuffer: ReplaySubject<{ value: any, time: number }>
+    subscribe: ReplaySubject<number>
+    unsubscribe: ReplaySubject<number>
+  }
+}
 export type Parent = { type: 'argument' | 'other', link: DebugObject }
 export type MestedDebugObject = Parent | MestedDebugObject[]
 export type DebugOperator = OperatorFunction<any, any> & DebugMeta
@@ -20,7 +29,9 @@ export function assignMeta(object: DebugObject, name: string | symbol, parent: M
       id: getUID(),
       name,
       parent,
-      nextBuffer: new ReplaySubject()
+      nextBuffer: new ReplaySubject(),
+      subscribe: new ReplaySubject(),
+      unsubscribe: new ReplaySubject()
     }
   }
   return object.__debug
@@ -59,6 +70,7 @@ function decorateNext<T, V>(ctx: T, source: DebugObservable, _next: (value: V) =
 }
 
 function trackEmission(ob: DebugObservable) {
+  let subscriptionsCount = 0
   const sub = ob.subscribe
   ob.subscribe = <T>(
     observerOrNext?: any | Partial<Observer<T>> | ((value: T) => void) | null,
@@ -71,7 +83,12 @@ function trackEmission(ob: DebugObservable) {
       observerOrNext = decorateNext(null, ob, observerOrNext)
     }
 
-    return sub.call(ob, observerOrNext, error, complete)
+    const subscription = sub.call(ob, observerOrNext, error, complete)
+
+    subscription.add(() => ob.__debug?.unsubscribe.next(--subscriptionsCount))
+    ob.__debug?.subscribe.next(++subscriptionsCount)
+
+    return subscription
   }
 
   return ob
