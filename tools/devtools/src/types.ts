@@ -29,6 +29,7 @@ export type Services = {
     type: ObservableEmissionType,
     source: 'tooltip' | 'marbles'
   }}
+  | { type: 'STOP_INSPECTING' }
   'easyhard-content':  { type: 'GET_GRAPH' }
   | { type: 'INSPECT', data: null | { id: string }}
   | { type: 'INSPECTING', data: { action: 'start' } | { action: 'stop' } }

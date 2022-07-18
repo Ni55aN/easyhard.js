@@ -19,6 +19,8 @@ const inspector = createInspector(highlighter, element => {
   if (id) {
     connection.send({ type: 'FOCUS', data: { id }})
   }
+}, () => {
+  connection.send({ type: 'STOP_INSPECTING' })
 })
 
 connection.onMessage(data => {

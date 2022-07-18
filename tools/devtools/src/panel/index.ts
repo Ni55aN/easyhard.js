@@ -1,6 +1,8 @@
 import cytoscape, { EventObjectNode } from 'cytoscape'
 import { $, h, onMount } from 'easyhard'
 import { css } from 'easyhard-styles'
+import { pipe } from 'rxjs'
+import { map, tap } from 'rxjs/operators'
 import { Services } from '../types'
 import { Connection } from '../utils/communication'
 import { adjustEdgeCurve } from './edges'
@@ -15,7 +17,6 @@ import { Splitter } from './splitter'
 import { createMarbles } from './marbles'
 import { Button } from './shared/Button'
 import { InspectIcon } from '../assets/icons/inspect'
-import { tap } from 'rxjs'
 import { focusNode } from './shared/cytoscape/focus'
 import { createAreaHighlighter } from './shared/cytoscape/highligher'
 
@@ -37,17 +38,17 @@ const bodyStyles = css({
 document.body.classList.add(bodyStyles.className)
 
 const activeInspector = $(false)
+const setInspecting = (active: boolean) => {
+  connection.postMessage('easyhard-content', { type: 'INSPECTING', data: { action: active ? 'start' : 'stop' }})
+  activeInspector.next(active)
+}
+
 const headerLeftContent = h('div', {},
   Button({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     label: InspectIcon() as any,
     active: activeInspector,
-    click: tap(() => {
-      const active = activeInspector.value
-
-      connection.postMessage('easyhard-content', { type: 'INSPECTING', data: { action: active ? 'stop' : 'start' }})
-      activeInspector.next(!active)
-    })
+    click: pipe(map(() => !activeInspector.value), tap(setInspecting))
   })
 )
 
@@ -128,6 +129,9 @@ connection.addListener(async message => {
   }
   if (message.type === 'FOCUS') {
     focusNode(cy, message.data.id, areaHighligher)
+  }
+  if (message.type === 'STOP_INSPECTING') {
+    setInspecting(false)
   }
 })
 
