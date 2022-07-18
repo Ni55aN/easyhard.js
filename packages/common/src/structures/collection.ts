@@ -29,11 +29,11 @@ export class CollectionSubject<T> extends Subject<Return<T>> {
     debugSubscription(this, subscription, k => this.subscriptionsCount += k)
 
     if (subscription && !subscription.closed) {
-      subscriber.next({ initial: true })
+      subscriber.next(debugNext(this, { initial: true }))
       this._value.forEach(item => {
-        subscriber.next({ insert: true, item, batch: true })
+        subscriber.next(debugNext(this, { insert: true, item, batch: true }))
       })
-      subscriber.next({ idle: true })
+      subscriber.next(debugNext(this, { idle: true }))
     }
     return subscription
   }

@@ -39,10 +39,11 @@ export function debugObservable(observable: Observable<any>, name: string) {
   return observable
 }
 
-export function debugNext(observable: Observable<any> & { __debug?: DebugProps }, value: unknown) {
+export function debugNext<T>(observable: Observable<any> & { __debug?: DebugProps }, value: T): T {
   if (debugWindow.__easyhardDebug) {
     observable.__debug?.nextBuffer.next({ value, time: Date.now() })
   }
+  return value
 }
 
 export function debugSubscription(observable: Observable<any> & { __debug?: DebugProps }, subscription: Subscription, change: (k: number) => number) {
