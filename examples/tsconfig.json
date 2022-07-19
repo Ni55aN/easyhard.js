@@ -1,21 +1,22 @@
 {
     "include": [
       "./client/**/*.ts",
+      "./*.d.ts",
       "./shared/**/*.ts"
     ],
     "compilerOptions": {
         "lib": [
             "dom",
-            "es2015"
+            "es2015",
+            "WebWorker"
         ],
-        "jsx": "preserve",
         "target": "es5",
         "skipLibCheck": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "strict": true,
         "forceConsistentCasingInFileNames": true,
-        "module": "ES6",
+        "module": "ES2022",
         "moduleResolution": "node",
         "sourceMap": true,
         "resolveJsonModule": true,

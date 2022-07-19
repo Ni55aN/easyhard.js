@@ -22,7 +22,7 @@ export function easyhardClient<T>({
   reconnectDelay = 5000
 }: Props = {}) {
   const http = useHttp(() => connection.args?.http)
-  const connection = createConnection<ConnectionArgs>({
+  const connection = createConnection<ConnectionArgs, unknown>({
     reconnectDelay
   })
 

@@ -1,8 +1,11 @@
 import { defer, firstValueFrom, interval } from 'rxjs'
 import { Server, default as WebSocket, AddressInfo } from 'ws'
-import { registerObservable, bindObservable, WebSocketState } from '../packages/bridge/src/binder'
+import { registerObservable, bindObservable, ConnectionState, ServerToClient, ClientToServer, Key } from '../packages/bridge/src/binder'
+import { connectionSerializer } from '../packages/bridge/src/serializer'
 import { Connection, createConnection } from '../packages/client/src/connection'
 import { retry, retryWhen, take, tap } from 'rxjs/operators'
+
+const serializer = connectionSerializer<ServerToClient<unknown>, ClientToServer<Key>, string, string>({ input: JSON.parse, output: JSON.stringify })
 
 describe('client', () => {
   let server: Server
@@ -27,11 +30,11 @@ describe('client', () => {
     })
     setTimeout(async () => {
       const state = await firstValueFrom(client.state)
-      expect(state).toBe(WebSocketState.OPEN)
+      expect(state).toBe(ConnectionState.OPEN)
     }, 1000)
     setTimeout(async () => {
       const state = await firstValueFrom(client.state)
-      expect(state).toBe(WebSocketState.CLOSED)
+      expect(state).toBe(ConnectionState.CLOSED)
       done()
     }, 1150)
   })
@@ -47,7 +50,7 @@ describe('client', () => {
             connection.terminate()
           }
         })
-      )), connection)
+      )), serializer.apply(connection))
     })
     const sub = bindObservable<number>('getFromServer', null, client).pipe(
       retryWhen(error => error.pipe(
@@ -79,7 +82,7 @@ describe('client', () => {
     server.addListener('connection', connection => {
       registerObservable<void, number>('getFromServer', defer(() => interval(100).pipe(
         tap(value => value === 3 && connection.terminate())
-      )), connection)
+      )), serializer.apply(connection))
     })
     const sub1 = bindObservable<number>('getFromServer', null, client).pipe(
       tap({

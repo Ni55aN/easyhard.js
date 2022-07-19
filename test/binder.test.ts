@@ -1,12 +1,15 @@
+import express from 'express'
+import fetch from 'node-fetch'
 import { defer, interval, NEVER, Subscriber } from 'rxjs'
 import { IncomingMessage, ServerResponse } from 'http'
 import { Server, default as WebSocket, AddressInfo } from 'ws'
 import { Readable } from 'stream'
-import { registerObservable, bindObservable } from '../packages/bridge/src/binder'
-import express from 'express'
-import fetch from 'node-fetch'
 import { mapTo, take, tap } from 'rxjs/operators'
+import { registerObservable, bindObservable, ClientToServer, ServerToClient, Key } from '../packages/bridge/src/binder'
 import { NOT_FOUND_STREAM_ERROR } from '../packages/bridge/src/constants'
+import { connectionSerializer } from '../packages/bridge/src/serializer'
+
+const serializer = connectionSerializer<ServerToClient<unknown>, ClientToServer<Key>, string, string>({ input: JSON.parse, output: JSON.stringify })
 
 async function sendFile(id: string | number | symbol, port: number, stream: Readable) {
   const res = await fetch(`http://localhost:${port}/api`, {
@@ -67,10 +70,10 @@ describe('binder', () => {
 
   it ('client subscribes to server', (done) => {
     server.addListener('connection', connection => {
-      registerObservable<void, number>('getFromServer', defer(() => interval(100).pipe(take(5))), connection)
+      registerObservable<void, number>('getFromServer', defer(() => interval(100).pipe(take(5))), serializer.apply(connection))
     })
     const results: number[] = []
-    bindObservable<number>('getFromServer', null, client).subscribe({
+    bindObservable<number>('getFromServer', null, serializer.apply(client)).subscribe({
       next: value => results.push(value),
       complete: () => results.push(999)
     })
@@ -86,12 +89,12 @@ describe('binder', () => {
   it ('server subscribes to client', (done) => {
     const results: number[] = []
     server.addListener('connection', connection => {
-      bindObservable<number>('getFromClient', null, connection).subscribe({
+      bindObservable<number>('getFromClient', null, serializer.apply(connection)).subscribe({
         next: value => results.push(value),
         complete: () => results.push(999)
       })
     })
-    registerObservable('getFromClient', interval(100).pipe(take(5)), client)
+    registerObservable('getFromClient', interval(100).pipe(take(5)), serializer.apply(client))
 
     setTimeout(() => {
       expect(results).toEqual([0,1,2])
@@ -108,9 +111,9 @@ describe('binder', () => {
       registerObservable<void, number>('getFromServer', defer(() => interval(100).pipe(
         take(5),
         tap(value => serverEmits.push(value))
-      )), connection)
+      )), serializer.apply(connection))
     })
-    bindObservable<number>('getFromServer', null, client).pipe(take(3)).subscribe()
+    bindObservable<number>('getFromServer', null, serializer.apply(client)).pipe(take(3)).subscribe()
     setTimeout(() => {
       expect(serverEmits).toEqual([0,1,2])
       done()
@@ -121,14 +124,14 @@ describe('binder', () => {
     const result: Buffer[] = []
 
     server.addListener('connection', connection => {
-      bindObservable<Buffer>(FILE_ID, null, connection, {
+      bindObservable<Buffer>(FILE_ID, null, serializer.apply(connection), {
         subscribe(id, subscriber) { listeners.set(id, subscriber) },
         unsubscribe(id) { listeners.delete(id) }
       }).subscribe({
         next: value => result.push(value)
       })
 
-      registerObservable(FILE_ID, NEVER, client, {
+      registerObservable(FILE_ID, NEVER, serializer.apply(client), {
         subscribe(id) { void sendFile(id, (appServer.address() as AddressInfo).port, Readable.from(['test1', 'test2', 'test3'])) }
       })
     })
@@ -142,12 +145,12 @@ describe('binder', () => {
     const result: string[] = []
 
     server.addListener('connection', connection => {
-      bindObservable<Buffer>('throwsError', null, connection).subscribe({
-        error: value => result.push(value),
+      bindObservable<Buffer>('throwsError', null, serializer.apply(connection)).subscribe({
+        error: (value: string) => result.push(value),
         next: console.log
       })
 
-      registerObservable('throwsError', mapTo('test'), client)
+      registerObservable('throwsError', mapTo('test'), serializer.apply(client))
     })
     setTimeout(() => {
       expect(result).toEqual([NOT_FOUND_STREAM_ERROR])

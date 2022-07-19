@@ -1,4 +1,4 @@
-import { WebSocketState, WebSocketEventMap, WsConnection } from 'easyhard-bridge'
+import { ConnectionState, ConnectionEventMap, Connection as BridgeConnection } from 'easyhard-bridge'
 import { $ } from 'easyhard-common'
 import { Observable } from 'rxjs'
 
@@ -6,22 +6,22 @@ type Props = {
   reconnectDelay?: number
 }
 
-export type WebSocketConnection = WsConnection & {
+export type WebSocketConnection = BridgeConnection<unknown, string> & {
   readonly url: string
   close(code?: number, reason?: string): void
 }
 
-export type Connection<Args> = WsConnection & {
+export type Connection<Args> = BridgeConnection<unknown, string> & {
   connect: <T extends WebSocketConnection>(ws: () => T, args: Args) => WebSocketConnection
-  state: Observable<WebSocketState | null>
+  state: Observable<ConnectionState | null>
   args: Args | null
   close: () => void
 }
 
-export function createConnection<Args>(props: Props): Connection<Args> {
+export function createConnection<Args, T>(props: Props): Connection<Args> {
   let connection: null | { socket: WebSocketConnection, args: Args } = null
-  const state = $<WebSocketState | null>(null)
-  const listeners: {[key in keyof WebSocketEventMap]: ((ev: WebSocketEventMap[key]) => void)[]} = {
+  const state = $<ConnectionState | null>(null)
+  const listeners: {[key in keyof ConnectionEventMap<unknown>]: ((ev: ConnectionEventMap<string>[key]) => void)[]} = {
     open: [],
     close: [],
     error: [],
@@ -31,22 +31,22 @@ export function createConnection<Args>(props: Props): Connection<Args> {
   function connect<Socket extends WebSocketConnection>(ws: () => Socket, args: Args): WebSocketConnection {
     const socket = ws()
 
-    state.next(WebSocketState.CONNECTING)
+    state.next(ConnectionState.CONNECTING)
     connection && connection.socket.close()
     connection = { socket, args }
     connection.socket.addEventListener('open', () => {
-      state.next(WebSocketState.OPEN)
+      state.next(ConnectionState.OPEN)
       listeners.open.slice().forEach(h => h(new Event('')))
     })
 
     connection.socket.addEventListener('close', event => {
-      state.next(WebSocketState.CLOSED)
+      state.next(ConnectionState.CLOSED)
       if (!event.wasClean) setTimeout(() => connection && connect(ws, connection.args), props.reconnectDelay)
       listeners.close.slice().forEach(h => h(event))
     })
 
     connection.socket.addEventListener('message', event => {
-      listeners.message.slice().forEach(h => h(event))
+      listeners.message.slice().forEach(h => h(new MessageEvent(event.type, { data: JSON.parse(event.data) })))
     })
 
     connection.socket.addEventListener('error', error => {
@@ -60,13 +60,13 @@ export function createConnection<Args>(props: Props): Connection<Args> {
     connect,
     state: state.asObservable(),
     get readyState() {
-      return connection?.socket.readyState || WebSocketState.CONNECTING
+      return connection?.socket.readyState || ConnectionState.CONNECTING
     },
     get args() {
       return connection ? connection.args : null
     },
-    send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
-      connection?.socket.send(data)
+    send(data: T) {
+      connection?.socket.send(JSON.stringify(data))
     },
     addEventListener(event, handler) {
       listeners[event].push(handler)
@@ -76,7 +76,7 @@ export function createConnection<Args>(props: Props): Connection<Args> {
       if (index >= 0) listeners[event].splice(index, 1)
     },
     close() {
-      state.next(WebSocketState.CLOSING)
+      state.next(ConnectionState.CLOSING)
       connection && connection.socket.close()
     }
   }

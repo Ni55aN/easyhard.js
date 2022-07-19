@@ -1,4 +1,4 @@
-import { WebSocketState } from 'easyhard-bridge'
+import { ConnectionState } from 'easyhard-bridge'
 import { attach, Attachment, Handlers } from 'easyhard-server'
 import { WebSocketBehavior, WebSocket as uWS, HttpRequest } from 'uWebSockets.js'
 import { ConnectionAdapter } from './connection-adapter'
@@ -28,11 +28,11 @@ export function easyhardServer<T>(actions: Handlers<T, Request>): { attachClient
         )
       },
       open(uws) {
-        const ws = uws as WebSocket
+        const ws = uws
         const { req } = ws
 
         ws.adapter = new ConnectionAdapter(ws)
-        ws.adapter.readyState = WebSocketState.OPEN
+        ws.adapter.readyState = ConnectionState.OPEN
 
         const attachment = attach(actions, ws.adapter, req, http)
 
@@ -40,7 +40,7 @@ export function easyhardServer<T>(actions: Handlers<T, Request>): { attachClient
       },
       message(uws, message) {
         const ws = uws as WebSocket
-        const data = arrayBufferToString(message)
+        const data = JSON.parse(arrayBufferToString(message))
 
         ws.adapter.emit('message', { data, type: '', target: null })
       },
@@ -48,7 +48,7 @@ export function easyhardServer<T>(actions: Handlers<T, Request>): { attachClient
         const ws = uws as WebSocket
         const reason = arrayBufferToString(message)
 
-        ws.adapter.readyState = WebSocketState.CLOSED
+        ws.adapter.readyState = ConnectionState.CLOSED
         ws.adapter.emit('close', { code, reason, wasClean: true } as CloseEvent)
       }
     }

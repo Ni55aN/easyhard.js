@@ -1,11 +1,11 @@
 import { Attachment, HandlerPayload, Handlers, ResponsePayload } from './types'
 import { Http } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
-import { ExtractPayload, registerObservable, WsConnection } from 'easyhard-bridge'
+import { ExtractPayload, registerObservable, Connection } from 'easyhard-bridge'
 import { Observable, OperatorFunction, pipe, throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-export function attach<T, R>(actions: Handlers<T, R>, ws: WsConnection, req: R, http: Http): Attachment {
+export function attach<T, R>(actions: Handlers<T, R>, ws: Connection<unknown, unknown>, req: R, http: Http): Attachment {
   const keys = Object.keys(actions).map(key => key as keyof T)
   type Request = ExtractPayload<T[keyof T], 'request'>
   type Return = ExtractPayload<T[keyof T], 'response'>

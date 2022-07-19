@@ -9,11 +9,11 @@ type UnsubscribeRequest = { id: RequestId, unsubscribe: true }
 type CompleteResponse = { id: RequestId, complete: true }
 type ErrorResponse<T> = { id: RequestId, error: T }
 
-type Key = string | number | symbol
-type ClientToServer<K> = { key: K, id: RequestId, source: RequestId | null, subscribe: true } | UnsubscribeRequest
-type ServerToClient<T> = { id: RequestId, value: T } | ErrorResponse<string> | CompleteResponse
+export type Key = string | number | symbol
+export type ClientToServer<K> = { key: K, id: RequestId, source: RequestId | null, subscribe: true } | UnsubscribeRequest
+export type ServerToClient<T> = { id: RequestId, value: T } | ErrorResponse<string> | CompleteResponse
 
-export enum WebSocketState {
+export enum ConnectionState {
   CONNECTING = 0,
   OPEN = 1,
   CLOSING = 2,
@@ -26,8 +26,8 @@ export interface Event {
   target: any
 }
 
-export interface MessageEvent {
-  data: string | Buffer | ArrayBuffer | Buffer[]
+export interface MessageEvent<T> {
+  data: T
   type: string
   target: any
 }
@@ -47,18 +47,18 @@ export interface CloseEvent {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-export interface WebSocketEventMap {
+export interface ConnectionEventMap<T> {
   'close': CloseEvent
   'error': ErrorEvent
-  'message': MessageEvent
+  'message': MessageEvent<T>
   'open': Event
 }
 
-export type WsConnection = {
-  readyState: WebSocketState
-  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void
-  addEventListener<K extends keyof WebSocketEventMap>(type: K, listener: (ev: WebSocketEventMap[K]) => void): void
-  removeEventListener<K extends keyof WebSocketEventMap>(type: K, listener: (ev: WebSocketEventMap[K]) => void): void
+export type Connection<Data, Receive> = {
+  readyState: ConnectionState
+  send(data: Data): void
+  addEventListener<K extends keyof ConnectionEventMap<Receive>>(type: K, listener: (ev: ConnectionEventMap<Receive>[K]) => void): void
+  removeEventListener<K extends keyof ConnectionEventMap<Receive>>(type: K, listener: (ev: ConnectionEventMap<Receive>[K]) => void): void
 }
 
 type BindProps = {
@@ -66,13 +66,13 @@ type BindProps = {
   unsubscribe?: (id: string, subscriber: Subscriber<unknown>) => void
 }
 
-export function bindObservable<T>(key: Key, source: RequestId | null, client: WsConnection, props?: BindProps): Observable<T> {
+export function bindObservable<T>(key: Key, source: RequestId | null, client: Connection<ClientToServer<Key>, ServerToClient<T>>, props?: BindProps): Observable<T> {
   return new Observable<T>(subscriber => {
     const nextData: ClientToServer<Key>[] = []
     const send = <T extends ClientToServer<Key>>(data: T) => {
-      if (client.readyState === WebSocketState.OPEN) {
+      if (client.readyState === ConnectionState.OPEN) {
         try {
-          client.send(JSON.stringify(data))
+          client.send(data)
         } catch (error) {
           subscriber.error(error)
         }
@@ -104,8 +104,8 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Ws
     send({ key, id, source, subscribe: true })
     props?.subscribe && props?.subscribe(id, subscriber)
 
-    const handler = (event: MessageEvent) => {
-      const data: ServerToClient<T> = JSON.parse(String(event.data))
+    const handler = (event: MessageEvent<ServerToClient<T>>) => {
+      const data = event.data
 
       if (data.id !== id) return
       else if ('error' in data) subscriber.error(data.error)
@@ -130,12 +130,12 @@ type RegisterProps = {
   unsubscribe?: (id: string) => void
 }
 
-export function registerObservable<P, T>(key: Key, stream: Observable<T> | OperatorFunction<P, T>, connection: WsConnection, props?: RegisterProps): () => void {
+export function registerObservable<P, T>(key: Key, stream: Observable<T> | OperatorFunction<P, T>, connection: Connection<ServerToClient<T> | ClientToServer<Key>, ClientToServer<Key> | ServerToClient<T>>, props?: RegisterProps): () => void {
   const subscriptions = new Map<string, Subscription>()
   function send<D extends ServerToClient<T>>(data: D) {
-    if (connection.readyState === WebSocketState.OPEN) {
+    if (connection.readyState === ConnectionState.OPEN) {
       try {
-        connection.send(JSON.stringify(data))
+        connection.send(data)
       } catch (error) {
         send({ id: data.id, error: sanitize(error) })
       }
@@ -157,8 +157,8 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
   const onClose = () => {
     Array.from(subscriptions.keys()).forEach(unsubscribe)
   }
-  const onMessage = (event: MessageEvent) => {
-    const data: ClientToServer<Key> = JSON.parse(String(event.data))
+  const onMessage = (event: MessageEvent<ClientToServer<Key> | ServerToClient<T>>) => {
+    const data = event.data
 
     if ('subscribe' in data && data.key === key) {
       const observable = stream instanceof Observable
