@@ -1,4 +1,4 @@
-
+import { TuplifyUnion } from './utils/types'
 
 export type GraphNode = {
   id: string
@@ -36,3 +36,5 @@ export type Services = {
   | { type: 'LOG_EMISSION', data: { valueId: string } }
   | { type: 'GET_EMISSION_VALUE', data: { id: string, valueId: string, source: 'tooltip' | 'marbles' } }
 }
+
+export type ServicesTypes<T extends keyof Services> = TuplifyUnion<Services[T]['type']>
