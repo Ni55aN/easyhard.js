@@ -1,5 +1,5 @@
 import { h,onMount } from 'easyhard'
-import { WebSocketState } from 'easyhard-bridge'
+import { ConnectionState } from 'easyhard-bridge'
 import { easyhardClient } from 'easyhard-client'
 import { defer, interval, of } from 'rxjs'
 import { retry, scan } from 'rxjs/operators'
@@ -50,8 +50,8 @@ function App() {
     h('div', {}, withOb1),
     h('div', {}, withOb2),
     'State: ', client.state.pipe(
-      scan((acc, item) => item === null ? acc : ([...acc, item]), [] as WebSocketState[]),
-      map(items => items.map(item => WebSocketState[item]).filter(item => item).map(item => item.toLowerCase()).join('; '))
+      scan((acc, item) => item === null ? acc : ([...acc, item]), [] as ConnectionState[]),
+      map(items => items.map(item => ConnectionState[item]).filter(item => item).map(item => item.toLowerCase()).join('; '))
     )
   )
 

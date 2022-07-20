@@ -1,6 +1,6 @@
-import { interval, map, mapTo, Observable, OperatorFunction, pipe, tap } from 'rxjs'
 import { easyhardResponser } from 'easyhard-post-message'
-import 'easyhard-post-message'
+import { interval, map, mapTo, Observable, OperatorFunction, pipe, tap } from 'rxjs'
+
 
 type M = {
   getData: Observable<number>
