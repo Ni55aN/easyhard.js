@@ -14,7 +14,8 @@ export const packages = [
   'client',
   'server',
   'server-uws',
-  'debug'
+  'debug',
+  'post-message'
 ].map(folder => ({
   folder,
   pkg: require(`../../packages/${folder}/package.json`)

@@ -62,10 +62,11 @@ module.exports = merge(
           exclude: /node_modules/,
           loader: 'eslint-loader'
         },
-        {
-          test: /\.tsx?$/,
-          loader: 'easyhard-loader'
-        },
+        // FIX post message example (import.meta)
+        // {
+        //   test: /\.tsx?$/,
+        //   loader: 'easyhard-loader'
+        // },
         {
           test: /\.tsx?$/,
           loader: 'ts-loader',
