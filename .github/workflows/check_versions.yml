@@ -23,6 +23,8 @@ jobs:
           {name: 'easyhard-client', folder: 'client'},
           {name: 'easyhard-server', folder: 'server'},
           {name: 'easyhard-server-uws', folder: 'server-uws'},
+          {name: 'easyhard-debug', folder: 'debug'},
+          {name: 'easyhard-post-message', folder: 'post-message'},
         ]
     steps:
       - uses: actions/checkout@v2
