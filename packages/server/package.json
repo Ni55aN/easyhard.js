@@ -1,11 +1,11 @@
 {
   "name": "easyhard-server",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "peerDependencies": {
     "easyhard-common": "^0.3.0",
     "cookie": "0.4.1",
     "rxjs": ">= 6.x <=7.x",
-    "easyhard-bridge": "^0.2.7"
+    "easyhard-bridge": "^0.3.0"
   },
   "rollup": {
     "node": true

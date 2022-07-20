@@ -1,10 +1,10 @@
 {
   "name": "easyhard-server-uws",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "peerDependencies": {
     "easyhard-common": "^0.3.0",
-    "easyhard-bridge": "^0.2.6",
-    "easyhard-server": "^0.6.0"
+    "easyhard-bridge": "^0.3.0",
+    "easyhard-server": "^0.7.0"
   },
   "dependencies": {
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.0.0"

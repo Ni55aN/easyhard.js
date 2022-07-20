@@ -1,6 +1,6 @@
 {
   "name": "easyhard-debug",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "peerDependencies": {
     "easyhard-common": "^0.4.0",
     "rxjs": ">= 6.x <=7.x"
