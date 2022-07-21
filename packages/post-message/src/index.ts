@@ -5,7 +5,7 @@
 import { getUID } from 'easyhard-common'
 import { bindObservable, registerObservable } from 'easyhard-bridge'
 import { Observable, OperatorFunction } from 'rxjs'
-import { createConnection } from './connection'
+import { Connection, createConnection } from './connection'
 import { mount } from './utils'
 
 type Schema = {[key: string]: Observable<any> | OperatorFunction<any, any>}
@@ -29,7 +29,7 @@ export type Requester<T extends Schema> = {
   pipe<Key extends keyof GetPipes<T>>(key: Key): OperatorFunction<GetOperatorInput<T, Key>, GetOperatorOutput<T, Key>>
 }
 
-export function easyhardRequester<T extends Schema>(target: Worker | Window): Requester<T> {
+export function easyhardRequester<T extends Schema>(target: Connection): Requester<T> {
   const id = getUID()
   const connection = createConnection(target, id)
   type Calls = GetCalls<T>
@@ -62,7 +62,7 @@ export function easyhardRequester<T extends Schema>(target: Worker | Window): Re
   }
 }
 
-export function easyhardResponser<T extends Schema>(target: Window, handlers: T) {
+export function easyhardResponser<T extends Schema>(target: Connection, handlers: T) {
   const id = getUID()
   const connection = createConnection(target, id)
 
