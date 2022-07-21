@@ -90,6 +90,9 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Co
       }
     }
     const onOpen = () => {
+      client.removeEventListener('close', onClose)
+      client.addEventListener('close', onClose)
+
       while(nextData.length > 0) {
         const data = nextData.shift()
         data && send(data)
@@ -99,7 +102,6 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Co
       subscriber.error(error)
     }
     client.addEventListener('open', onOpen)
-    client.addEventListener('close', onClose)
     client.addEventListener('error', onError)
     send({ key, id, source, subscribe: true })
     props?.subscribe && props?.subscribe(id, subscriber)
