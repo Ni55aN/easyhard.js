@@ -1,9 +1,10 @@
 import cytoscape, { EventObjectNode } from 'cytoscape'
-import { $, h, onMount } from 'easyhard'
+import { $, h } from 'easyhard'
 import { css } from 'easyhard-styles'
-import { pipe } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
-import { Services } from '../types'
+import { easyhardResponser } from 'easyhard-post-message'
+import { BehaviorSubject, merge, pipe, Subject } from 'rxjs'
+import { map, switchMap, tap } from 'rxjs/operators'
+import { EmissionValueRequest, Services, _Services } from '../types'
 import { Connection } from '../utils/communication'
 import { adjustEdgeCurve } from './edges'
 import { createGraph } from './graph'
@@ -23,7 +24,12 @@ import { createAreaHighlighter } from './shared/cytoscape/highligher'
 const debug = Boolean(process.env.DEBUG)
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-const connection = new Connection<Services, 'easyhard-devtools'>('easyhard-devtools', chrome.devtools.inspectedWindow.tabId)
+const connection = new Connection<Services>('easyhard-devtools', 'easyhard-content', chrome.devtools.inspectedWindow.tabId)
+
+const requestEmissionValue = new Subject<EmissionValueRequest>()
+const logEmission = new Subject<{ valueId: string }>()
+const inspectorActive = $(false)
+const inspect = new BehaviorSubject<{ id: string } | null>(null)
 
 const bodyStyles = css({
   margin: 0,
@@ -37,18 +43,12 @@ const bodyStyles = css({
 
 document.body.classList.add(bodyStyles.className)
 
-const activeInspector = $(false)
-const setInspecting = (active: boolean) => {
-  connection.postMessage('easyhard-content', { type: 'INSPECTING', data: { action: active ? 'start' : 'stop' }})
-  activeInspector.next(active)
-}
-
 const headerLeftContent = h('div', {},
   Button({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     label: InspectIcon() as any,
-    active: activeInspector,
-    click: pipe(map(() => !activeInspector.value), tap(setInspecting))
+    active: inspectorActive,
+    click: tap(() => inspectorActive.next(!inspectorActive.value))
   })
 )
 
@@ -63,10 +63,10 @@ const marbles = createMarbles({
     focusNode(cy, id, areaHighligher)
   },
   log(valueId) {
-    connection.postMessage('easyhard-content', { type: 'LOG_EMISSION', data: { valueId }})
+    logEmission.next({ valueId })
   },
   fetchValue(id, valueId) {
-    connection.postMessage('easyhard-content', { type: 'GET_EMISSION_VALUE', data: { id, valueId, source: 'marbles' }})
+    requestEmissionValue.next({ id, valueId, source: 'marbles' })
   }
 })
 const sidebar = Sidebar({}, marbles.container)
@@ -79,24 +79,43 @@ document.body.appendChild(main)
 const cy = createGraph(container, { toggle: marbles.toggle, debug })
 const areaHighligher = createAreaHighlighter(cy)
 
-connection.addListener(async message => {
-  if (message.type === 'GRAPH') {
-    marbles.clear()
-    setData(cy, message.data)
-    await layout(cy, true)
-  }
-  if (message.type === 'REMOVED') {
-    removeNodes(cy, message.data)
-  }
-  if (message.type === 'ADDED') {
-    addNodes(cy, message.data)
-    await layout(cy)
-  }
-  if (message.type === 'TEXT') {
-    updateNodeText(cy, message.data.id, message.data.text)
-  }
-  if (message.type === 'NEXT') {
-    const { id, time, valueId } = message.data
+
+easyhardResponser<_Services>(connection, {
+  // ttt: interval(500).pipe(map(v => v * 0.999)),
+  graph: tap(async data => {
+    if ('graph' in data) {
+      marbles.clear()
+      setData(cy, data.graph)
+      await layout(cy, true)
+    }
+    if ('removed' in data) {
+      removeNodes(cy, data.removed)
+    }
+    if ('added' in data) {
+      addNodes(cy, data.added)
+      await layout(cy)
+    }
+    if ('text' in data) {
+      updateNodeText(cy, data.text.id, data.text.value)
+    }
+  }),
+  subscriptions: tap(data => {
+    if ('subscribe' in data) {
+      const node = cy.getElementById(data.subscribe.id)
+
+      if (!node.length) throw new Error('cannot find node for SUBSCRIBE')
+      node.data('subscriptionsCount', data.subscribe.count)
+    }
+    if ('unsubscribe' in data) {
+      const node = cy.getElementById(data.unsubscribe.id)
+
+      if (!node.length) throw new Error('cannot find node for UNSUBSCRIBE')
+      node.data('subscriptionsCount', data.unsubscribe.count)
+    }
+  }),
+  requestEmissionValue,
+  emission: tap(data => {
+    const { id, time, valueId } = data.next
 
     const incomers = cy.getElementById(id).incomers()
       .filter((n): n is cytoscape.NodeSingular => n.isNode())
@@ -104,35 +123,25 @@ connection.addListener(async message => {
 
     marbles.add(id, incomersIds, time, valueId)
 
-    connection.postMessage('easyhard-content', { type: 'GET_EMISSION_VALUE', data: { id, valueId, source: 'tooltip' }})
-  }
-  if (message.type === 'SUBSCRIBE') {
-    const node = cy.getElementById(message.data.id)
-
-    if (!node.length) throw new Error('cannot find node for SUBSCRIBE')
-    node.data('subscriptionsCount', message.data.count)
-  }
-  if (message.type === 'UNSUBSCRIBE') {
-    const node = cy.getElementById(message.data.id)
-
-    if (!node.length) throw new Error('cannot find node for UNSUBSCRIBE')
-    node.data('subscriptionsCount', message.data.count)
-  }
-  if (message.type === 'EMISSION_VALUE') {
-    const { id, value, type, valueId, source } = message.data
+    requestEmissionValue.next({ id, valueId, source: 'tooltip' })
+  }),
+  emissionValue: tap(data => {
+    const { id, value, type, valueId, source } = data
 
     if (source === 'tooltip') {
       showObservableEmittedValue(cy, id, value)
     } else if (source === 'marbles') {
       marbles.setValue(valueId, value, type)
     }
-  }
-  if (message.type === 'FOCUS') {
-    focusNode(cy, message.data.id, areaHighligher)
-  }
-  if (message.type === 'STOP_INSPECTING') {
-    setInspecting(false)
-  }
+  }),
+  logEmission,
+  focus: tap(data => {
+    focusNode(cy, data.id, areaHighligher)
+  }),
+  inspector: pipe(
+    tap(active => inspectorActive.next(active)),
+    switchMap(() => merge(inspect, inspectorActive.pipe(map(active => ({ active })))))
+  )
 })
 
 cy.on('layoutstop', () => {
@@ -152,10 +161,10 @@ cy.on('mouseover', 'node', e => {
   const node = e.target as cytoscape.NodeSingular
   const id = node.data('id')
 
-  connection.postMessage('easyhard-content', { type: 'INSPECT', data: { id }})
+  inspect.next({ id })
 })
 cy.on('mouseout', 'node', () => {
-  connection.postMessage('easyhard-content', { type: 'INSPECT', data: null })
+  inspect.next(null)
 })
 
 cy.on('tap', 'node', e => {
@@ -169,12 +178,6 @@ cy.on('tap', 'node', e => {
 
 cy.on('mousemove', () => {
   areaHighligher.hide()
-})
-
-onMount(container, () => {
-  setTimeout(() => {
-    connection.postMessage('easyhard-content', { type: 'GET_GRAPH' })
-  }, 200)
 })
 
 window.addEventListener('resize', () => {

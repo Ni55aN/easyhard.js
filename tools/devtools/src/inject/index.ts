@@ -1,65 +1,85 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { easyhardRequester } from 'easyhard-post-message'
 import { emissionTracker } from './emission-tracker'
 import { createHighlighter } from './highlighter'
 import { EhNode } from './types'
-import * as connection from './connection'
 import { findElementByDebugId, traverseSubtree } from './dom'
 import { DomToGraph } from './dom-to-graph'
 import { createInspector } from './inspector'
 import { stringify } from './stringify'
+import { map, retry } from 'rxjs/operators'
+import { ConnectionTunnelKey, GraphPayload, ObservableEmission, SubsPayload, _Services } from '../types'
+import { connectionTunnelExit } from '../utils/tunnel'
+import { BehaviorSubject, ReplaySubject, Subject } from 'rxjs'
+
+const connection = connectionTunnelExit<ConnectionTunnelKey>('connectionTunnel')
+const requester = easyhardRequester<_Services>(connection)
+
+const graph = new ReplaySubject<GraphPayload>()
+const subscriptions = new ReplaySubject<SubsPayload>()
+const emission = new ReplaySubject<ObservableEmission>()
+const focus = new Subject<{ id: string }>()
+const inspecting = new BehaviorSubject(false)
 
 const highlighter = createHighlighter()
 const emissions = emissionTracker(
-  data => connection.send({ type: 'NEXT', data }),
-  data => connection.send({ type: 'SUBSCRIBE', data }),
-  data => connection.send({ type: 'UNSUBSCRIBE', data }),
+  data => emission.next(data),
+  data => subscriptions.next({ subscribe: data }),
+  data => subscriptions.next({ unsubscribe: data })
 )
 const inspector = createInspector(highlighter, element => {
   const id = element.__easyhard?.id
 
   if (id) {
-    connection.send({ type: 'FOCUS', data: { id }})
+    focus.next({ id })
   }
 }, () => {
-  connection.send({ type: 'STOP_INSPECTING' })
+  inspecting.next(false)
 })
 
-connection.onMessage(data => {
-  if (data.type === 'GET_GRAPH') {
-    const domToGraph = new DomToGraph({
-      add: arg => '__debug' in arg && emissions.add(arg)
-    })
 
-    emissions.clear()
-    domToGraph.add(document.body)
+graph.pipe(requester.pipe('graph'), retry()).subscribe()
 
-    connection.send({ type: 'GRAPH', data: domToGraph.serialize() })
-    emissions.flush()
-  }
-  if (data.type === 'INSPECT') {
-    highlighter.hide()
+subscriptions.pipe(requester.pipe('subscriptions'), retry()).subscribe()
 
-    const el = data.data && findElementByDebugId(document.body, data.data.id)
-    if (el) highlighter.highlight(el)
-  }
-  if (data.type === 'INSPECTING') {
-    if (data.data.action === 'start') {
+emission.pipe(map(next => ({ next })), requester.pipe('emission'), retry()).subscribe()
+
+requester.call('requestEmissionValue').pipe(map(data => {
+  const { valueId, id, source } = data
+  const { value, type } = stringify(emissions.get(valueId))
+
+  return { id, valueId, value, type, source }
+}), requester.pipe('emissionValue'), retry()).subscribe()
+
+requester.call('logEmission').pipe(retry()).subscribe(data => {
+  const { valueId } = data
+
+  console.log(emissions.get(valueId))
+})
+
+focus.pipe(requester.pipe('focus'), retry()).subscribe()
+
+inspecting.pipe(requester.pipe('inspector'), retry()).subscribe(data => {
+  if (data && 'active' in data) {
+    if (data.active) {
       inspector.start()
-    } else if (data.data.action === 'stop') {
+    } else {
       inspector.stop()
     }
+    return
   }
-  if (data.type === 'LOG_EMISSION') {
-    const { valueId } = data.data
+  highlighter.hide()
 
-    console.log(emissions.get(valueId))
-  }
-  if (data.type === 'GET_EMISSION_VALUE') {
-    const { valueId, id, source } = data.data
-    const { value, type } = stringify(emissions.get(valueId))
-
-    connection.send({ type: 'EMISSION_VALUE', data: { id, valueId, value, type, source }})
-  }
+  const el = data && findElementByDebugId(document.body, data.id)
+  if (el) highlighter.highlight(el)
 })
+
+const domToGraph = new DomToGraph({
+  add: arg => '__debug' in arg && emissions.add(arg)
+})
+
+domToGraph.add(document.body)
+graph.next({ graph: domToGraph.serialize() })
 
 const m = new MutationObserver(mutationsList => {
   mutationsList.forEach(item => {
@@ -71,7 +91,7 @@ const m = new MutationObserver(mutationsList => {
       item.addedNodes.forEach(node => domToGraph.add(node))
 
       if (!domToGraph.isEmpty()) {
-        connection.send({ type: 'ADDED', data: domToGraph.serialize() })
+        graph.next({ added: domToGraph.serialize() })
       }
 
       const removedNodes = Array.from(item.removedNodes).map(traverseSubtree).flat()
@@ -80,7 +100,7 @@ const m = new MutationObserver(mutationsList => {
       }).filter((id): id is string => Boolean(id))
 
       if (removedNodesIds.length > 0) {
-        connection.send({ type: 'REMOVED', data: removedNodesIds })
+        graph.next({ removed: removedNodesIds })
 
         removedNodesIds.forEach(emissions.remove)
       }
@@ -89,7 +109,7 @@ const m = new MutationObserver(mutationsList => {
       const meta = target.__easyhard
 
       if (!meta) throw new Error('should have __easyhard property')
-      connection.send({ type: 'TEXT', data: { id: meta.id, text: target.textContent || '' }})
+      graph.next({ text: { id: meta.id, value: target.textContent || '' }})
     }
   })
 

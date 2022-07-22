@@ -1,109 +1,137 @@
-type ToMessage<ID, T> = { to: ID, message: T }
-type ServicesID<Services> = Exclude<keyof Services, symbol | number>
-type PortID<Services> = `${ServicesID<Services>}-${number}` | ServicesID<Services>
+type PortPayload<Services> = { name: Services, to: Services, tabId: number }
+type Port<Services> = PortPayload<Services> & { port: chrome.runtime.Port }
+type Message = { open: true } | { error: any } | { message: any }
 
-class PortIdSerializer {
-  static delimiter = '|'
+export class Hub<Services extends string> {
+  ports: Port<Services>[] = []
 
-  static stringify<S>(name: string | number | symbol, tabId?: number) {
-    return [name, tabId].filter(Boolean).join(this.delimiter) as PortID<S>
-  }
+  constructor(private accept: (Services)[]) {}
 
-  static parse<S>(portName: PortID<S>): { name: ServicesID<S>, tabId: number | undefined } {
-    const [name, tabId] = portName.split(this.delimiter)
-
-    return {
-      name: name as ServicesID<S>,
-      tabId: tabId ? +tabId : undefined
-    }
-  }
-}
-
-export class Hub<Services extends {[key: string]: unknown}> {
-  ports: {[key in PortID<Services>]?: chrome.runtime.Port}
-
-  constructor(private accept: (keyof Services)[]) {
-    this.ports = {}
-  }
-
-  listen<To extends ServicesID<Services>>(onMessage: (payload: { from: ServicesID<Services>, to: To, message: Services[To] }) => void) {
+  listen(onMessage: (payload: { from: Services, to: Services, message: unknown }) => void) {
     chrome.runtime.onConnect.addListener(port => {
-      const { name, tabId: connectionTabId } = PortIdSerializer.parse<Services>(port.name as PortID<Services>)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const { name, to, tabId: connectionTabId } = JSON.parse(port.name) as Port<Services>
       const tabId = connectionTabId || port.sender?.tab?.id  as number
 
       if (!tabId) return
       if (!this.accept.includes(name)) return
       console.debug('connected ', name)
-      this.setPort(name, tabId, port)
+      this.addPort(name, to, tabId, port)
 
-      port.onMessage.addListener((payload: ToMessage<To, Services[To]>) => {
-        onMessage({ from: name, to: payload.to, message: payload.message })
+      port.onMessage.addListener((message: unknown) => {
+        onMessage({ from: name, to, message })
         try {
-          this.getPort(payload.to, tabId).postMessage(payload.message)
+          this.getPort(to, name, tabId).postMessage({ message })
         } catch (error: Error | any) {
           console.warn(error)
-          this.getPort(name, tabId).postMessage({ error: 'message' in error ? error.message : error })
+          port.postMessage({ error: 'message' in error ? error.message : error })
         }
       })
 
       port.onDisconnect.addListener(() => {
         console.debug('disconnected ', name)
-        this.setPort(name, tabId, undefined)
+        this.removePort(name, to, tabId)
       })
     })
   }
 
-  private setPort(name: ServicesID<Services>, tabId: number, port: chrome.runtime.Port | undefined) {
-    this.ports[PortIdSerializer.stringify<Services>(name, tabId)] = port
+  private addPort(name: Services, to: Services, tabId: number, port: chrome.runtime.Port) {
+    const current: Port<Services> = {
+      name,
+      to,
+      tabId,
+      port
+    }
+    this.ports.push(current)
+
+    const target = this.ports.find(port => port.to === name && port.name === to && port.tabId === tabId)
+
+    if (target) {
+      target.port.postMessage({ open: true })
+      current.port.postMessage({ open: true })
+    }
   }
 
-  private getPort(name: ServicesID<Services>, tabId: number): chrome.runtime.Port {
-    const port = this.ports[PortIdSerializer.stringify<Services>(name, tabId)]
+  private removePort(name: Services, to: Services, tabId: number) {
+    const port = this.ports.find(port => port.name === name &&  port.to === to &&  port.tabId === tabId)
+
+    if (port) {
+      const index = this.ports.indexOf(port)
+      this.ports.splice(index, 1)
+      port.port.disconnect()
+
+      const target = this.ports.find(port => port.to === name && port.name === to && port.tabId === tabId)
+
+      if (target) {
+        target.port.disconnect()
+        this.removePort(target.name, target.to, target.tabId)
+      }
+    }
+  }
+
+  private getPort<To extends Services>(name: Services, to: To, tabId: number): chrome.runtime.Port {
+    const port = this.ports.find(p => p.name === name && p.to === to && p.tabId === tabId)
 
     if (!port) throw new Error('port hasnt connected')
 
-    return port
+    return port.port
   }
 }
 
-export class Connection<Services extends {[key: string]: unknown}, Key extends keyof Services> {
+
+type Handler = (event: { type: string, target: any, data: unknown }) => void
+type EventName = 'message' | 'open' | 'close' | 'error'
+
+export class Connection<Services extends string> {
   private port: chrome.runtime.Port
-  private buffer: { to: keyof Services, message: Services[keyof Services] }[] = []
+  private handlers: { event: EventName, handler: (e: any) => void }[] = []
 
   // tabId needs to be defined in sender is undefined (e.g. from devtools panel)
-  constructor(private name: Key, private tabId?: number) {
-    this.port = this.connect(name, tabId)
+  constructor(private name: Services, private to: Services, private tabId?: number) {
+    this.port = this.connect(name, to, tabId)
+  }
 
-    this.flush()
+  private connect(name: Services, to: Services, tabId?: number) {
+    const port = chrome.runtime.connect({ name: JSON.stringify(<PortPayload<Services>>{ name, to, tabId }) })
+
+    port.onDisconnect.addListener(() => {
+      this.emit('close', new CloseEvent('close', { reason: 'disconnect' }))
+      setTimeout(() => this.reconnect(), 500)
+    })
+    port.onMessage.addListener((message: Message) => {
+      if ('open' in message) {
+        this.emit('open', undefined)
+      }
+      if ('error' in message) {
+        this.emit('error', message.error)
+      }
+      if ('message' in message) {
+        this.emit('message', new MessageEvent('message', { data: message.message }))
+      }
+    })
+
+    return port
   }
 
   private reconnect() {
     console.log(`reconnect ${String(this.name)} for tab ${this.tabId || 'unknown'}`)
-    this.port = this.connect(this.name, this.tabId)
+    this.port = this.connect(this.name, this.to, this.tabId)
   }
 
-  private connect(name: Key, tabId?: number) {
-    return chrome.runtime.connect({ name: PortIdSerializer.stringify<Services>(name, tabId) })
+  private emit(event: EventName, data: any) {
+    this.handlers.filter(h => h.event === event).forEach(h => h.handler(data))
   }
 
-  private flush() {
-    while (this.buffer.length) {
-      try {
-        this.port.postMessage(this.buffer[0])
-        this.buffer.shift()
-      } catch(e) {
-        console.error(e)
-        this.reconnect()
-      }
-    }
-    requestAnimationFrame(() => this.flush())
+  addEventListener(event: EventName, handler: Handler) {
+    this.handlers.push({ event, handler })
   }
 
-  addListener(handler: (message: Services[Key]) => void) {
-    this.port.onMessage.addListener(handler)
+  removeEventListener(event: EventName, handler: Handler) {
+    this.handlers = this.handlers.filter(h => !(h.event === event && h.handler === handler))
   }
 
-  postMessage<ID extends keyof Services>(to: ID, message: Services[ID]) {
-    this.buffer.push({ to, message })
+  postMessage(message: unknown) {
+    this.port.postMessage(message)
   }
 }
+
