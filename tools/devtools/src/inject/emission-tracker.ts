@@ -1,59 +1,53 @@
 import { nanoid } from 'nanoid'
-import { Subscription } from 'rxjs'
-import { ObservableEmission } from '../types'
+import { ReplaySubject, Subscription } from 'rxjs'
+import { ObservableEmission, SubsPayload } from '../types'
 import { EhObservable } from './types'
 
-type SubArguments = { id: string, count: number }
-
-export function emissionTracker(onNext: (arg: ObservableEmission) => void, onSub: (props: SubArguments) => void, onUnsub: (props: SubArguments) => void) {
-  const observables: EhObservable[] = []
-  const subscriptions = new Map<string, Subscription[]>()
-  const emissions = new Map<string, any>()
+export function emissionTracker() {
+  const trackedSubscriptions = new Map<string, Subscription>()
+  const valuesCache = new Map<string, any>()
+  const subscriptions = new ReplaySubject<SubsPayload>()
+  const values = new ReplaySubject<ObservableEmission>()
 
   function add(ob: EhObservable) {
-    observables.push(ob)
+    const { __debug } = ob
+    const { id, nextBuffer, subscribe, unsubscribe } = __debug
+    const subscription = new Subscription()
+
+    if (trackedSubscriptions.has(id)) return
+
+    subscription.add(nextBuffer.subscribe(({ time, value }) => {
+      const valueId = nanoid()
+
+      values.next({ id, valueId, time })
+      valuesCache.set(valueId, value)
+    }))
+    subscription.add(subscribe.subscribe(count => {
+      subscriptions.next({ subscribe: { id, count }})
+    }))
+    subscription.add(unsubscribe.subscribe(count => {
+      subscriptions.next({ unsubscribe: { id, count }})
+    }))
+
+    trackedSubscriptions.set(id, subscription)
   }
   function remove(id: string) {
-    subscriptions.get(id)?.forEach(sub => sub.unsubscribe())
-    subscriptions.delete(id)
+    trackedSubscriptions.get(id)?.unsubscribe()
+    trackedSubscriptions.delete(id)
   }
   function clear() {
-    Array.from(subscriptions.keys()).forEach(remove)
-  }
-  function flush() {
-    while (observables.length) {
-      const ob = observables.shift()
-      if (!ob) return
-
-      const id = ob.__debug.id
-
-      if (subscriptions.has(id)) return
-
-      const sub = ob.__debug.nextBuffer.subscribe(({ time, value }) => {
-        const valueId = nanoid()
-
-        onNext({ id, valueId, time })
-        emissions.set(valueId, value)
-      })
-      const sub2 = ob.__debug.subscribe.subscribe(count => {
-        onSub({ id, count })
-      })
-      const sub3 = ob.__debug.unsubscribe.subscribe(count => {
-        onUnsub({ id, count })
-      })
-
-      subscriptions.set(id, [sub, sub2, sub3])
-    }
+    Array.from(trackedSubscriptions.keys()).forEach(remove)
   }
   function get(valueId: string) {
-    return emissions.get(valueId)
+    return valuesCache.get(valueId)
   }
 
   return {
     add,
     remove,
     clear,
-    flush,
-    get
+    get,
+    subscriptions,
+    values
   }
 }

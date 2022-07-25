@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { easyhardRequester } from 'easyhard-post-message'
 import { emissionTracker } from './emission-tracker'
 import { createHighlighter } from './highlighter'
@@ -7,72 +6,76 @@ import { findElementByDebugId, traverseSubtree } from './dom'
 import { DomToGraph } from './dom-to-graph'
 import { createInspector } from './inspector'
 import { stringify } from './stringify'
-import { map, retry } from 'rxjs/operators'
-import { ConnectionTunnelKey, GraphPayload, ObservableEmission, SubsPayload, _Services } from '../types'
+import { filter, map, pluck } from 'rxjs/operators'
+import { ConnectionTunnelKey, GraphPayload, ServicesScheme } from '../types'
 import { connectionTunnelExit } from '../utils/tunnel'
-import { BehaviorSubject, ReplaySubject, Subject } from 'rxjs'
+import { ReplaySubject, tap } from 'rxjs'
+import { useEffects } from '../utils/effects'
 
 const connection = connectionTunnelExit<ConnectionTunnelKey>('connectionTunnel')
-const requester = easyhardRequester<_Services>(connection)
+const requester = easyhardRequester<ServicesScheme>(connection)
 
 const graph = new ReplaySubject<GraphPayload>()
-const subscriptions = new ReplaySubject<SubsPayload>()
-const emission = new ReplaySubject<ObservableEmission>()
-const focus = new Subject<{ id: string }>()
-const inspecting = new BehaviorSubject(false)
 
 const highlighter = createHighlighter()
-const emissions = emissionTracker(
-  data => emission.next(data),
-  data => subscriptions.next({ subscribe: data }),
-  data => subscriptions.next({ unsubscribe: data })
-)
-const inspector = createInspector(highlighter, element => {
-  const id = element.__easyhard?.id
+const emissions = emissionTracker()
+const inspector = createInspector(highlighter)
 
-  if (id) {
-    focus.next({ id })
-  }
-}, () => {
-  inspecting.next(false)
-})
+const effects = useEffects()
 
+effects.add(graph.pipe(
+  requester.pipe('graph')
+))
 
-graph.pipe(requester.pipe('graph'), retry()).subscribe()
+effects.add(emissions.subscriptions.pipe(
+  requester.pipe('subscriptions')
+))
 
-subscriptions.pipe(requester.pipe('subscriptions'), retry()).subscribe()
+effects.add(emissions.values.pipe(
+  map(next => ({ next })),
+  requester.pipe('emission')
+))
 
-emission.pipe(map(next => ({ next })), requester.pipe('emission'), retry()).subscribe()
+effects.add(requester.call('requestEmissionValue').pipe(
+  map(data => {
+    const { valueId, id, source } = data
+    const { value, type } = stringify(emissions.get(valueId))
 
-requester.call('requestEmissionValue').pipe(map(data => {
-  const { valueId, id, source } = data
-  const { value, type } = stringify(emissions.get(valueId))
+    return { id, valueId, value, type, source }
+  }),
+  requester.pipe('emissionValue')
+))
 
-  return { id, valueId, value, type, source }
-}), requester.pipe('emissionValue'), retry()).subscribe()
+effects.add(requester.call('logEmission').pipe(
+  pluck('valueId'),
+  map(emissions.get),
+  tap(console.log)
+))
 
-requester.call('logEmission').pipe(retry()).subscribe(data => {
-  const { valueId } = data
+effects.add(inspector.over.pipe(
+  map(element => element.__easyhard?.id),
+  filter(Boolean),
+  map(id => ({ id })),
+  requester.pipe('focus')
+))
 
-  console.log(emissions.get(valueId))
-})
-
-focus.pipe(requester.pipe('focus'), retry()).subscribe()
-
-inspecting.pipe(requester.pipe('inspector'), retry()).subscribe(data => {
-  if (data && 'active' in data) {
-    if (data.active) {
-      inspector.start()
-    } else {
-      inspector.stop()
+effects.add(inspector.active.pipe(
+  requester.pipe('inspector'),
+  tap(data => {
+    if (data && 'active' in data) {
+      if (data.active) {
+        inspector.start()
+      } else {
+        inspector.stop()
+      }
+      return
     }
-    return
-  }
-  highlighter.hide()
+    highlighter.hide()
 
-  const el = data && findElementByDebugId(document.body, data.id)
-  if (el) highlighter.highlight(el)
-})
+    const el = data && findElementByDebugId(document.body, data.id)
+    if (el) highlighter.highlight(el)
+  })
+))
 
 const domToGraph = new DomToGraph({
   add: arg => '__debug' in arg && emissions.add(arg)
@@ -112,8 +115,6 @@ const m = new MutationObserver(mutationsList => {
       graph.next({ text: { id: meta.id, value: target.textContent || '' }})
     }
   })
-
-  emissions.flush()
 })
 
 m.observe(document.body, {
