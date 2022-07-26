@@ -63,7 +63,11 @@ const marbles = createMarbles({
     focusNode(cy, id, areaHighligher)
   },
   log(valueId) {
+    if (Array.isArray(valueId)) {
+      valueId.forEach(id => logEmission.next({ valueId: id }))
+    } else {
     logEmission.next({ valueId })
+    }
   },
   fetchValue(id, valueId) {
     requestEmissionValue.next({ id, valueId, source: 'marbles' })

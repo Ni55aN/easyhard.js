@@ -22,7 +22,7 @@ type Props = {
   toggle: Observable<{ id: string, hidden: boolean }>
   debug?: boolean
   tap?: (id: string, parentId?: string) => void
-  log?: (valueId: string) => void
+  log?: (valueId: string | string[]) => void
   fetchValue?: (id: string, valueId: string) => void
 }
 
@@ -235,7 +235,24 @@ export function Graph(props: Props) {
     createContextMenu(cy, 'node:child', [
       {
         content: h('span', {}, 'Log value'),
-        select: el => props.log && props.log(el.data('id') as string)
+        select: el => {
+          if (!props.log) return
+          const id: string = el.data('id')
+
+          props.log(id)
+        }
+      },
+      {
+        content: h('span', {}, 'Log nearest'),
+        select: el => {
+          if (!props.log) return
+          const id: string = el.data('id')
+          const child = cy.getElementById(id)
+          const parent = child.parent()
+          const nearest = parent.children().filter(node => Math.abs(node.position('x') - child.position('x')) < child.width())
+
+          props.log(nearest.map(el => el.data('id') as string))
+        }
       }
     ])
 

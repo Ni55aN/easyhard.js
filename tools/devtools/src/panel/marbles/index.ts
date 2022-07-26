@@ -6,7 +6,7 @@ import { Graph } from './views/graph'
 type Props = {
   debug?: boolean
   lineSelect: (id: string) => void
-  log: (valueId: string) => void
+  log: (valueId: string | string[]) => void
   fetchValue: (id: string, valueId: string) => void
 }
 
