@@ -57,6 +57,8 @@ module.exports = {
         { from: 'manifest.json', to: '.' }
       ]
     }),
-    new webpack.EnvironmentPlugin(['DEBUG'])
+    new webpack.EnvironmentPlugin({
+      'DEBUG': false
+    })
   ]
 }
