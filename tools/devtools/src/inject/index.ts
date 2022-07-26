@@ -11,6 +11,7 @@ import { ConnectionTunnelKey, GraphPayload, ServicesScheme } from '../types'
 import { connectionTunnelExit } from '../utils/tunnel'
 import { ReplaySubject, tap } from 'rxjs'
 import { useEffects } from '../utils/effects'
+import './register-window-utils'
 
 const connection = connectionTunnelExit<ConnectionTunnelKey>('connectionTunnel')
 const requester = easyhardRequester<ServicesScheme>(connection)

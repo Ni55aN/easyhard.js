@@ -1,8 +1,9 @@
 import { Observable, OperatorFunction } from 'rxjs'
 
+export type GraphNodeType = 'eh-text' | 'text' | 'node' | 'eh-node' | 'observable' | 'fragment'
 export type GraphNode = {
   id: string
-  type: 'eh-text' | 'text' | 'node' | 'eh-node' | 'observable' | 'fragment'
+  type: GraphNodeType
   label: string | null
 }
 export type EdgeType = 'argument' | 'other'
@@ -24,7 +25,8 @@ export type EmissionValue = {
 
 export type Services = 'easyhard-devtools' | 'easyhard-content'
 
-export type InspectorPayload = { id: string } | { active: boolean } | null
+export type InpectorAction = { id: string }
+export type InspectorPayload = InpectorAction | { active: boolean } | null
 export type GraphPayload = { graph: Graph } | { added: Graph } | { removed: string[] } | { text: { id: string, value: string }}
 export type SubsPayload = { subscribe: { id: string, count: number }} | { unsubscribe: { id: string, count: number }}
 export type ServicesScheme = {

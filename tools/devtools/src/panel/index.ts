@@ -4,7 +4,7 @@ import { css } from 'easyhard-styles'
 import { easyhardResponser } from 'easyhard-post-message'
 import { BehaviorSubject, merge, pipe, Subject } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
-import { EmissionValueRequest, Services, ServicesScheme } from '../types'
+import { EmissionValueRequest, GraphNodeType, InpectorAction, Services, ServicesScheme } from '../types'
 import { Connection } from '../utils/communication'
 import { adjustEdgeCurve } from './edges'
 import { createGraph } from './graph'
@@ -29,7 +29,7 @@ const connection = new Connection<Services>('easyhard-devtools', 'easyhard-conte
 const requestEmissionValue = new Subject<EmissionValueRequest>()
 const logEmission = new Subject<{ valueId: string }>()
 const inspectorActive = $(false)
-const inspect = new BehaviorSubject<{ id: string } | null>(null)
+const inspect = new BehaviorSubject<InpectorAction | null>(null)
 
 const bodyStyles = css({
   margin: 0,
@@ -173,9 +173,18 @@ cy.on('mouseout', 'node', () => {
 cy.on('tap', 'node', e => {
   const node = e.target as cytoscape.NodeSingular
   const id = node.data('id') as string
+  const type = node.data('type') as GraphNodeType
 
-  if (node.data('type') === 'observable') {
+  if (type === 'observable') {
     marbles.focus(id)
+  }
+  if ((['eh-text', 'text', 'node', 'eh-node', 'fragment'] as GraphNodeType[]).includes(type)) {
+    chrome.devtools.inspectedWindow.eval(`
+    var node = window.findElementByDebugId(document.body, "${id}")
+    inspect(node instanceof Text && !node.textContent ? node.parentNode : node)
+    `,
+    console.log
+    )
   }
 })
 
