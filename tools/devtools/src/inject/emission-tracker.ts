@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { ReplaySubject, Subscription } from 'rxjs'
 import { ObservableEmission, SubsPayload } from '../types'
-import { EhObservable } from './types'
+import { EhObservable } from '../dom-types'
 
 export function emissionTracker() {
   const trackedSubscriptions = new Map<string, Subscription>()

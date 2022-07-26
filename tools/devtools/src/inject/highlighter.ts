@@ -1,6 +1,6 @@
 import 'luna-dom-highlighter/luna-dom-highlighter.css'
 import LunaDomHighlighter from 'luna-dom-highlighter'
-import { EhMeta } from './types'
+import { EhMeta } from '../dom-types'
 
 export function createHighlighter() {
   const highligherContainer = document.createElement('div') as EhMeta & HTMLDivElement

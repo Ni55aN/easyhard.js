@@ -1,4 +1,4 @@
-import { EhMeta, EhNode } from './types'
+import { EhMeta, EhNode } from '../dom-types'
 
 export function findElementByDebugId(node: (HTMLElement | Text) & EhMeta, id: string): HTMLElement | Text | null { // TODO performance
   if (node?.__easyhard?.id === id) return node

@@ -1,6 +1,6 @@
 import LunaDomHighlighter from 'luna-dom-highlighter'
 import { BehaviorSubject, Subject } from 'rxjs'
-import { EhNode } from './types'
+import { EhNode } from '../dom-types'
 
 export function createInspector(highlighter: LunaDomHighlighter) {
   const active = new BehaviorSubject(false)

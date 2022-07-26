@@ -1,6 +1,6 @@
 import { Attrs, TagName } from 'easyhard'
 import { Observable, ReplaySubject } from 'rxjs'
-import { EdgeType } from '../types'
+import { EdgeType } from './types'
 
 export type Parent = { type: EdgeType, link: EhObservable | EhNode }
 export type NestedParent = Parent | NestedParent[]

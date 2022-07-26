@@ -1,8 +1,8 @@
 import { Attrs, TagName } from 'easyhard'
 import { nanoid } from 'nanoid'
 import { EdgeType, Graph, GraphNode } from '../types'
-import { findParent } from './dom'
-import { EhMeta, EhNode, EhObservable, Parent } from './types'
+import { findParent } from '../utils/dom'
+import { EhMeta, EhNode, EhObservable, Parent } from '../dom-types'
 
 export class DomToGraph {
   graph: Graph
