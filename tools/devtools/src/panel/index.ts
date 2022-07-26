@@ -4,7 +4,7 @@ import { css } from 'easyhard-styles'
 import { easyhardResponser } from 'easyhard-post-message'
 import { BehaviorSubject, merge, pipe, Subject } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
-import { EmissionValueRequest, Services, _Services } from '../types'
+import { EmissionValueRequest, Services, ServicesScheme } from '../types'
 import { Connection } from '../utils/communication'
 import { adjustEdgeCurve } from './edges'
 import { createGraph } from './graph'
@@ -66,7 +66,7 @@ const marbles = createMarbles({
     if (Array.isArray(valueId)) {
       valueId.forEach(id => logEmission.next({ valueId: id }))
     } else {
-    logEmission.next({ valueId })
+      logEmission.next({ valueId })
     }
   },
   fetchValue(id, valueId) {
@@ -84,8 +84,7 @@ const cy = createGraph(container, { toggle: marbles.toggle, debug })
 const areaHighligher = createAreaHighlighter(cy)
 
 
-easyhardResponser<_Services>(connection, {
-  // ttt: interval(500).pipe(map(v => v * 0.999)),
+easyhardResponser<ServicesScheme>(connection, {
   graph: tap(async data => {
     if ('graph' in data) {
       marbles.clear()

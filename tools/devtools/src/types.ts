@@ -1,4 +1,4 @@
-import { TuplifyUnion } from './utils/types'
+import { Observable, OperatorFunction } from 'rxjs'
 
 export type GraphNode = {
   id: string
@@ -13,28 +13,29 @@ export type ObservableEmission = { id: string, time: number, valueId: string }
 export type ObservableEmissionType = 'string' | 'number' | 'boolean' | 'function' | 'array' | 'object' | 'null' | 'undefined'
 
 
-export type Services = {
-  'easyhard-devtools': { type: 'GRAPH', data: Graph }
-  | { type: 'ADDED', data: Graph }
-  | { type: 'REMOVED', data: string[] }
-  | { type: 'TEXT', data: { id: string, text: string }}
-  | { type: 'NEXT', data: ObservableEmission }
-  | { type: 'SUBSCRIBE', data: { id: string, count: number } }
-  | { type: 'UNSUBSCRIBE', data: { id: string, count: number } }
-  | { type: 'FOCUS', data: { id: string }}
-  | { type: 'EMISSION_VALUE', data: {
-    id: string,
-    valueId: string,
-    value: object | string | number | boolean,
-    type: ObservableEmissionType,
-    source: 'tooltip' | 'marbles'
-  }}
-  | { type: 'STOP_INSPECTING' }
-  'easyhard-content':  { type: 'GET_GRAPH' }
-  | { type: 'INSPECT', data: null | { id: string }}
-  | { type: 'INSPECTING', data: { action: 'start' } | { action: 'stop' } }
-  | { type: 'LOG_EMISSION', data: { valueId: string } }
-  | { type: 'GET_EMISSION_VALUE', data: { id: string, valueId: string, source: 'tooltip' | 'marbles' } }
+export type EmissionValueRequest = { id: string, valueId: string, source: 'tooltip' | 'marbles' }
+export type EmissionValue = {
+  id: string,
+  valueId: string,
+  value: object | string | number | boolean,
+  type: ObservableEmissionType,
+  source: 'tooltip' | 'marbles'
 }
 
-export type ServicesTypes<T extends keyof Services> = TuplifyUnion<Services[T]['type']>
+export type Services = 'easyhard-devtools' | 'easyhard-content'
+
+export type InspectorPayload = { id: string } | { active: boolean } | null
+export type GraphPayload = { graph: Graph } | { added: Graph } | { removed: string[] } | { text: { id: string, value: string }}
+export type SubsPayload = { subscribe: { id: string, count: number }} | { unsubscribe: { id: string, count: number }}
+export type ServicesScheme = {
+  graph: OperatorFunction<GraphPayload, unknown>
+  subscriptions: OperatorFunction<SubsPayload, unknown>
+  emission: OperatorFunction<{ next: ObservableEmission }, unknown>
+  requestEmissionValue: Observable<EmissionValueRequest>
+  emissionValue: OperatorFunction<EmissionValue, unknown>
+  logEmission: Observable<{ valueId: string }>
+  focus: OperatorFunction<{ id: string }, unknown>
+  inspector: OperatorFunction<boolean, InspectorPayload>
+}
+
+export type ConnectionTunnelKey = 'connectionTunnel'
