@@ -2,8 +2,8 @@ import cytoscape, { EventObjectNode } from 'cytoscape'
 import { $, h } from 'easyhard'
 import { css } from 'easyhard-styles'
 import { easyhardResponser } from 'easyhard-post-message'
-import { BehaviorSubject, merge, pipe, Subject } from 'rxjs'
-import { map, switchMap, tap } from 'rxjs/operators'
+import { BehaviorSubject, merge, EMPTY, OperatorFunction, pipe, Subject } from 'rxjs'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { EmissionValueRequest, GraphNodeType, InpectorAction, Services, ServicesScheme } from '../types'
 import { Connection } from '../utils/communication'
 import { adjustEdgeCurve } from './edges'
@@ -20,6 +20,7 @@ import { Button } from './shared/Button'
 import { InspectIcon } from '../assets/icons/inspect'
 import { focusNode } from './shared/cytoscape/focus'
 import { createAreaHighlighter } from './shared/cytoscape/highligher'
+import { syncGroups } from './graph/group'
 
 const debug = Boolean(process.env.DEBUG)
 
@@ -60,7 +61,9 @@ const container = Main({})
 const marbles = createMarbles({
   debug,
   lineSelect(id) {
-    focusNode(cy, id, areaHighligher)
+    if (cy.hasElementWithId(id)) {
+      focusNode(cy, id, areaHighligher)
+    }
   },
   log(valueId) {
     if (Array.isArray(valueId)) {
@@ -111,26 +114,34 @@ easyhardResponser<ServicesScheme>(connection, {
     if ('text' in data) {
       updateNodeText(cy, data.text.id, data.text.value)
     }
+
+    syncGroups(cy)
   })),
   subscriptions: _catch(tap(data => {
     if ('subscribe' in data) {
-      const node = cy.getElementById(data.subscribe.id)
+      const { id, count } = data.subscribe
+      const node = graph.getElementById(id)
 
-      if (!node.length) throw new Error('cannot find node for SUBSCRIBE')
-      node.data('subscriptionsCount', data.subscribe.count)
+      if (node.length) {
+        node.data('subscriptionsCount', count)
+        cy.$(`node[type="observable-group"][endNodeId="${id}"]`).data('subscriptionsCount', count)
+      }
     }
     if ('unsubscribe' in data) {
-      const node = cy.getElementById(data.unsubscribe.id)
+      const { id, count } = data.unsubscribe
+      const node = graph.getElementById(id)
 
-      if (!node.length) throw new Error('cannot find node for UNSUBSCRIBE')
-      node.data('subscriptionsCount', data.unsubscribe.count)
+      if (node.length) {
+        node.data('subscriptionsCount', count)
+        cy.$(`node[type="observable-group"][endNodeId="${id}"]`).data('subscriptionsCount', count)
+      }
     }
   })),
   requestEmissionValue,
   emission: _catch(tap(data => {
     const { id, time, valueId } = data.next
 
-    const incomers = cy.getElementById(id).incomers()
+    const incomers = graph.getElementById(id).incomers()
       .filter((n): n is cytoscape.NodeSingular => n.isNode())
     const incomersIds = incomers.map(incomer => incomer.data('id') as string)
 
@@ -142,7 +153,9 @@ easyhardResponser<ServicesScheme>(connection, {
     const { id, value, type, valueId, source } = data
 
     if (source === 'tooltip') {
-      showObservableEmittedValue(cy, id, value)
+      if (cy.hasElementWithId(id)) {
+        showObservableEmittedValue(cy, id, value)
+      }
     } else if (source === 'marbles') {
       marbles.setValue(valueId, value, type)
     }
@@ -163,13 +176,7 @@ cy.on('layoutstop', () => {
 cy.on('drag', (el: EventObjectNode) => {
   el.target.connectedEdges().forEach(edge => adjustEdgeCurve(edge))
 })
-cy.on('remove', e => {
-  if (e.target.isNode()) {
-    const id: string = e.target.data('id')
 
-    marbles.remove(id)
-  }
-})
 cy.on('mouseover', 'node', e => {
   const node = e.target as cytoscape.NodeSingular
   const id = node.data('id')
@@ -187,6 +194,9 @@ cy.on('tap', 'node', e => {
 
   if (type === 'observable') {
     marbles.focus(id)
+  }
+  if (type === 'observable-group') {
+    marbles.focus(node.data('endNodeId') as string)
   }
   if (getTypeCategory(type) === 'dom') {
     chrome.devtools.inspectedWindow.eval(`

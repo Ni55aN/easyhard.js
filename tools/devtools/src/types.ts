@@ -1,10 +1,11 @@
 import { Observable, OperatorFunction } from 'rxjs'
 
-export type GraphNodeType = 'eh-text' | 'text' | 'node' | 'eh-node' | 'observable' | 'fragment'
+export type GraphNodeType = 'eh-text' | 'text' | 'node' | 'eh-node' | 'observable' | 'observable-group' | 'fragment'
 export type GraphNode = {
   id: string
   type: GraphNodeType
   label: string | null
+  group?: null | { name: string, start: string }
 }
 export type EdgeType = 'argument' | 'other'
 export type GraphEdge = { id: string, source: string, target: string, type: EdgeType, label?: string }

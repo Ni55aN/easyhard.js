@@ -20,7 +20,11 @@ export class DomToGraph {
         this.graph.nodes.push({
           id,
           label: ob.__debug.name,
-          type: 'observable'
+          type: 'observable',
+          group: ob.__debug.groupName && ob.__debug.groupStart ? {
+            name: ob.__debug.groupName,
+            start: ob.__debug.groupStart
+          } : null
         })
         this.events.add(ob)
 

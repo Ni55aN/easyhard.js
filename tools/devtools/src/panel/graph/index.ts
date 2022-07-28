@@ -5,6 +5,7 @@ import { createNodesBadge } from '../shared/cytoscape/badge'
 import { createContextMenu } from '../shared/cytoscape/context-menu'
 import { toggleObservables, TogglerKey, toggleSubGraph } from './toggler'
 import * as selectors from './selectors'
+import { initGroups, syncGroups } from './group'
 import { setupTooltips } from './tooltip'
 
 function getLabelStyle(key: string, maxLength: number, sizes: [number, number], debug?: boolean) {
@@ -41,7 +42,7 @@ function getBackground(color: string, props: (el: NodeSingular) => { leftGradien
 }
 
 export function getTypeCategory<T extends string | GraphNodeType>(type: T) {
-  if (['observable'].includes(type)) return 'observable'
+  if (['observable', 'observable-group'].includes(type)) return 'observable'
   if (['eh-text', 'text', 'node', 'eh-node', 'fragment'].includes(type)) return 'dom'
 
   return null
@@ -144,6 +145,24 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
         }
       },
       {
+        selector: 'node[type="observable-group"]',
+        style: {
+          'shape': 'round-rectangle',
+          'border-width': 1,
+          'border-color': 'black',
+          ...getBackground('#f1a800', el => ({
+            leftGradient: isParentsHidden(el),
+            rightGradient: false
+          })),
+          color: 'white',
+          opacity(el: cytoscape.NodeSingular) {
+            const endNodeId = el.data('endNodeId') as string
+
+            return +originElements.getElementById(endNodeId).data('subscriptionsCount') > 0 ? 1 : 0.4
+          },
+        }
+      },
+      {
         selector: 'node[type="fragment"]',
         style: {
           'shape': 'ellipse',
@@ -198,7 +217,7 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
     ]
   })
 
-  createNodesBadge(cy, () => cy.elements('node[type="observable"]'), node => {
+  createNodesBadge(cy, () => cy.elements('node[type="observable"], node[type="observable-group"]'), node => {
     const count = node.data('subscriptionsCount')
 
     return count > 0 && String(count)
@@ -215,6 +234,7 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
         select: () => {
           node.data(TogglerKey.ObservablesHidden, !observablesHidden)
           toggleObservables(cy, node, !observablesHidden, props.toggle)
+          syncGroups(cy)
         }
       },
       {
@@ -222,6 +242,7 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
         select: () => {
           node.data(TogglerKey.ChildrenHidden, !childrenHidden)
           toggleSubGraph(cy, node, !childrenHidden, props.toggle)
+          syncGroups(cy)
         }
       }
     ]
@@ -241,6 +262,8 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
       }
     ]
   })
+
+  initGroups(cy)
 
   let originElements = cy.collection()
 

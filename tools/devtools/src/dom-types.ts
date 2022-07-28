@@ -14,6 +14,8 @@ export type EhObservable = Observable<unknown> & {
     nextBuffer: ReplaySubject<{ value: any, time: number }>
     subscribe: ReplaySubject<number>
     unsubscribe: ReplaySubject<number>
+    groupName?: string
+    groupStart?: string
   }
 }
 export type EhMeta = {
