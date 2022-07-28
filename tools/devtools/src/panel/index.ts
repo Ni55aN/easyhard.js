@@ -7,7 +7,7 @@ import { map, switchMap, tap } from 'rxjs/operators'
 import { EmissionValueRequest, GraphNodeType, InpectorAction, Services, ServicesScheme } from '../types'
 import { Connection } from '../utils/communication'
 import { adjustEdgeCurve } from './edges'
-import { createGraph } from './graph'
+import { createGraph, getTypeCategory } from './graph'
 import { Header } from './header'
 import { Sidebar } from './sidebar'
 import { Main } from './main'
@@ -178,7 +178,7 @@ cy.on('tap', 'node', e => {
   if (type === 'observable') {
     marbles.focus(id)
   }
-  if ((['eh-text', 'text', 'node', 'eh-node', 'fragment'] as GraphNodeType[]).includes(type)) {
+  if (getTypeCategory(type) === 'dom') {
     chrome.devtools.inspectedWindow.eval(`
     var node = window.findElementByDebugId(document.body, "${id}")
     inspect(node instanceof Text && !node.textContent ? node.parentNode : node)

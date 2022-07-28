@@ -38,6 +38,13 @@ function getBackground(color: string, props: (el: cytoscape.NodeSingular) => { l
   }
 }
 
+export function getTypeCategory<T extends string | GraphNodeType>(type: T) {
+  if (['observable'].includes(type)) return 'observable'
+  if (['eh-text', 'text', 'node', 'eh-node', 'fragment'].includes(type)) return 'dom'
+
+  return null
+}
+
 function isChildrenHidden(node: cytoscape.NodeSingular) {
   return Boolean(node.data(TogglerKey.ChildrenHidden))
 }
@@ -158,13 +165,15 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
           },
           'line-color'(edge: EdgeSingular) {
             const nodes = edge.connectedNodes()
+            const type = nodes[0].data('type')
 
-            return nodes[0].data('type') === 'observable' ? '#f1c82a' : '#7e7e7e'
+            return getTypeCategory(type) === 'observable' ? '#f1c82a' : '#7e7e7e'
           },
           'width'(edge: EdgeSingular) {
             const nodes = edge.connectedNodes()
+            const type = nodes[0].data('type')
 
-            return nodes[0].data('type') === 'observable' ? 1.5 : 2
+            return getTypeCategory(type) === 'observable' ? 1.5 : 2
           }
         }
       },
