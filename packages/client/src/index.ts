@@ -3,6 +3,7 @@ import { getUID } from 'easyhard-common'
 import { NEVER, Observable, OperatorFunction, throwError } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 import { createConnection } from './connection'
+import { debugAddParent, debugObservableGroup } from './devtools'
 import { useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
 import { ConnectionArgs, JSONPayload } from './types'
@@ -46,12 +47,13 @@ export function easyhardClient<T>({
 
     const transformError = catchError<JSONResponse, Observable<JSONResponse>>(err => throwError(responseTransformer.prop(err, null)))
     const transformValue = map<JSONResponse, Type>(value => value && responseTransformer.apply(value, null) as Type)
+    const observable = bindObservable<JSONResponse>(key, null, connection)
 
-    return bindObservable<JSONResponse>(key, null, connection).pipe(
+    return debugObservableGroup('call', observable, observable.pipe(
       transformError,
       transformValue,
       mergeMap(setCookies)
-    )
+    ))
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -120,7 +122,11 @@ export function easyhardClient<T>({
         })
       )
 
-      return bindObservable<JSONResponse>(key, sourceId, connection).pipe(
+      const observable = bindObservable<JSONResponse>(key, sourceId, connection)
+
+      debugAddParent(source, observable)
+
+      return debugObservableGroup('pipe', observable, observable.pipe(
         transformError,
         transformValue,
         mergeMap(setCookies),
@@ -132,7 +138,7 @@ export function easyhardClient<T>({
             while(paramsDestroy.length) (paramsDestroy.shift() || (() => null))()
           }
         })
-      )
+      ))
     })
   }
 
