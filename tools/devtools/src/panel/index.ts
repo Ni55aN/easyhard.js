@@ -80,7 +80,8 @@ const main = Splitter({ sizes: [75, 25] }, container, sidebar)
 document.body.appendChild(header)
 document.body.appendChild(main)
 
-const cy = createGraph(container, { toggle: marbles.toggle, debug })
+const graph = createGraph(container, { toggle: marbles.toggle, debug })
+const { cy } = graph
 const areaHighligher = createAreaHighlighter(cy)
 
 
@@ -88,14 +89,14 @@ easyhardResponser<ServicesScheme>(connection, {
   graph: tap(async data => {
     if ('graph' in data) {
       marbles.clear()
-      setData(cy, data.graph)
+      setData(graph, data.graph)
       await layout(cy, true)
     }
     if ('removed' in data) {
-      removeNodes(cy, data.removed)
+      removeNodes(graph, data.removed)
     }
     if ('added' in data) {
-      addNodes(cy, data.added)
+      addNodes(graph, data.added)
       await layout(cy)
     }
     if ('text' in data) {

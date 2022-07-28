@@ -1,13 +1,15 @@
 import { h } from 'easyhard'
-import cytoscape, { EdgeSingular } from 'cytoscape'
+import cytoscape, { CollectionArgument, CollectionReturnValue, EdgeSingular, ElementDefinition, NodeSingular } from 'cytoscape'
+import { GraphNodeType } from '../../types'
 import { createNodesBadge } from '../shared/cytoscape/badge'
 import { createContextMenu } from '../shared/cytoscape/context-menu'
 import { toggleObservables, TogglerKey, toggleSubGraph } from './toggler'
 import * as selectors from './selectors'
+import { setupTooltips } from './tooltip'
 
 function getLabelStyle(key: string, maxLength: number, sizes: [number, number], debug?: boolean) {
   return {
-    label(ele: cytoscape.NodeSingular) {
+    label(ele: NodeSingular) {
       const label = ele.data(key)
 
       if (debug) {
@@ -16,7 +18,7 @@ function getLabelStyle(key: string, maxLength: number, sizes: [number, number], 
 
       return label
     },
-    'font-size'(ele: cytoscape.NodeSingular) {
+    'font-size'(ele: NodeSingular) {
       const label = String(ele.data('label'))
       const scale = debug ? 0.7 : 1
 
@@ -25,11 +27,11 @@ function getLabelStyle(key: string, maxLength: number, sizes: [number, number], 
   }
 }
 
-function getBackground(color: string, props: (el: cytoscape.NodeSingular) => { leftGradient: boolean, rightGradient: boolean }) {
+function getBackground(color: string, props: (el: NodeSingular) => { leftGradient: boolean, rightGradient: boolean }) {
   return {
     'background-color': color,
     'background-fill': 'linear-gradient',
-    'background-gradient-stop-colors': (el: cytoscape.NodeSingular) => {
+    'background-gradient-stop-colors': (el: NodeSingular) => {
       const { leftGradient, rightGradient } = props(el)
       return `${leftGradient ? 'white' : color} ${color} ${rightGradient ? 'white' : color}`
     },
@@ -49,15 +51,24 @@ function isChildrenHidden(node: cytoscape.NodeSingular) {
   return Boolean(node.data(TogglerKey.ChildrenHidden))
 }
 
-function isObservablesHidden(node: cytoscape.NodeSingular) {
+function isObservablesHidden(node: NodeSingular) {
   return Boolean(node.data(TogglerKey.ObservablesHidden))
 }
 
-function isParentsHidden(node: cytoscape.NodeSingular) {
+function isParentsHidden(node: NodeSingular) {
   return Boolean(node.data(TogglerKey.ParentsHidden))
 }
 
-export function createGraph(container: HTMLElement, props: { toggle?: (id: string, hidden: boolean) => void, debug?: boolean } = {}) {
+export type GraphView = {
+  cy: cytoscape.Core,
+  clear: () => void
+  add: (els: ElementDefinition[]) => CollectionReturnValue
+  remove: (els: CollectionArgument) => CollectionReturnValue
+  elements: CollectionReturnValue
+  getElementById: (id: string) => CollectionReturnValue
+}
+
+export function createGraph(container: HTMLElement, props: { toggle?: (id: string, hidden: boolean) => void, debug?: boolean } = {}): GraphView {
   const cy = cytoscape({
     container,
     wheelSensitivity: 0.25,
@@ -231,5 +242,30 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
     ]
   })
 
-  return cy
+  let originElements = cy.collection()
+
+  return {
+    cy,
+    clear() {
+      cy.elements().remove()
+      originElements.remove()
+    },
+    elements: originElements,
+    add(eles) {
+      const newEles = eles.filter(el => !originElements.toArray().find(n => n.data('id') === el.data.id))
+      const added = cy.add(newEles)
+
+      originElements = originElements.add(added)
+      setupTooltips(added)
+
+      return added
+    },
+    remove(eles) {
+      originElements = originElements.subtract(eles)
+      return cy.remove(eles)
+    },
+    getElementById(id) {
+      return originElements.getElementById(id) as CollectionReturnValue
+    }
+  }
 }
