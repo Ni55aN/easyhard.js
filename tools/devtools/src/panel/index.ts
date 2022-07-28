@@ -84,9 +84,18 @@ const graph = createGraph(container, { toggle: marbles.toggle, debug })
 const { cy } = graph
 const areaHighligher = createAreaHighlighter(cy)
 
+function _catch<T,K>(op: OperatorFunction<T,K>) {
+  return pipe(
+    op,
+    catchError(e => {
+      console.error(e)
+      return EMPTY
+    })
+  )
+}
 
 easyhardResponser<ServicesScheme>(connection, {
-  graph: tap(async data => {
+  graph: _catch(tap(async data => {
     if ('graph' in data) {
       marbles.clear()
       setData(graph, data.graph)
@@ -102,8 +111,8 @@ easyhardResponser<ServicesScheme>(connection, {
     if ('text' in data) {
       updateNodeText(cy, data.text.id, data.text.value)
     }
-  }),
-  subscriptions: tap(data => {
+  })),
+  subscriptions: _catch(tap(data => {
     if ('subscribe' in data) {
       const node = cy.getElementById(data.subscribe.id)
 
@@ -116,9 +125,9 @@ easyhardResponser<ServicesScheme>(connection, {
       if (!node.length) throw new Error('cannot find node for UNSUBSCRIBE')
       node.data('subscriptionsCount', data.unsubscribe.count)
     }
-  }),
+  })),
   requestEmissionValue,
-  emission: tap(data => {
+  emission: _catch(tap(data => {
     const { id, time, valueId } = data.next
 
     const incomers = cy.getElementById(id).incomers()
@@ -128,8 +137,8 @@ easyhardResponser<ServicesScheme>(connection, {
     marbles.add(id, incomersIds, time, valueId)
 
     requestEmissionValue.next({ id, valueId, source: 'tooltip' })
-  }),
-  emissionValue: tap(data => {
+  })),
+  emissionValue: _catch(tap(data => {
     const { id, value, type, valueId, source } = data
 
     if (source === 'tooltip') {
@@ -137,15 +146,15 @@ easyhardResponser<ServicesScheme>(connection, {
     } else if (source === 'marbles') {
       marbles.setValue(valueId, value, type)
     }
-  }),
+  })),
   logEmission,
-  focus: tap(data => {
+  focus: _catch(tap(data => {
     focusNode(cy, data.id, areaHighligher)
-  }),
-  inspector: pipe(
+  })),
+  inspector: _catch(pipe(
     tap(active => inspectorActive.next(active)),
     switchMap(() => merge(inspect, inspectorActive.pipe(map(active => ({ active })))))
-  )
+  ))
 })
 
 cy.on('layoutstop', () => {
