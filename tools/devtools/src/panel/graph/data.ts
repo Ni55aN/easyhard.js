@@ -11,11 +11,12 @@ export function setData(graph: GraphView, data: Graph) {
 }
 
 export function removeNodes(graph: GraphView, idsToRemove: string[]) {
-  const allNodes = graph.elements.filter('node')
+  const allNodes = graph.elements().filter('node')
   const shouldBeRemovedAndDependencies = allNodes.filter((node: cytoscape.NodeSingular) => {
     const id = node.data('id') as string
     return idsToRemove.includes(id)
   })
+
   graph.remove(shouldBeRemovedAndDependencies)
 }
 

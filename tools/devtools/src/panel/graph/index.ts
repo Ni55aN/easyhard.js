@@ -65,7 +65,7 @@ export type GraphView = {
   clear: () => void
   add: (els: ElementDefinition[]) => CollectionReturnValue
   remove: (els: CollectionArgument) => CollectionReturnValue
-  elements: CollectionReturnValue
+  elements: () => CollectionReturnValue
   getElementById: (id: string) => CollectionReturnValue
 }
 
@@ -273,7 +273,9 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
       cy.elements().remove()
       originElements.remove()
     },
-    elements: originElements,
+    elements() {
+      return originElements
+    },
     add(eles) {
       const newEles = eles.filter(el => !originElements.toArray().find(n => n.data('id') === el.data.id))
       const added = cy.add(newEles)
