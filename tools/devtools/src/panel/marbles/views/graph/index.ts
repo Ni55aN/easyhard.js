@@ -8,6 +8,7 @@ import { createAreaHighlighter } from '../../../../panel/shared/cytoscape/highli
 import { ObservableEmissionType } from '../../../../types'
 import { collectionInsert, collectionRemove } from '../../../shared/operators/collection'
 import { createContextMenu } from '../../../../panel/shared/cytoscape/context-menu'
+import { useEffects } from '../../../../utils/effects'
 import { focusNode } from '../../../shared/cytoscape/focus'
 import { Table } from '../../table'
 import { collapseOverlayNodes, expandOverlayNodes, timelineLayout } from './timeline-layout'
@@ -89,9 +90,11 @@ export function Graph(props: Props) {
       }
     })
     const areaHighligher = createAreaHighlighter(cy)
+    const effects = useEffects()
 
     const now = Date.now()
-    const insertSub = props.table.asObservable().pipe(
+
+    effects.add(props.table.asObservable().pipe(
       collectionInsert(),
       tap(item => {
         if (cy.hasElementWithId(item.id)) return
@@ -127,23 +130,23 @@ export function Graph(props: Props) {
 
         triggerLayout.next(null)
       })
-    ).subscribe()
+    ))
 
-    const removeSub = props.table.asObservable().pipe(
+    effects.add(props.table.asObservable().pipe(
       collectionRemove(),
       pluck('id'),
       map(cy.getElementById.bind(cy)),
       tap(node => node.remove())
-    ).subscribe()
+    ))
 
     const triggerLayout = new Subject()
     let mouseIsOver = false
-    const layoutSub = triggerLayout.pipe(
+    effects.add(triggerLayout.pipe(
       debounceTime(200),
       tap(() => {
         timelineLayout(cy, { fit: !mouseIsOver, spacing: 5, field: 'time', scale: 0.05, start: now })
       })
-    ).subscribe()
+    ))
     cy.on('mouseover', e => {
       if(e.target === cy) mouseIsOver = true
     })
@@ -152,7 +155,8 @@ export function Graph(props: Props) {
       })
 
     const activeParent = new Subject<cytoscape.NodeSingular | null>()
-    const activeSub = activeParent.pipe(
+
+    effects.add(activeParent.pipe(
       distinctUntilChanged(),
       scan((prev, curr) => {
         if (curr === null) {
@@ -168,7 +172,7 @@ export function Graph(props: Props) {
         expandOverlayNodes(curr.children())
         return curr
       }, null as cytoscape.NodeSingular | null)
-    ).subscribe()
+    ))
 
     cy.on('mouseover', 'node', e => {
       const node: cytoscape.NodeSingular = e.target
@@ -180,7 +184,7 @@ export function Graph(props: Props) {
       activeParent.next(null)
     })
 
-    const focusSub = props.focus.pipe(
+    effects.add(props.focus.pipe(
       map(timelineId => {
         return cy.getElementById(timelineId).children().last()
       }),
@@ -190,9 +194,9 @@ export function Graph(props: Props) {
         return throwError(() => err)
       }),
       retry()
-    ).subscribe()
+    ))
 
-    const toggleSub = props.toggle.pipe(
+    effects.add(props.toggle.pipe(
       tap(({ id, hidden }) => {
         const node = cy.getElementById(id)
 
@@ -200,9 +204,9 @@ export function Graph(props: Props) {
 
         node.css('opacity', hidden ? '0.2' : '1')
       })
-    ).subscribe()
+    ))
 
-    const setValueSub = props.setValue.pipe(
+    effects.add(props.setValue.pipe(
       tap(args => {
         const node = cy.getElementById(args.valueId)
 
@@ -211,7 +215,7 @@ export function Graph(props: Props) {
         node.data('label', args.value)
         node.data('type', args.type)
       })
-    ).subscribe()
+    ))
 
     const scale = scaleGraph(cy, 'x')
 
@@ -275,13 +279,7 @@ export function Graph(props: Props) {
     })
 
     return () => {
-      insertSub.unsubscribe()
-      removeSub.unsubscribe()
-      layoutSub.unsubscribe()
-      activeSub.unsubscribe()
-      focusSub.unsubscribe()
-      toggleSub.unsubscribe()
-      setValueSub.unsubscribe()
+      effects.dispose()
     }
   })
 
