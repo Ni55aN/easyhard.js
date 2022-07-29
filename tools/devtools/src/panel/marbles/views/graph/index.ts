@@ -1,8 +1,8 @@
 import { h, onLife } from 'easyhard'
 import cytoscape from 'cytoscape'
 import { injectStyles } from 'easyhard-styles'
-import { combineLatest, Observable, of, Subject, throwError } from 'rxjs'
-import { debounceTime, delay, map, retry, mergeMap, pluck, tap, scan, catchError, distinctUntilChanged } from 'rxjs/operators'
+import { Observable, Subject, throwError } from 'rxjs'
+import { debounceTime, delay, map, retry, pluck, tap, scan, catchError, distinctUntilChanged } from 'rxjs/operators'
 import { nanoid } from 'nanoid'
 import { createAreaHighlighter } from '../../../../panel/shared/cytoscape/highligher'
 import { ObservableEmissionType } from '../../../../types'
@@ -93,9 +93,11 @@ export function Graph(props: Props) {
     const now = Date.now()
     const insertSub = props.table.asObservable().pipe(
       collectionInsert(),
-      tap(item => cy.add({ group: 'nodes', data: { id: item.id }})),
-      mergeMap(item => combineLatest(of(item.id), item.data.pipe(collectionInsert()))),
-      map(([id, item]) => {
+      tap(item => {
+        if (cy.hasElementWithId(item.id)) return
+        cy.add({ group: 'nodes', data: { id: item.id }})
+      }),
+      map(({ id, data: item }) => {
         const currentId = item.valueId
         const currentTime = item.time
 
