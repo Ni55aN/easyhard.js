@@ -39,8 +39,6 @@ export class Table {
   }
 
   clear() {
-    this.data.getValue().forEach(item => {
-      item.data.clear()
-    })
+    this.data.clear()
   }
 }
