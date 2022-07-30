@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getUID } from 'easyhard-common-alias'
 import { ReplaySubject } from 'rxjs-alias'
 import { Observable, Observer, OperatorFunction, UnaryFunction } from 'rxjs'
 
@@ -21,6 +19,10 @@ export type DebugOperator = OperatorFunction<any, any> & DebugMeta
 export type DebugObservable = Observable<any> & DebugMeta
 export type DebugClass<T extends { pipe: any }> = ({ new(...args: any[]): T } & DebugMeta)
 export type DebugObject = DebugOperator | DebugObservable | (UnaryFunction<any, any> & DebugMeta) | DebugClass<any>
+
+export function getUID(): string {
+  return (Date.now()+Math.random()).toString(36).replace('.', '')
+}
 
 export function assignMeta(object: DebugObject, name: string | symbol, parent: MestedDebugObject[] = []) {
   // if (object.__debug) console.warn('__debug already defined in ', object)
