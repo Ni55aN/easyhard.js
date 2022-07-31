@@ -28,13 +28,15 @@ function getLabelStyle(key: string, maxLength: number, sizes: [number, number], 
   }
 }
 
-function getBackground(color: string, props: (el: NodeSingular) => { leftGradient: boolean, rightGradient: boolean }) {
+function getBackground(color: string | ((el: NodeSingular) => string), props: (el: NodeSingular) => { leftGradient: boolean, rightGradient: boolean }) {
   return {
     'background-color': color,
     'background-fill': 'linear-gradient',
     'background-gradient-stop-colors': (el: NodeSingular) => {
       const { leftGradient, rightGradient } = props(el)
-      return `${leftGradient ? 'white' : color} ${color} ${rightGradient ? 'white' : color}`
+      const _color = typeof color === 'function' ? color(el) : color
+
+      return `${leftGradient ? 'white' : _color} ${_color} ${rightGradient ? 'white' : _color}`
     },
     'background-gradient-stop-positions': '0 50 100',
     'background-gradient-direction': 'to-right'
@@ -134,7 +136,7 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
           'shape': 'round-rectangle',
           'border-width': 1,
           'border-color': 'black',
-          ...getBackground('#f1c82a', el => ({
+          ...getBackground(el => el.data('scope') === 'server' ? '#d7c484' : '#f1c82a', el => ({
             leftGradient: isParentsHidden(el),
             rightGradient: false
           })),
@@ -271,7 +273,7 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
     cy,
     clear() {
       cy.elements().remove()
-      originElements.remove()
+      originElements = cy.collection()
     },
     elements() {
       return originElements

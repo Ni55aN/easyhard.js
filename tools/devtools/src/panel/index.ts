@@ -12,7 +12,7 @@ import { Header } from './header'
 import { Sidebar } from './sidebar'
 import { Main } from './main'
 import { layout } from './graph/layout'
-import { addNodes, removeNodes, setData, updateNodeText } from './graph/data'
+import { addNodes, removeNodes, clearData, updateNodeText } from './graph/data'
 import { showObservableEmittedValue } from './graph/tooltip'
 import { Splitter } from './splitter'
 import { createMarbles } from './marbles'
@@ -99,10 +99,9 @@ function _catch<T,K>(op: OperatorFunction<T,K>) {
 
 easyhardResponser<ServicesScheme>(connection, {
   graph: _catch(tap(async data => {
-    if ('graph' in data) {
+    if ('clear' in data) {
       marbles.clear()
-      setData(graph, data.graph)
-      await layout(cy, true)
+      clearData(graph)
     }
     if ('removed' in data) {
       removeNodes(graph, data.removed)

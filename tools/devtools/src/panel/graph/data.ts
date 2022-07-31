@@ -2,12 +2,8 @@ import { Core, ElementGroup } from 'cytoscape'
 import { GraphView } from '.'
 import { Graph } from '../../types'
 
-export function setData(graph: GraphView, data: Graph) {
+export function clearData(graph: GraphView) {
   graph.clear()
-  graph.add([
-    ...data.nodes.map(data => ({ group: 'nodes' as ElementGroup, data })),
-    ...data.edges.map(data => ({ group: 'edges' as ElementGroup, data }))
-  ])
 }
 
 export function removeNodes(graph: GraphView, idsToRemove: string[]) {

@@ -28,7 +28,7 @@ export type Services = 'easyhard-devtools' | 'easyhard-content'
 
 export type InpectorAction = { id: string }
 export type InspectorPayload = InpectorAction | { active: boolean } | null
-export type GraphPayload = { graph: Graph } | { added: Graph } | { removed: string[] } | { text: { id: string, value: string }}
+export type GraphPayload = { clear: true } | { added: Graph } | { removed: string[] } | { text: { id: string, value: string }}
 export type SubsPayload = { subscribe: { id: string, count: number }} | { unsubscribe: { id: string, count: number }}
 export type ServicesScheme = {
   graph: OperatorFunction<GraphPayload, unknown>

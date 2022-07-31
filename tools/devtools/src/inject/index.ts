@@ -17,6 +17,7 @@ const connection = connectionTunnelExit<ConnectionTunnelKey>('connectionTunnel')
 const requester = easyhardRequester<ServicesScheme>(connection)
 
 const graph = new ReplaySubject<GraphPayload>()
+graph.next({ clear: true })
 
 const highlighter = createHighlighter()
 const emissions = emissionTracker()
@@ -83,7 +84,7 @@ const domToGraph = new DomToGraph({
 })
 
 domToGraph.add(document.body)
-graph.next({ graph: domToGraph.serialize() })
+graph.next({ added: domToGraph.serialize() })
 
 const m = new MutationObserver(mutationsList => {
   mutationsList.forEach(item => {
