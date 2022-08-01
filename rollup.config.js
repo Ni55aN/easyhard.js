@@ -63,8 +63,10 @@ export default packages.map(({ folder, pkg }) => {
           const { repository, author, license, bugs, homepage } = mainPkg
           const packageJson = {
             ...pkg,
-            main: 'cjs',
-            module: 'esm',
+            ...(inputs.length > 1 ? {} : {
+              main: 'cjs',
+              module: 'esm',
+            }),
             repository, author, license, bugs, homepage
           }
 
