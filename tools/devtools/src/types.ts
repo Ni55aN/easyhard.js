@@ -5,6 +5,7 @@ export type GraphNode = {
   id: string
   type: GraphNodeType
   label: string | null
+  scope?: 'client' | 'server'
   group?: null | { name: string, start: string }
 }
 export type EdgeType = 'argument' | 'other'
@@ -29,7 +30,7 @@ export type Services = 'easyhard-devtools' | 'easyhard-content'
 export type InpectorAction = { id: string }
 export type InspectorPayload = InpectorAction | { active: boolean } | null
 export type GraphPayload = { clear: true } | { added: Graph } | { removed: string[] } | { text: { id: string, value: string }}
-export type SubsPayload = { subscribe: { id: string, count: number }} | { unsubscribe: { id: string, count: number }}
+export type SubsPayload = ({ subscribe: { id: string, count: number }} | { unsubscribe: { id: string, count: number }}) & { scope?: 'client' | 'server' }
 export type ServicesScheme = {
   graph: OperatorFunction<GraphPayload, unknown>
   subscriptions: OperatorFunction<SubsPayload, unknown>

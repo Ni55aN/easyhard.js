@@ -4,6 +4,10 @@ import { EdgeType } from './types'
 
 export type Parent = { type: EdgeType, link: EhObservable | EhNode }
 export type NestedParent = Parent | NestedParent[]
+export type BridgeChanges = { id: string, name: string, parents: { type: EdgeType, id: string }[], isEntry?: boolean }
+| { id: string, valueId: string, time: number }
+| { id: string, subscribe: true, count: number }
+| { id: string, unsubscribe: true, count: number }
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type EhObservable = Observable<unknown> & {
@@ -16,6 +20,7 @@ export type EhObservable = Observable<unknown> & {
     unsubscribe: ReplaySubject<number>
     groupName?: string
     groupStart?: string
+    bridge?: ReplaySubject<BridgeChanges>
   }
 }
 export type EhMeta = {

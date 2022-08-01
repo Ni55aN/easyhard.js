@@ -3,7 +3,7 @@ import { getUID } from 'easyhard-common'
 import { NEVER, Observable, OperatorFunction, throwError } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 import { createConnection } from './connection'
-import { debugAddParent, debugObservableGroup } from './devtools'
+import { debugAddParent, debugSkipInternal } from './devtools'
 import { useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
 import { ConnectionArgs, JSONPayload } from './types'
@@ -49,7 +49,7 @@ export function easyhardClient<T>({
     const transformValue = map<JSONResponse, Type>(value => value && responseTransformer.apply(value, null) as Type)
     const observable = bindObservable<JSONResponse>(key, null, connection)
 
-    return debugObservableGroup('call', observable, observable.pipe(
+    return debugSkipInternal('call', observable, observable.pipe(
       transformError,
       transformValue,
       mergeMap(setCookies)
@@ -126,7 +126,7 @@ export function easyhardClient<T>({
 
       debugAddParent(source, observable)
 
-      return debugObservableGroup('pipe', observable, observable.pipe(
+      return debugSkipInternal('pipe', observable, observable.pipe(
         transformError,
         transformValue,
         mergeMap(setCookies),

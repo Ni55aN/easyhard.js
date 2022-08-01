@@ -4,6 +4,7 @@ import { requestTransformer, responseTransformer } from './transformers'
 import { ExtractPayload, registerObservable, Connection } from 'easyhard-bridge'
 import { Observable, OperatorFunction, pipe, throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
+import { debugSkipInternal } from './devtools'
 
 export function attach<T, R>(actions: Handlers<T, R>, ws: Connection<unknown, unknown>, req: R, http: Http): Attachment {
   const keys = Object.keys(actions).map(key => key as keyof T)
@@ -20,10 +21,18 @@ export function attach<T, R>(actions: Handlers<T, R>, ws: Connection<unknown, un
 
     if (stream instanceof Observable) {
       const s = stream as Observable<Return>
-      return registerObservable(key, s.pipe(postMap), ws)
+      return registerObservable(key, debugSkipInternal(null, s, s.pipe(postMap)), ws)
     } else {
       const s = stream as OperatorFunction<HandlerPayload<T[keyof T]> & { $request: R }, Return>
-      return registerObservable(key, pipe(preMap, s, postMap), ws)
+      return registerObservable(key, (start: Observable<Request>) => {
+        const step1 = start.pipe(preMap)
+        const step2 = step1.pipe(s)
+        const end = step2.pipe(postMap)
+
+        debugSkipInternal('call', start, step1)
+        debugSkipInternal(null, step2, end)
+        return end
+      }, ws)
     }
   })
 

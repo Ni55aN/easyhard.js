@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ReplaySubject } from 'rxjs-alias'
+import { ReplaySubject, Subscriber } from 'rxjs-alias'
 import { Observable, Observer, OperatorFunction, UnaryFunction } from 'rxjs'
 
 export type DebugMeta = {

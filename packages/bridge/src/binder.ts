@@ -2,6 +2,7 @@ import { Observable, OperatorFunction, Subscriber, Subscription } from 'rxjs'
 import { getUID } from 'easyhard-common'
 import { NOT_FOUND_STREAM_ERROR } from './constants'
 import { sanitize } from './utils'
+import { debugBindInit, debugBind, debugCompleteSub, debugListenObservable } from './devtools'
 
 export type RequestId = string
 type UnsubscribeRequest = { id: RequestId, unsubscribe: true }
@@ -67,7 +68,7 @@ type BindProps = {
 }
 
 export function bindObservable<T>(key: Key, source: RequestId | null, client: Connection<ClientToServer<Key>, ServerToClient<T>>, props?: BindProps): Observable<T> {
-  return new Observable<T>(subscriber => {
+  const observable = new Observable<T>(subscriber => {
     const nextData: ClientToServer<Key>[] = []
     const send = <T extends ClientToServer<Key>>(data: T) => {
       if (client.readyState === ConnectionState.OPEN) {
@@ -106,6 +107,8 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Co
     send({ key, id, source, subscribe: true })
     props?.subscribe && props?.subscribe(id, subscriber)
 
+    const debugDestroy = debugBind(id, observable, client)
+
     const handler = (event: MessageEvent<ServerToClient<T>>) => {
       const data = event.data
 
@@ -123,8 +126,11 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Co
       subscriber.unsubscribe()
       send({ id, unsubscribe: true })
       props?.unsubscribe && props?.unsubscribe(id, subscriber)
+      debugDestroy && debugDestroy()
     }
   })
+
+  return debugBindInit(observable)
 }
 
 type RegisterProps = {
@@ -153,6 +159,7 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
       } finally {
         subscriptions.delete(id)
         props?.unsubscribe && props?.unsubscribe(id)
+        debugCompleteSub(id)
       }
     }
   }
@@ -171,15 +178,21 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
         return send({ id: data.id, error: NOT_FOUND_STREAM_ERROR })
       }
 
+      debugListenObservable(data.id, observable, send)
+        .then(console.log)
+        .catch(console.error)
+
       const subscription = observable.subscribe({
         next(value) {
           send({ id: data.id, value })
         },
         error(error) {
           send({ id: data.id, error })
+          debugCompleteSub(data.id)
         },
         complete() {
           send({ id: data.id, complete: true })
+          debugCompleteSub(data.id)
         }
       })
 

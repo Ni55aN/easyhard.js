@@ -11,17 +11,10 @@ type ObservableDebugMeta = { __debug?: { id: string, name: string, groupName?: s
 
 const debugWindow = <{ __easyhardDebug?: boolean }>getGlobal()
 
-export function debugSkipInternal<A, B>(name: string, start: Observable<A> & ObservableDebugMeta, end: Observable<B> & ObservableDebugMeta) {
+export function debugSkipInternal<A, B>(name: string | null, start: Observable<A> & ObservableDebugMeta, end: Observable<B> & ObservableDebugMeta) {
   if (debugWindow.__easyhardDebug && end.__debug && start.__debug) {
     end.__debug = start.__debug
-    end.__debug.name = name
+    if (name) end.__debug.name = name
   }
   return end
-}
-
-
-export function debugAddParent<A, B>(source: Observable<A> & ObservableDebugMeta, observable: Observable<B> & ObservableDebugMeta) {
-  if (debugWindow.__easyhardDebug && source.__debug && observable.__debug) {
-    observable.__debug.parent.push({ type: 'other', link: source })
-  }
 }

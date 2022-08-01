@@ -9,8 +9,9 @@ import { stringify } from './stringify'
 import { filter, map, pluck } from 'rxjs/operators'
 import { ConnectionTunnelKey, GraphPayload, ServicesScheme } from '../types'
 import { connectionTunnelExit } from '../utils/tunnel'
-import { ReplaySubject, tap } from 'rxjs'
+import { merge, ReplaySubject, tap } from 'rxjs'
 import { useEffects } from '../utils/effects'
+import { serverToGraph } from './server-to-graph'
 import './register-window-utils'
 
 const connection = connectionTunnelExit<ConnectionTunnelKey>('connectionTunnel')
@@ -20,6 +21,7 @@ const graph = new ReplaySubject<GraphPayload>()
 graph.next({ clear: true })
 
 const highlighter = createHighlighter()
+const server = serverToGraph()
 const emissions = emissionTracker()
 const inspector = createInspector(highlighter)
 
@@ -29,11 +31,11 @@ effects.add(graph.pipe(
   requester.pipe('graph')
 ))
 
-effects.add(emissions.subscriptions.pipe(
+effects.add(merge(emissions.subscriptions, server.subscriptions).pipe(
   requester.pipe('subscriptions')
 ))
 
-effects.add(emissions.values.pipe(
+effects.add(merge(emissions.values, server.values).pipe(
   map(next => ({ next })),
   requester.pipe('emission')
 ))
@@ -79,8 +81,17 @@ effects.add(inspector.active.pipe(
   })
 ))
 
+effects.add(server.added.pipe(
+  tap(added => graph.next({ added }))
+))
+
 const domToGraph = new DomToGraph({
-  add: arg => '__debug' in arg && emissions.add(arg)
+  add: arg => {
+    if ('__debug' in arg) {
+      emissions.add(arg)
+      server.add(arg)
+    }
+  }
 })
 
 domToGraph.add(document.body)
@@ -90,7 +101,12 @@ const m = new MutationObserver(mutationsList => {
   mutationsList.forEach(item => {
     if (item.type === 'childList') {
       const domToGraph = new DomToGraph({
-        add: arg => '__debug' in arg && emissions.add(arg)
+        add: arg => {
+          if ('__debug' in arg) {
+            emissions.add(arg)
+            server.add(arg)
+          }
+        }
       })
 
       item.addedNodes.forEach(node => domToGraph.add(node))
