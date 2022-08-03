@@ -7,6 +7,9 @@ export type GraphNode = {
   label: string | null
   scope?: 'client' | 'server'
   group?: null | { name: string, start: string }
+} | {
+  id: string
+  placeholder: true
 }
 export type EdgeType = 'argument' | 'other'
 export type GraphEdge = { id: string, source: string, target: string, type: EdgeType, label?: string }

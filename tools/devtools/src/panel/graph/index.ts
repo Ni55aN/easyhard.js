@@ -279,7 +279,18 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
       return originElements
     },
     add(eles) {
+      const placeholderElements = originElements.filter(n => n.data('placeholder'))
       const newEles = eles.filter(el => !originElements.toArray().find(n => n.data('id') === el.data.id))
+      const newPlaceholderElements = placeholderElements.filter(n => {
+        return Boolean(eles.find(el => n.data('id') === el.data.id))
+      })
+
+      newPlaceholderElements.forEach(node => {
+        const data = eles.find(el => el.data.id === node.data('id'))?.data
+
+        node.data(data)
+      })
+
       const added = cy.add(newEles)
 
       originElements = originElements.add(added)
