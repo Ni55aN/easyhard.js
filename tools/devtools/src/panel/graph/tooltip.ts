@@ -1,5 +1,5 @@
 import cytoscape, { CollectionReturnValue, Core, NodeCollection, SingularElementReturnValue } from 'cytoscape'
-import tippy, { Instance } from 'tippy.js'
+import tippy, { Instance, sticky } from 'tippy.js'
 import popper from 'cytoscape-popper'
 import 'tippy.js/dist/tippy.css'
 
@@ -90,7 +90,9 @@ export function showObservableEmittedValue(cy: Core, id: string, value: object |
     getReferenceClientRect: ref.getBoundingClientRect,
     trigger: 'manual',
     placement: 'bottom',
-    theme: 'observable'
+    theme: 'observable',
+    sticky: true,
+    plugins: [sticky]
   })
 
   tippyInstance.setContent(typeof value === 'object' ? renderJSON(value) : String(value))
