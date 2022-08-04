@@ -1,6 +1,13 @@
 {
   "name": "easyhard-debug",
   "version": "0.3.0",
+  "scripts": {
+    "update": "patch-package easyhard-rxjs-debug --exclude dist",
+    "build": "patch-package --patch-dir patches && npm run compile --prefix node_modules/easyhard-rxjs-debug/"
+  },
+  "dependencies": {
+    "easyhard-rxjs-debug": "npm:rxjs@7.5.6"
+  },
   "peerDependencies": {
     "easyhard-common": "^0.4.0",
     "rxjs": ">= 6.x <=7.x"

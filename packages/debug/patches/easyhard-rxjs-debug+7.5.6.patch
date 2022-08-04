@@ -1,0 +1,2186 @@
+diff --git a/node_modules/easyhard-rxjs-debug/spec/index.js b/node_modules/easyhard-rxjs-debug/spec/index.js
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/easyhard-rxjs-debug/spec/index.ts b/node_modules/easyhard-rxjs-debug/spec/index.ts
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/easyhard-rxjs-debug/spec/tsconfig.json b/node_modules/easyhard-rxjs-debug/spec/tsconfig.json
+new file mode 100644
+index 0000000..69a88e3
+--- /dev/null
++++ b/node_modules/easyhard-rxjs-debug/spec/tsconfig.json
+@@ -0,0 +1 @@
++{}
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/AsyncSubject.ts b/node_modules/easyhard-rxjs-debug/src/internal/AsyncSubject.ts
+index 954cd92..477f49b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/AsyncSubject.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/AsyncSubject.ts
+@@ -1,5 +1,6 @@
+ import { Subject } from './Subject';
+ import { Subscriber } from './Subscriber';
++import { debugObservableName } from './util/debug';
+
+ /**
+  * A variant of Subject that only emits a value when it completes. It will emit
+@@ -12,6 +13,11 @@ export class AsyncSubject<T> extends Subject<T> {
+   private _hasValue = false;
+   private _isComplete = false;
+
++  constructor() {
++    super();
++    debugObservableName(this, 'AsyncSubject');
++  }
++
+   /** @internal */
+   protected _checkFinalizedStatuses(subscriber: Subscriber<T>) {
+     const { hasError, _hasValue, _value, thrownError, isStopped, _isComplete } = this;
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/BehaviorSubject.ts b/node_modules/easyhard-rxjs-debug/src/internal/BehaviorSubject.ts
+index 8e56179..8a0df40 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/BehaviorSubject.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/BehaviorSubject.ts
+@@ -1,6 +1,7 @@
+ import { Subject } from './Subject';
+ import { Subscriber } from './Subscriber';
+ import { Subscription } from './Subscription';
++import { debugObservableName } from './util/debug';
+
+ /**
+  * A variant of Subject that requires an initial value and emits its current
+@@ -11,6 +12,7 @@ import { Subscription } from './Subscription';
+ export class BehaviorSubject<T> extends Subject<T> {
+   constructor(private _value: T) {
+     super();
++    debugObservableName(this, 'BehaviorSubject');
+   }
+
+   get value(): T {
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/Observable.ts b/node_modules/easyhard-rxjs-debug/src/internal/Observable.ts
+index c74509d..a2ceb3b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/Observable.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/Observable.ts
+@@ -7,6 +7,7 @@ import { pipeFromArray } from './util/pipe';
+ import { config } from './config';
+ import { isFunction } from './util/isFunction';
+ import { errorContext } from './util/errorContext';
++import { debugObservable, debugSubscribed } from './util/debug';
+
+ /**
+  * A representation of any set of values over any amount of time. This is the most basic building block
+@@ -36,6 +37,7 @@ export class Observable<T> implements Subscribable<T> {
+     if (subscribe) {
+       this._subscribe = subscribe;
+     }
++    debugObservable(this);
+   }
+
+   // HACK: Since TypeScript inherits static properties too, we have to
+@@ -218,6 +220,7 @@ export class Observable<T> implements Subscribable<T> {
+   ): Subscription {
+     const subscriber = isSubscriber(observerOrNext) ? observerOrNext : new SafeSubscriber(observerOrNext, error, complete);
+
++    debugSubscribed(subscriber, this);
+     errorContext(() => {
+       const { operator, source } = this;
+       subscriber.add(
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/ReplaySubject.ts b/node_modules/easyhard-rxjs-debug/src/internal/ReplaySubject.ts
+index 85f5c71..73bd9c0 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/ReplaySubject.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/ReplaySubject.ts
+@@ -3,6 +3,7 @@ import { TimestampProvider } from './types';
+ import { Subscriber } from './Subscriber';
+ import { Subscription } from './Subscription';
+ import { dateTimestampProvider } from './scheduler/dateTimestampProvider';
++import { debugObservableName } from './util/debug';
+
+ /**
+  * A variant of {@link Subject} that "replays" old values to new subscribers by emitting them when they first subscribe.
+@@ -53,6 +54,7 @@ export class ReplaySubject<T> extends Subject<T> {
+     this._infiniteTimeWindow = _windowTime === Infinity;
+     this._bufferSize = Math.max(1, _bufferSize);
+     this._windowTime = Math.max(1, _windowTime);
++    debugObservableName(this, 'ReplaySubject');
+   }
+
+   next(value: T): void {
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/Subject.ts b/node_modules/easyhard-rxjs-debug/src/internal/Subject.ts
+index fc4a7f0..c1c964c 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/Subject.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/Subject.ts
+@@ -6,6 +6,7 @@ import { Observer, SubscriptionLike, TeardownLogic } from './types';
+ import { ObjectUnsubscribedError } from './util/ObjectUnsubscribedError';
+ import { arrRemove } from './util/arrRemove';
+ import { errorContext } from './util/errorContext';
++import { debugObservableName } from './util/debug';
+
+ /**
+  * A Subject is a special type of Observable that allows values to be
+@@ -41,6 +42,7 @@ export class Subject<T> extends Observable<T> implements SubscriptionLike {
+   constructor() {
+     // NOTE: This must be here to obscure Observable's constructor.
+     super();
++    debugObservableName(this, 'Subject');
+   }
+
+   /** @deprecated Internal implementation detail, do not use directly. Will be made internal in v8. */
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/Subscriber.ts b/node_modules/easyhard-rxjs-debug/src/internal/Subscriber.ts
+index e682fe4..b2d37b1 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/Subscriber.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/Subscriber.ts
+@@ -7,6 +7,7 @@ import { noop } from './util/noop';
+ import { nextNotification, errorNotification, COMPLETE_NOTIFICATION } from './NotificationFactories';
+ import { timeoutProvider } from './scheduler/timeoutProvider';
+ import { captureError } from './util/errorContext';
++import { debugSubscriber, debugSubscriberNext, debugSubscriberUnsubscribe } from './util/debug';
+
+ /**
+  * Implements the {@link Observer} interface and extends the
+@@ -49,6 +50,7 @@ export class Subscriber<T> extends Subscription implements Observer<T> {
+    */
+   constructor(destination?: Subscriber<any> | Observer<any>) {
+     super();
++    debugSubscriber(this);
+     if (destination) {
+       this.destination = destination;
+       // Automatically chain subscriptions together here.
+@@ -69,6 +71,7 @@ export class Subscriber<T> extends Subscription implements Observer<T> {
+    * @return {void}
+    */
+   next(value?: T): void {
++    debugSubscriberNext(this, value);
+     if (this.isStopped) {
+       handleStoppedNotification(nextNotification(value), this);
+     } else {
+@@ -109,6 +112,7 @@ export class Subscriber<T> extends Subscription implements Observer<T> {
+
+   unsubscribe(): void {
+     if (!this.closed) {
++      debugSubscriberUnsubscribe(this);
+       this.isStopped = true;
+       super.unsubscribe();
+       this.destination = null!;
+@@ -152,7 +156,9 @@ function bind<Fn extends (...args: any[]) => any>(fn: Fn, thisArg: any): Fn {
+  * @internal
+  */
+ class ConsumerObserver<T> implements Observer<T> {
+-  constructor(private partialObserver: Partial<Observer<T>>) {}
++  constructor(private partialObserver: Partial<Observer<T>>) {
++    debugSubscriber(this);
++  }
+
+   next(value: T): void {
+     const { partialObserver } = this;
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/combineLatest.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/combineLatest.ts
+index 91e3ce8..36ec279 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/combineLatest.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/combineLatest.ts
+@@ -11,6 +11,7 @@ import { createObject } from '../util/createObject';
+ import { createOperatorSubscriber } from '../operators/OperatorSubscriber';
+ import { AnyCatcher } from '../AnyCatcher';
+ import { executeSchedule } from '../util/executeSchedule';
++import { debugObservableName } from '../util/debug';
+
+ // combineLatest(any)
+ // We put this first because we need to catch cases where the user has supplied
+@@ -208,10 +209,10 @@ export function combineLatest<O extends ObservableInput<any>, R>(...args: any[])
+     // If no observables are passed, or someone has passed an ampty array
+     // of observables, or even an empty object POJO, we need to just
+     // complete (EMPTY), but we have to honor the scheduler provided if any.
+-    return from([], scheduler as any);
++    return debugObservableName(from([], scheduler as any), 'combineLatest');
+   }
+
+-  const result = new Observable<ObservedValueOf<O>[]>(
++  const result = debugObservableName(new Observable<ObservedValueOf<O>[]>(
+     combineLatestInit(
+       observables as ObservableInput<ObservedValueOf<O>>[],
+       scheduler,
+@@ -221,9 +222,9 @@ export function combineLatest<O extends ObservableInput<any>, R>(...args: any[])
+         : // A passthrough to just return the array
+           identity
+     )
+-  );
++  ), 'combineLatest');
+
+-  return resultSelector ? (result.pipe(mapOneOrManyArgs(resultSelector)) as Observable<R>) : result;
++  return resultSelector ? debugObservableName(result.pipe(mapOneOrManyArgs(resultSelector)) as Observable<R>, 'combineLatest') : result;
+ }
+
+ export function combineLatestInit(
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/concat.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/concat.ts
+index 75f9722..8ac1119 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/concat.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/concat.ts
+@@ -3,6 +3,7 @@ import { ObservableInputTuple, SchedulerLike } from '../types';
+ import { concatAll } from '../operators/concatAll';
+ import { popScheduler } from '../util/args';
+ import { from } from './from';
++import { debugObservableName } from '../util/debug';
+
+ export function concat<T extends readonly unknown[]>(...inputs: [...ObservableInputTuple<T>]): Observable<T[number]>;
+ export function concat<T extends readonly unknown[]>(
+@@ -111,5 +112,5 @@ export function concat<T extends readonly unknown[]>(
+  * @param args Input Observables to concatenate.
+  */
+ export function concat(...args: any[]): Observable<unknown> {
+-  return concatAll()(from(args, popScheduler(args)));
++  return debugObservableName(concatAll()(from(args, popScheduler(args))), 'concat');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/defer.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/defer.ts
+index 2e54b37..cd57119 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/defer.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/defer.ts
+@@ -1,5 +1,6 @@
+ import { Observable } from '../Observable';
+ import { ObservedValueOf, ObservableInput } from '../types';
++import { debugObservableName } from '../util/debug';
+ import { innerFrom } from './innerFrom';
+
+ /**
+@@ -51,7 +52,7 @@ import { innerFrom } from './innerFrom';
+  * an invocation of the given Observable factory function.
+  */
+ export function defer<R extends ObservableInput<any>>(observableFactory: () => R): Observable<ObservedValueOf<R>> {
+-  return new Observable<ObservedValueOf<R>>((subscriber) => {
++  return debugObservableName(new Observable<ObservedValueOf<R>>((subscriber) => {
+     innerFrom(observableFactory()).subscribe(subscriber);
+-  });
++  }), 'defer');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/empty.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/empty.ts
+index 8f59e45..0457717 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/empty.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/empty.ts
+@@ -1,5 +1,6 @@
+ import { Observable } from '../Observable';
+ import { SchedulerLike } from '../types';
++import { debugObservableName } from '../util/debug';
+
+ /**
+  * A simple Observable that emits no items to the Observer and immediately
+@@ -63,7 +64,7 @@ import { SchedulerLike } from '../types';
+  * @see {@link of}
+  * @see {@link throwError}
+  */
+-export const EMPTY = new Observable<never>((subscriber) => subscriber.complete());
++export const EMPTY = debugObservableName(new Observable<never>((subscriber) => subscriber.complete()), 'EMPTY');
+
+ /**
+  * @param scheduler A {@link SchedulerLike} to use for scheduling
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/from.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/from.ts
+index 834bb22..492ce9a 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/from.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/from.ts
+@@ -2,6 +2,7 @@ import { Observable } from '../Observable';
+ import { ObservableInput, SchedulerLike, ObservedValueOf } from '../types';
+ import { scheduled } from '../scheduled/scheduled';
+ import { innerFrom } from './innerFrom';
++import { debugObservableName } from '../util/debug';
+
+ export function from<O extends ObservableInput<any>>(input: O): Observable<ObservedValueOf<O>>;
+ /** @deprecated The `scheduler` parameter will be removed in v8. Use `scheduled`. Details: https://rxjs.dev/deprecations/scheduler-argument */
+@@ -100,5 +101,5 @@ export function from<O extends ObservableInput<any>>(input: O, scheduler: Schedu
+  * @return {Observable<T>}
+  */
+ export function from<T>(input: ObservableInput<T>, scheduler?: SchedulerLike): Observable<T> {
+-  return scheduler ? scheduled(input, scheduler) : innerFrom(input);
++  return debugObservableName(scheduler ? scheduled(input, scheduler) : innerFrom(input), 'from', true);
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/iif.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/iif.ts
+index d9ea9f1..64e6c06 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/iif.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/iif.ts
+@@ -1,6 +1,7 @@
+ import { Observable } from '../Observable';
+ import { defer } from './defer';
+ import { ObservableInput } from '../types';
++import { debugObservableName } from '../util/debug';
+
+ /**
+  * Checks a boolean at subscription time, and chooses between one of two observable sources
+@@ -81,5 +82,5 @@ import { ObservableInput } from '../types';
+  * @return An observable that proxies to `trueResult` or `falseResult`, depending on the result of the `condition` function.
+  */
+ export function iif<T, F>(condition: () => boolean, trueResult: ObservableInput<T>, falseResult: ObservableInput<F>): Observable<T | F> {
+-  return defer(() => (condition() ? trueResult : falseResult));
++  return debugObservableName(defer(() => (condition() ? trueResult : falseResult)), 'iif');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/interval.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/interval.ts
+index fc1b3e0..bc05954 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/interval.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/interval.ts
+@@ -1,6 +1,7 @@
+ import { Observable } from '../Observable';
+ import { asyncScheduler } from '../scheduler/async';
+ import { SchedulerLike } from '../types';
++import { debugObservableName } from '../util/debug';
+ import { timer } from './timer';
+
+ /**
+@@ -54,5 +55,5 @@ export function interval(period = 0, scheduler: SchedulerLike = asyncScheduler):
+     period = 0;
+   }
+
+-  return timer(period, period, scheduler);
++  return debugObservableName(timer(period, period, scheduler), 'interval');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/merge.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/merge.ts
+index 38adf34..a73258f 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/merge.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/merge.ts
+@@ -5,6 +5,7 @@ import { innerFrom } from './innerFrom';
+ import { EMPTY } from './empty';
+ import { popNumber, popScheduler } from '../util/args';
+ import { from } from './from';
++import { debugObservableName } from '../util/debug';
+
+ export function merge<A extends readonly unknown[]>(...sources: [...ObservableInputTuple<A>]): Observable<A[number]>;
+ export function merge<A extends readonly unknown[]>(...sourcesAndConcurrency: [...ObservableInputTuple<A>, number?]): Observable<A[number]>;
+@@ -96,7 +97,7 @@ export function merge(...args: (ObservableInput<unknown> | number | SchedulerLik
+       EMPTY
+     : sources.length === 1
+     ? // One source? Just return it.
+-      innerFrom(sources[0])
++    debugObservableName(innerFrom(sources[0]), 'merge')
+     : // Merge all sources
+-      mergeAll(concurrent)(from(sources, scheduler));
++    debugObservableName(mergeAll(concurrent)(from(sources, scheduler)), 'merge');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/never.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/never.ts
+index cfbec7d..51c3983 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/never.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/never.ts
+@@ -1,4 +1,5 @@
+ import { Observable } from '../Observable';
++import { debugObservableName } from '../util/debug';
+ import { noop } from '../util/noop';
+
+ /**
+@@ -34,7 +35,7 @@ import { noop } from '../util/noop';
+  * @see {@link of}
+  * @see {@link throwError}
+  */
+-export const NEVER = new Observable<never>(noop);
++export const NEVER = debugObservableName(new Observable<never>(noop), 'NEVER');
+
+ /**
+  * @deprecated Replaced with the {@link NEVER} constant. Will be removed in v8.
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/of.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/of.ts
+index dc0c918..6c864dd 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/of.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/of.ts
+@@ -2,6 +2,7 @@ import { SchedulerLike, ValueFromArray } from '../types';
+ import { Observable } from '../Observable';
+ import { popScheduler } from '../util/args';
+ import { from } from './from';
++import { debugObservableName } from '../util/debug';
+
+ // Devs are more likely to pass null or undefined than they are a scheduler
+ // without accompanying values. To make things easier for (naughty) devs who
+@@ -79,5 +80,5 @@ export function of<A extends readonly unknown[]>(...values: A): Observable<Value
+  */
+ export function of<T>(...args: Array<T | SchedulerLike>): Observable<T> {
+   const scheduler = popScheduler(args);
+-  return from(args as T[], scheduler);
++  return debugObservableName(from(args as T[], scheduler), 'of');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/timer.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/timer.ts
+index dcc2745..65c3a46 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/timer.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/timer.ts
+@@ -3,6 +3,7 @@ import { SchedulerLike } from '../types';
+ import { async as asyncScheduler } from '../scheduler/async';
+ import { isScheduler } from '../util/isScheduler';
+ import { isValidDate } from '../util/isDate';
++import { debugObservableName } from '../util/debug';
+
+ /**
+  * Creates an observable that will wait for a specified time period, or exact date, before
+@@ -152,7 +153,7 @@ export function timer(
+     }
+   }
+
+-  return new Observable((subscriber) => {
++  return debugObservableName(new Observable((subscriber) => {
+     // If a valid date is passed, calculate how long to wait before
+     // executing the first value... otherwise, if it's a number just schedule
+     // that many milliseconds (or scheduler-specified unit size) in the future.
+@@ -182,5 +183,5 @@ export function timer(
+         }
+       }
+     }, due);
+-  });
++  }), 'timer');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/observable/zip.ts b/node_modules/easyhard-rxjs-debug/src/internal/observable/zip.ts
+index e7c5849..d6c49e7 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/observable/zip.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/observable/zip.ts
+@@ -5,6 +5,7 @@ import { argsOrArgArray } from '../util/argsOrArgArray';
+ import { EMPTY } from './empty';
+ import { createOperatorSubscriber } from '../operators/OperatorSubscriber';
+ import { popResultSelector } from '../util/args';
++import { debugObservableName } from '../util/debug';
+
+ export function zip<A extends readonly unknown[]>(sources: [...ObservableInputTuple<A>]): Observable<A>;
+ export function zip<A extends readonly unknown[], R>(
+@@ -54,7 +55,7 @@ export function zip(...args: unknown[]): Observable<unknown> {
+   const sources = argsOrArgArray(args) as Observable<unknown>[];
+
+   return sources.length
+-    ? new Observable<unknown[]>((subscriber) => {
++    ? debugObservableName(new Observable<unknown[]>((subscriber) => {
+         // A collection of buffers of values from each source.
+         // Keyed by the same index with which the sources were passed in.
+         let buffers: unknown[][] = sources.map(() => []);
+@@ -110,6 +111,6 @@ export function zip(...args: unknown[]): Observable<unknown> {
+         return () => {
+           buffers = completed = null!;
+         };
+-      })
++      }), 'zip')
+     : EMPTY;
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/audit.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/audit.ts
+index da13800..d85a23f 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/audit.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/audit.ts
+@@ -92,5 +92,5 @@ export function audit<T>(durationSelector: (value: T) => ObservableInput<any>):
+         }
+       )
+     );
+-  });
++  }, 'audit');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/auditTime.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/auditTime.ts
+index af83889..63a3af0 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/auditTime.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/auditTime.ts
+@@ -2,6 +2,7 @@ import { asyncScheduler } from '../scheduler/async';
+ import { audit } from './audit';
+ import { timer } from '../observable/timer';
+ import { MonoTypeOperatorFunction, SchedulerLike } from '../types';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Ignores source values for `duration` milliseconds, then emits the most recent
+@@ -51,5 +52,5 @@ import { MonoTypeOperatorFunction, SchedulerLike } from '../types';
+  * emissions from the source Observable.
+  */
+ export function auditTime<T>(duration: number, scheduler: SchedulerLike = asyncScheduler): MonoTypeOperatorFunction<T> {
+-  return audit(() => timer(duration, scheduler));
++  return debugOperatorName(audit(() => timer(duration, scheduler)), 'auditTime');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/buffer.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/buffer.ts
+index a30b881..4dec6ac 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/buffer.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/buffer.ts
+@@ -76,5 +76,5 @@ export function buffer<T>(closingNotifier: Observable<any>): OperatorFunction<T,
+       // Ensure buffered values are released on finalization.
+       currentBuffer = null!;
+     };
+-  });
++  }, 'buffer');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferCount.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferCount.ts
+index 4983fec..fbd7055 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferCount.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferCount.ts
+@@ -116,5 +116,5 @@ export function bufferCount<T>(bufferSize: number, startBufferEvery: number | nu
+         }
+       )
+     );
+-  });
++  }, 'bufferCount');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferTime.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferTime.ts
+index 3e547b7..3c9c8cd 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferTime.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferTime.ts
+@@ -164,5 +164,5 @@ export function bufferTime<T>(bufferTimeSpan: number, ...otherArgs: any[]): Oper
+     );
+
+     source.subscribe(bufferTimeSubscriber);
+-  });
++  }, 'bufferTime');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferToggle.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferToggle.ts
+index fabefbc..278292b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferToggle.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferToggle.ts
+@@ -98,5 +98,5 @@ export function bufferToggle<T, O>(
+         }
+       )
+     );
+-  });
++  }, 'bufferToggle');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferWhen.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferWhen.ts
+index 00e8c13..6c4c62e 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferWhen.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/bufferWhen.ts
+@@ -90,5 +90,5 @@ export function bufferWhen<T>(closingSelector: () => ObservableInput<any>): Oper
+         () => (buffer = closingSubscriber = null!)
+       )
+     );
+-  });
++  }, 'bufferWhen');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/catchError.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/catchError.ts
+index 39eeb98..5185a9d 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/catchError.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/catchError.ts
+@@ -137,5 +137,5 @@ export function catchError<T, O extends ObservableInput<any>>(
+       innerSub = null;
+       handledResult!.subscribe(subscriber);
+     }
+-  });
++  }, 'catchError');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatest.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatest.ts
+index 3f0f3a6..9d01b22 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatest.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatest.ts
+@@ -30,5 +30,5 @@ export function combineLatest<T, R>(...args: (ObservableInput<any> | ((...values
+     ? pipe(combineLatest(...(args as Array<ObservableInput<any>>)), mapOneOrManyArgs(resultSelector))
+     : operate((source, subscriber) => {
+         combineLatestInit([source, ...argsOrArgArray(args)])(subscriber);
+-      });
++      }, 'combineLatest');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatestAll.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatestAll.ts
+index 434f621..4f0102f 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatestAll.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatestAll.ts
+@@ -1,5 +1,6 @@
+ import { combineLatest } from '../observable/combineLatest';
+ import { OperatorFunction, ObservableInput } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { joinAllInternals } from './joinAllInternals';
+
+ export function combineLatestAll<T>(): OperatorFunction<ObservableInput<T>, T[]>;
+@@ -46,5 +47,5 @@ export function combineLatestAll<R>(project: (...values: Array<any>) => R): Oper
+  * emitted by the source Observable.
+  */
+ export function combineLatestAll<R>(project?: (...values: Array<any>) => R) {
+-  return joinAllInternals(combineLatest, project);
++  return debugOperatorName(joinAllInternals(combineLatest, project), 'combineLatestAll');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatestWith.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatestWith.ts
+index b262f89..3cc0d84 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatestWith.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/combineLatestWith.ts
+@@ -1,4 +1,5 @@
+ import { ObservableInputTuple, OperatorFunction, Cons } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { combineLatest } from './combineLatest';
+
+ /**
+@@ -44,5 +45,5 @@ import { combineLatest } from './combineLatest';
+ export function combineLatestWith<T, A extends readonly unknown[]>(
+   ...otherSources: [...ObservableInputTuple<A>]
+ ): OperatorFunction<T, Cons<T, A>> {
+-  return combineLatest(...otherSources);
++  return debugOperatorName(combineLatest(...otherSources), 'combineLatestWith');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/concat.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/concat.ts
+index eadb595..db24079 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/concat.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/concat.ts
+@@ -18,5 +18,5 @@ export function concat<T, R>(...args: any[]): OperatorFunction<T, R> {
+   const scheduler = popScheduler(args);
+   return operate((source, subscriber) => {
+     concatAll()(from([source, ...args], scheduler)).subscribe(subscriber);
+-  });
++  }, 'concat');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/concatAll.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/concatAll.ts
+index 05be4fc..3655a25 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/concatAll.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/concatAll.ts
+@@ -1,5 +1,6 @@
+ import { mergeAll } from './mergeAll';
+ import { OperatorFunction, ObservableInput, ObservedValueOf } from '../types';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Converts a higher-order Observable into a first-order Observable by
+@@ -58,5 +59,5 @@ import { OperatorFunction, ObservableInput, ObservedValueOf } from '../types';
+  * inner Observables concatenated.
+  */
+ export function concatAll<O extends ObservableInput<any>>(): OperatorFunction<O, ObservedValueOf<O>> {
+-  return mergeAll(1);
++  return debugOperatorName(mergeAll(1), 'concatAll');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/concatMap.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/concatMap.ts
+index 21bbf42..b6ad949 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/concatMap.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/concatMap.ts
+@@ -1,6 +1,7 @@
+ import { mergeMap } from './mergeMap';
+ import { ObservableInput, OperatorFunction, ObservedValueOf } from '../types';
+ import { isFunction } from '../util/isFunction';
++import { debugOperatorName } from '../util/debug';
+
+ /* tslint:disable:max-line-length */
+ export function concatMap<T, O extends ObservableInput<any>>(
+@@ -80,5 +81,7 @@ export function concatMap<T, R, O extends ObservableInput<any>>(
+   project: (value: T, index: number) => O,
+   resultSelector?: (outerValue: T, innerValue: ObservedValueOf<O>, outerIndex: number, innerIndex: number) => R
+ ): OperatorFunction<T, ObservedValueOf<O> | R> {
+-  return isFunction(resultSelector) ? mergeMap(project, resultSelector, 1) : mergeMap(project, 1);
++  return isFunction(resultSelector)
++    ? debugOperatorName(mergeMap(project, resultSelector, 1), 'concatMap')
++    : debugOperatorName(mergeMap(project, 1), 'concatMap');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/concatMapTo.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/concatMapTo.ts
+index 00798c6..7b1deef 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/concatMapTo.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/concatMapTo.ts
+@@ -1,6 +1,7 @@
+ import { concatMap } from './concatMap';
+ import { ObservableInput, OperatorFunction, ObservedValueOf } from '../types';
+ import { isFunction } from '../util/isFunction';
++import { debugOperatorName } from '../util/debug';
+
+ /** @deprecated Will be removed in v9. Use {@link concatMap} instead: `concatMap(() => result)` */
+ export function concatMapTo<O extends ObservableInput<unknown>>(observable: O): OperatorFunction<unknown, ObservedValueOf<O>>;
+@@ -75,5 +76,7 @@ export function concatMapTo<T, R, O extends ObservableInput<unknown>>(
+   innerObservable: O,
+   resultSelector?: (outerValue: T, innerValue: ObservedValueOf<O>, outerIndex: number, innerIndex: number) => R
+ ): OperatorFunction<T, ObservedValueOf<O> | R> {
+-  return isFunction(resultSelector) ? concatMap(() => innerObservable, resultSelector) : concatMap(() => innerObservable);
++  return isFunction(resultSelector)
++    ? debugOperatorName(concatMap(() => innerObservable, resultSelector), 'concatMapTo')
++    : debugOperatorName(concatMap(() => innerObservable), 'concatMapTo');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/concatWith.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/concatWith.ts
+index b836b29..5be5653 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/concatWith.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/concatWith.ts
+@@ -1,4 +1,5 @@
+ import { ObservableInputTuple, OperatorFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { concat } from './concat';
+
+ /**
+@@ -44,5 +45,5 @@ import { concat } from './concat';
+ export function concatWith<T, A extends readonly unknown[]>(
+   ...otherSources: [...ObservableInputTuple<A>]
+ ): OperatorFunction<T, T | A[number]> {
+-  return concat(...otherSources);
++  return debugOperatorName(concat(...otherSources), 'concatWith');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/connect.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/connect.ts
+index 4a6b3c4..ac200fb 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/connect.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/connect.ts
+@@ -105,5 +105,5 @@ export function connect<T, O extends ObservableInput<unknown>>(
+     const subject = connector();
+     innerFrom(selector(fromSubscribable(subject))).subscribe(subscriber);
+     subscriber.add(source.subscribe(subject));
+-  });
++  }, 'connect');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/count.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/count.ts
+index 8b764f8..628c8d4 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/count.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/count.ts
+@@ -1,4 +1,5 @@
+ import { OperatorFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { reduce } from './reduce';
+
+ /**
+@@ -57,5 +58,8 @@ import { reduce } from './reduce';
+  * represents the count of emissions.
+  */
+ export function count<T>(predicate?: (value: T, index: number) => boolean): OperatorFunction<T, number> {
+-  return reduce((total, value, i) => (!predicate || predicate(value, i) ? total + 1 : total), 0);
++  return debugOperatorName(
++    reduce((total, value, i) => (!predicate || predicate(value, i) ? total + 1 : total), 0),
++    'count'
++  );
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/debounce.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/debounce.ts
+index b644855..71a431d 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/debounce.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/debounce.ts
+@@ -115,5 +115,5 @@ export function debounce<T>(durationSelector: (value: T) => ObservableInput<any>
+         }
+       )
+     );
+-  });
++  }, 'debounce');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/debounceTime.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/debounceTime.ts
+index 1bbbe4d..c1d5e4b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/debounceTime.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/debounceTime.ts
+@@ -120,5 +120,5 @@ export function debounceTime<T>(dueTime: number, scheduler: SchedulerLike = asyn
+         }
+       )
+     );
+-  });
++  }, 'debounceTime');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/defaultIfEmpty.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/defaultIfEmpty.ts
+index 9e0d277..88f64ca 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/defaultIfEmpty.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/defaultIfEmpty.ts
+@@ -55,5 +55,5 @@ export function defaultIfEmpty<T, R>(defaultValue: R): OperatorFunction<T, T | R
+         }
+       )
+     );
+-  });
++  }, 'defaultIfEmpty');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/delay.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/delay.ts
+index 64dd894..864bec5 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/delay.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/delay.ts
+@@ -2,6 +2,7 @@ import { asyncScheduler } from '../scheduler/async';
+ import { MonoTypeOperatorFunction, SchedulerLike } from '../types';
+ import { delayWhen } from './delayWhen';
+ import { timer } from '../observable/timer';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Delays the emission of items from the source Observable by a given timeout or
+@@ -61,5 +62,5 @@ import { timer } from '../observable/timer';
+  */
+ export function delay<T>(due: number | Date, scheduler: SchedulerLike = asyncScheduler): MonoTypeOperatorFunction<T> {
+   const duration = timer(due, scheduler);
+-  return delayWhen(() => duration);
++  return debugOperatorName(delayWhen(() => duration), 'delay');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/delayWhen.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/delayWhen.ts
+index 3d35073..32d6b69 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/delayWhen.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/delayWhen.ts
+@@ -5,6 +5,7 @@ import { take } from './take';
+ import { ignoreElements } from './ignoreElements';
+ import { mapTo } from './mapTo';
+ import { mergeMap } from './mergeMap';
++import { debugOperatorName } from '../util/debug';
+
+ /** @deprecated The `subscriptionDelay` parameter will be removed in v8. */
+ export function delayWhen<T>(
+@@ -82,5 +83,5 @@ export function delayWhen<T>(
+       concat(subscriptionDelay.pipe(take(1), ignoreElements()), source.pipe(delayWhen(delayDurationSelector)));
+   }
+
+-  return mergeMap((value, index) => delayDurationSelector(value, index).pipe(take(1), mapTo(value)));
++  return debugOperatorName(mergeMap((value, index) => delayDurationSelector(value, index).pipe(take(1), mapTo(value))), 'delayWhen');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/dematerialize.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/dematerialize.ts
+index 3a4e17f..6ec9c6b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/dematerialize.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/dematerialize.ts
+@@ -54,5 +54,5 @@ import { createOperatorSubscriber } from './OperatorSubscriber';
+ export function dematerialize<N extends ObservableNotification<any>>(): OperatorFunction<N, ValueFromNotification<N>> {
+   return operate((source, subscriber) => {
+     source.subscribe(createOperatorSubscriber(subscriber, (notification) => observeNotification(notification, subscriber)));
+-  });
++  }, 'dematerialize');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/elementAt.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/elementAt.ts
+index 6a817fc..534831f 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/elementAt.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/elementAt.ts
+@@ -5,6 +5,7 @@ import { filter } from './filter';
+ import { throwIfEmpty } from './throwIfEmpty';
+ import { defaultIfEmpty } from './defaultIfEmpty';
+ import { take } from './take';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Emits the single value at the specified `index` in a sequence of emissions
+@@ -59,10 +60,10 @@ export function elementAt<T, D = T>(index: number, defaultValue?: D): OperatorFu
+     throw new ArgumentOutOfRangeError();
+   }
+   const hasDefaultValue = arguments.length >= 2;
+-  return (source: Observable<T>) =>
++  return debugOperatorName((source: Observable<T>) =>
+     source.pipe(
+       filter((v, i) => i === index),
+       take(1),
+       hasDefaultValue ? defaultIfEmpty(defaultValue!) : throwIfEmpty(() => new ArgumentOutOfRangeError())
+-    );
++    ), 'elementAt');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/endWith.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/endWith.ts
+index 436e5b3..6eb4dcb 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/endWith.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/endWith.ts
+@@ -3,6 +3,7 @@ import { Observable } from '../Observable';
+ import { concat } from '../observable/concat';
+ import { of } from '../observable/of';
+ import { MonoTypeOperatorFunction, SchedulerLike, OperatorFunction, ValueFromArray } from '../types';
++import { debugOperatorName } from '../util/debug';
+
+ /** @deprecated The `scheduler` parameter will be removed in v8. Use `scheduled` and `concatAll`. Details: https://rxjs.dev/deprecations/scheduler-argument */
+ export function endWith<T>(scheduler: SchedulerLike): MonoTypeOperatorFunction<T>;
+@@ -64,5 +65,5 @@ export function endWith<T, A extends unknown[] = T[]>(...values: A): OperatorFun
+  * source completes.
+  */
+ export function endWith<T>(...values: Array<T | SchedulerLike>): MonoTypeOperatorFunction<T> {
+-  return (source: Observable<T>) => concat(source, of(...values)) as Observable<T>;
++  return debugOperatorName((source: Observable<T>) => concat(source, of(...values)) as Observable<T>, 'endWith');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/every.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/every.ts
+index be3d9ea..70ec47b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/every.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/every.ts
+@@ -62,5 +62,5 @@ export function every<T>(
+         }
+       )
+     );
+-  });
++  }, 'every');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/exhaustAll.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/exhaustAll.ts
+index 8004306..45b328c 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/exhaustAll.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/exhaustAll.ts
+@@ -1,6 +1,7 @@
+ import { OperatorFunction, ObservableInput, ObservedValueOf } from '../types';
+ import { exhaustMap } from './exhaustMap';
+ import { identity } from '../util/identity';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Converts a higher-order Observable into a first-order Observable by dropping
+@@ -47,5 +48,5 @@ import { identity } from '../util/identity';
+  * completes before subscribing to the next.
+  */
+ export function exhaustAll<O extends ObservableInput<any>>(): OperatorFunction<O, ObservedValueOf<O>> {
+-  return exhaustMap(identity);
++  return debugOperatorName(exhaustMap(identity), 'exhaustAll');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/exhaustMap.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/exhaustMap.ts
+index 0d0572f..8aa270a 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/exhaustMap.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/exhaustMap.ts
+@@ -97,5 +97,5 @@ export function exhaustMap<T, R, O extends ObservableInput<any>>(
+         }
+       )
+     );
+-  });
++  }, 'exhaustMap');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/expand.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/expand.ts
+index 84b7e34..db6416b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/expand.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/expand.ts
+@@ -91,6 +91,6 @@ export function expand<T, O extends ObservableInput<unknown>>(
+       // Expand-specific
+       true, // Use expand path
+       scheduler // Inner subscription scheduler
+-    )
++    ), 'expand'
+   );
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/filter.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/filter.ts
+index ccc1dec..f98b511 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/filter.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/filter.ts
+@@ -71,5 +71,5 @@ export function filter<T>(predicate: (value: T, index: number) => boolean, thisA
+       // to the consumer.
+       createOperatorSubscriber(subscriber, (value) => predicate.call(thisArg, value, index++) && subscriber.next(value))
+     );
+-  });
++  }, 'filter');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/finalize.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/finalize.ts
+index 7ab08b2..52231a4 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/finalize.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/finalize.ts
+@@ -71,5 +71,5 @@ export function finalize<T>(callback: () => void): MonoTypeOperatorFunction<T> {
+     } finally {
+       subscriber.add(callback);
+     }
+-  });
++  }, 'finalize');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/find.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/find.ts
+index d91a3d8..03d28de 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/find.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/find.ts
+@@ -66,7 +66,7 @@ export function find<T>(
+   predicate: (value: T, index: number, source: Observable<T>) => boolean,
+   thisArg?: any
+ ): OperatorFunction<T, T | undefined> {
+-  return operate(createFind(predicate, thisArg, 'value'));
++  return operate(createFind(predicate, thisArg, 'value'), 'find');
+ }
+
+ export function createFind<T>(
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/findIndex.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/findIndex.ts
+index 7a9d943..d75b96c 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/findIndex.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/findIndex.ts
+@@ -60,5 +60,5 @@ export function findIndex<T>(
+   predicate: (value: T, index: number, source: Observable<T>) => boolean,
+   thisArg?: any
+ ): OperatorFunction<T, number> {
+-  return operate(createFind(predicate, thisArg, 'index'));
++  return operate(createFind(predicate, thisArg, 'index'), 'findIndex');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/first.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/first.ts
+index b3ca1f8..1b3b553 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/first.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/first.ts
+@@ -6,6 +6,7 @@ import { take } from './take';
+ import { defaultIfEmpty } from './defaultIfEmpty';
+ import { throwIfEmpty } from './throwIfEmpty';
+ import { identity } from '../util/identity';
++import { debugOperatorName } from '../util/debug';
+
+ export function first<T, D = T>(predicate?: null, defaultValue?: D): OperatorFunction<T, T | D>;
+ export function first<T>(predicate: BooleanConstructor): OperatorFunction<T, TruthyTypesOf<T>>;
+@@ -83,10 +84,10 @@ export function first<T, D>(
+   defaultValue?: D
+ ): OperatorFunction<T, T | D> {
+   const hasDefaultValue = arguments.length >= 2;
+-  return (source: Observable<T>) =>
++  return debugOperatorName((source: Observable<T>) =>
+     source.pipe(
+       predicate ? filter((v, i) => predicate(v, i, source)) : identity,
+       take(1),
+       hasDefaultValue ? defaultIfEmpty(defaultValue!) : throwIfEmpty(() => new EmptyError())
+-    );
++    ), 'first');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/groupBy.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/groupBy.ts
+index 4e4d573..80081ea 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/groupBy.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/groupBy.ts
+@@ -273,7 +273,7 @@ export function groupBy<T, K, R>(
+       result.key = key;
+       return result;
+     }
+-  });
++  }, 'groupBy');
+ }
+
+ /**
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/ignoreElements.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/ignoreElements.ts
+index d4977ac..04001e9 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/ignoreElements.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/ignoreElements.ts
+@@ -41,5 +41,5 @@ import { noop } from '../util/noop';
+ export function ignoreElements(): OperatorFunction<unknown, never> {
+   return operate((source, subscriber) => {
+     source.subscribe(createOperatorSubscriber(subscriber, noop));
+-  });
++  }, 'ignoreElements');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/isEmpty.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/isEmpty.ts
+index 5de8deb..109f1d9 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/isEmpty.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/isEmpty.ts
+@@ -78,5 +78,5 @@ export function isEmpty<T>(): OperatorFunction<T, boolean> {
+         }
+       )
+     );
+-  });
++  }, 'isEmpty');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/joinAllInternals.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/joinAllInternals.ts
+index 74876e9..786f571 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/joinAllInternals.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/joinAllInternals.ts
+@@ -1,5 +1,6 @@
+ import { Observable } from '../Observable';
+ import { ObservableInput, OperatorFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { identity } from '../util/identity';
+ import { mapOneOrManyArgs } from '../util/mapOneOrManyArgs';
+ import { pipe } from '../util/pipe';
+@@ -17,7 +18,7 @@ import { toArray } from './toArray';
+  * @param project The projection function to apply to the values, if any
+  */
+ export function joinAllInternals<T, R>(joinFn: (sources: ObservableInput<T>[]) => Observable<T>, project?: (...args: any[]) => R) {
+-  return pipe(
++  return debugOperatorName(pipe(
+     // Collect all inner sources into an array, and emit them when the
+     // source completes.
+     toArray() as OperatorFunction<ObservableInput<T>, ObservableInput<T>[]>,
+@@ -25,5 +26,5 @@ export function joinAllInternals<T, R>(joinFn: (sources: ObservableInput<T>[]) =
+     mergeMap((sources) => joinFn(sources)),
+     // If a projection function was supplied, apply it to each result.
+     project ? mapOneOrManyArgs(project) : (identity as any)
+-  );
++  ), 'joinAllInternals');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/last.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/last.ts
+index a046922..76c5edc 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/last.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/last.ts
+@@ -6,6 +6,7 @@ import { takeLast } from './takeLast';
+ import { throwIfEmpty } from './throwIfEmpty';
+ import { defaultIfEmpty } from './defaultIfEmpty';
+ import { identity } from '../util/identity';
++import { debugObservableName } from '../util/debug';
+
+ export function last<T>(predicate: BooleanConstructor): OperatorFunction<T, TruthyTypesOf<T>>;
+ export function last<T, D>(predicate: BooleanConstructor, defaultValue: D): OperatorFunction<T, TruthyTypesOf<T> | D>;
+@@ -82,9 +83,9 @@ export function last<T, D>(
+ ): OperatorFunction<T, T | D> {
+   const hasDefaultValue = arguments.length >= 2;
+   return (source: Observable<T>) =>
+-    source.pipe(
++    debugObservableName(source.pipe(
+       predicate ? filter((v, i) => predicate(v, i, source)) : identity,
+       takeLast(1),
+       hasDefaultValue ? defaultIfEmpty(defaultValue!) : throwIfEmpty(() => new EmptyError())
+-    );
++    ), 'last');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/map.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/map.ts
+index 35b548f..460a0e0 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/map.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/map.ts
+@@ -58,5 +58,5 @@ export function map<T, R>(project: (value: T, index: number) => R, thisArg?: any
+         subscriber.next(project.call(thisArg, value, index++));
+       })
+     );
+-  });
++  }, 'map');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/mapTo.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/mapTo.ts
+index 9fb8a8e..1bad60e 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/mapTo.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/mapTo.ts
+@@ -1,4 +1,5 @@
+ import { OperatorFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { map } from './map';
+
+ /** @deprecated To be removed in v9. Use {@link map} instead: `map(() => value)`. */
+@@ -44,5 +45,5 @@ export function mapTo<T, R>(value: R): OperatorFunction<T, R>;
+  * @deprecated To be removed in v9. Use {@link map} instead: `map(() => value)`.
+  */
+ export function mapTo<R>(value: R): OperatorFunction<unknown, R> {
+-  return map(() => value);
++  return debugOperatorName(map(() => value), 'mapTo');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/materialize.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/materialize.ts
+index 5f9a629..59190cc 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/materialize.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/materialize.ts
+@@ -69,5 +69,5 @@ export function materialize<T>(): OperatorFunction<T, Notification<T> & Observab
+         }
+       )
+     );
+-  });
++  }, 'materialize');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/max.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/max.ts
+index b3c5fcb..6814cb9 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/max.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/max.ts
+@@ -1,6 +1,7 @@
+ import { reduce } from './reduce';
+ import { MonoTypeOperatorFunction } from '../types';
+ import { isFunction } from '../util/isFunction';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * The Max operator operates on an Observable that emits numbers (or items that can be compared with a provided function),
+@@ -49,5 +50,5 @@ import { isFunction } from '../util/isFunction';
+  * largest value.
+  */
+ export function max<T>(comparer?: (x: T, y: T) => number): MonoTypeOperatorFunction<T> {
+-  return reduce(isFunction(comparer) ? (x, y) => (comparer(x, y) > 0 ? x : y) : (x, y) => (x > y ? x : y));
++  return debugOperatorName(reduce(isFunction(comparer) ? (x, y) => (comparer(x, y) > 0 ? x : y) : (x, y) => (x > y ? x : y)), 'max');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/merge.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/merge.ts
+index d7cae4e..2a91811 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/merge.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/merge.ts
+@@ -27,5 +27,5 @@ export function merge<T>(...args: unknown[]): OperatorFunction<T, unknown> {
+
+   return operate((source, subscriber) => {
+     mergeAll(concurrent)(from([source, ...(args as ObservableInput<T>[])], scheduler)).subscribe(subscriber);
+-  });
++  }, 'merge');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeAll.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeAll.ts
+index 9183bad..954b8dd 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeAll.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeAll.ts
+@@ -1,6 +1,7 @@
+ import { mergeMap } from './mergeMap';
+ import { identity } from '../util/identity';
+ import { OperatorFunction, ObservableInput, ObservedValueOf } from '../types';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Converts a higher-order Observable into a first-order Observable which
+@@ -62,5 +63,5 @@ import { OperatorFunction, ObservableInput, ObservedValueOf } from '../types';
+  * all the inner Observables emitted by the source Observable.
+  */
+ export function mergeAll<O extends ObservableInput<any>>(concurrent: number = Infinity): OperatorFunction<O, ObservedValueOf<O>> {
+-  return mergeMap(identity, concurrent);
++  return debugOperatorName(mergeMap(identity, concurrent), 'mergeAll');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeMap.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeMap.ts
+index 6a88076..9f1bdd7 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeMap.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeMap.ts
+@@ -92,5 +92,5 @@ export function mergeMap<T, R, O extends ObservableInput<any>>(
+     concurrent = resultSelector;
+   }
+
+-  return operate((source, subscriber) => mergeInternals(source, subscriber, project, concurrent));
++  return operate((source, subscriber) => mergeInternals(source, subscriber, project, concurrent), 'mergeMap');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeMapTo.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeMapTo.ts
+index b457401..fa6e3e3 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeMapTo.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeMapTo.ts
+@@ -1,6 +1,7 @@
+ import { OperatorFunction, ObservedValueOf, ObservableInput } from '../types';
+ import { mergeMap } from './mergeMap';
+ import { isFunction } from '../util/isFunction';
++import { debugOperatorName } from '../util/debug';
+
+ /** @deprecated Will be removed in v9. Use {@link mergeMap} instead: `mergeMap(() => result)` */
+ export function mergeMapTo<O extends ObservableInput<unknown>>(
+@@ -65,10 +66,10 @@ export function mergeMapTo<T, R, O extends ObservableInput<unknown>>(
+   concurrent: number = Infinity
+ ): OperatorFunction<T, ObservedValueOf<O> | R> {
+   if (isFunction(resultSelector)) {
+-    return mergeMap(() => innerObservable, resultSelector, concurrent);
++    return debugOperatorName(mergeMap(() => innerObservable, resultSelector, concurrent), 'mergeMapTo');
+   }
+   if (typeof resultSelector === 'number') {
+     concurrent = resultSelector;
+   }
+-  return mergeMap(() => innerObservable, concurrent);
++  return debugOperatorName(mergeMap(() => innerObservable, concurrent), 'mergeMapTo');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeScan.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeScan.ts
+index 6e1e37c..02994ab 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeScan.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeScan.ts
+@@ -89,5 +89,5 @@ export function mergeScan<T, R>(
+       undefined,
+       () => (state = null!)
+     );
+-  });
++  }, 'mergeScan');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeWith.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeWith.ts
+index b0c8142..dac0472 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeWith.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/mergeWith.ts
+@@ -1,4 +1,5 @@
+ import { ObservableInputTuple, OperatorFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { merge } from './merge';
+
+ /**
+@@ -45,5 +46,5 @@ import { merge } from './merge';
+ export function mergeWith<T, A extends readonly unknown[]>(
+   ...otherSources: [...ObservableInputTuple<A>]
+ ): OperatorFunction<T, T | A[number]> {
+-  return merge(...otherSources);
++  return debugOperatorName(merge(...otherSources), 'mergeWith');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/min.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/min.ts
+index bef78d1..2cf5c19 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/min.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/min.ts
+@@ -1,6 +1,7 @@
+ import { reduce } from './reduce';
+ import { MonoTypeOperatorFunction } from '../types';
+ import { isFunction } from '../util/isFunction';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * The Min operator operates on an Observable that emits numbers (or items that can be compared with a provided function),
+@@ -49,5 +50,5 @@ import { isFunction } from '../util/isFunction';
+  * smallest value.
+  */
+ export function min<T>(comparer?: (x: T, y: T) => number): MonoTypeOperatorFunction<T> {
+-  return reduce(isFunction(comparer) ? (x, y) => (comparer(x, y) < 0 ? x : y) : (x, y) => (x < y ? x : y));
++  return debugOperatorName(reduce(isFunction(comparer) ? (x, y) => (comparer(x, y) < 0 ? x : y) : (x, y) => (x < y ? x : y)), 'min');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/multicast.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/multicast.ts
+index 4ea03d2..7993869 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/multicast.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/multicast.ts
+@@ -4,6 +4,7 @@ import { ConnectableObservable } from '../observable/ConnectableObservable';
+ import { OperatorFunction, UnaryFunction, ObservedValueOf, ObservableInput } from '../types';
+ import { isFunction } from '../util/isFunction';
+ import { connect } from './connect';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * An operator that creates a {@link ConnectableObservable}, that when connected,
+@@ -94,5 +95,5 @@ export function multicast<T, R>(
+     });
+   }
+
+-  return (source: Observable<T>) => new ConnectableObservable<any>(source, subjectFactory);
++  return debugOperatorName((source: Observable<T>) => new ConnectableObservable<any>(source, subjectFactory), 'multicast');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/observeOn.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/observeOn.ts
+index bd37111..bab43b3 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/observeOn.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/observeOn.ts
+@@ -66,5 +66,5 @@ export function observeOn<T>(scheduler: SchedulerLike, delay = 0): MonoTypeOpera
+         (err) => executeSchedule(subscriber, scheduler, () => subscriber.error(err), delay)
+       )
+     );
+-  });
++  }, 'observeOn');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/onErrorResumeNext.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/onErrorResumeNext.ts
+index e248fb5..8646d00 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/onErrorResumeNext.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/onErrorResumeNext.ts
+@@ -121,5 +121,5 @@ export function onErrorResumeNext<T, A extends readonly unknown[]>(
+     };
+
+     subscribeNext();
+-  });
++  }, 'onErrorResumeNext');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/pairwise.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/pairwise.ts
+index e2b0eba..8f1bc52 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/pairwise.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/pairwise.ts
+@@ -57,5 +57,5 @@ export function pairwise<T>(): OperatorFunction<T, [T, T]> {
+         hasPrev = true;
+       })
+     );
+-  });
++  }, 'pairwise');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/partition.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/partition.ts
+index 9b02a0c..aae4b54 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/partition.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/partition.ts
+@@ -2,6 +2,7 @@ import { not } from '../util/not';
+ import { filter } from './filter';
+ import { Observable } from '../Observable';
+ import { UnaryFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Splits the source Observable into two, one with values that satisfy a
+@@ -58,6 +59,6 @@ export function partition<T>(
+   predicate: (value: T, index: number) => boolean,
+   thisArg?: any
+ ): UnaryFunction<Observable<T>, [Observable<T>, Observable<T>]> {
+-  return (source: Observable<T>) =>
+-    [filter(predicate, thisArg)(source), filter(not(predicate, thisArg))(source)] as [Observable<T>, Observable<T>];
++  return debugOperatorName((source: Observable<T>) =>
++    [filter(predicate, thisArg)(source), filter(not(predicate, thisArg))(source)] as [Observable<T>, Observable<T>], 'partition');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/pluck.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/pluck.ts
+index b80da73..562a1d6 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/pluck.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/pluck.ts
+@@ -1,5 +1,6 @@
+ import { map } from './map';
+ import { OperatorFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+
+ /* tslint:disable:max-line-length */
+ /** @deprecated Use {@link map} and optional chaining: `pluck('foo', 'bar')` is `map(x => x?.foo?.bar)`. Will be removed in v8. */
+@@ -91,7 +92,7 @@ export function pluck<T, R>(...properties: Array<string | number | symbol>): Ope
+   if (length === 0) {
+     throw new Error('list of properties cannot be empty.');
+   }
+-  return map((x) => {
++  return debugOperatorName(map((x) => {
+     let currentProp: any = x;
+     for (let i = 0; i < length; i++) {
+       const p = currentProp?.[properties[i]];
+@@ -102,5 +103,5 @@ export function pluck<T, R>(...properties: Array<string | number | symbol>): Ope
+       }
+     }
+     return currentProp;
+-  });
++  }), 'pluck');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/publish.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/publish.ts
+index 105cd36..9613a97 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/publish.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/publish.ts
+@@ -4,6 +4,7 @@ import { multicast } from './multicast';
+ import { ConnectableObservable } from '../observable/ConnectableObservable';
+ import { MonoTypeOperatorFunction, OperatorFunction, UnaryFunction, ObservableInput, ObservedValueOf } from '../types';
+ import { connect } from './connect';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Returns a connectable observable that, when connected, will multicast
+@@ -89,5 +90,7 @@ export function publish<T, O extends ObservableInput<any>>(selector: (shared: Ob
+  * Details: https://rxjs.dev/deprecations/multicasting
+  */
+ export function publish<T, R>(selector?: OperatorFunction<T, R>): MonoTypeOperatorFunction<T> | OperatorFunction<T, R> {
+-  return selector ? (source) => connect(selector)(source) : (source) => multicast(new Subject<T>())(source);
++  return selector
++    ? debugOperatorName((source) => connect(selector)(source), 'publish')
++    : debugOperatorName((source) => multicast(new Subject<T>())(source), 'publish');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/publishBehavior.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/publishBehavior.ts
+index d94589c..2027eb0 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/publishBehavior.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/publishBehavior.ts
+@@ -2,6 +2,7 @@ import { Observable } from '../Observable';
+ import { BehaviorSubject } from '../BehaviorSubject';
+ import { ConnectableObservable } from '../observable/ConnectableObservable';
+ import { UnaryFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Creates a {@link ConnectableObservable} that utilizes a {@link BehaviorSubject}.
+@@ -19,8 +20,8 @@ import { UnaryFunction } from '../types';
+  */
+ export function publishBehavior<T>(initialValue: T): UnaryFunction<Observable<T>, ConnectableObservable<T>> {
+   // Note that this has *never* supported the selector function.
+-  return (source) => {
++  return debugOperatorName((source) => {
+     const subject = new BehaviorSubject<T>(initialValue);
+     return new ConnectableObservable(source, () => subject);
+-  };
++  }, 'publishBehavior');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/publishLast.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/publishLast.ts
+index ded47fb..823b978 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/publishLast.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/publishLast.ts
+@@ -2,6 +2,7 @@ import { Observable } from '../Observable';
+ import { AsyncSubject } from '../AsyncSubject';
+ import { ConnectableObservable } from '../observable/ConnectableObservable';
+ import { UnaryFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Returns a connectable observable sequence that shares a single subscription to the
+@@ -69,8 +70,8 @@ import { UnaryFunction } from '../types';
+  */
+ export function publishLast<T>(): UnaryFunction<Observable<T>, ConnectableObservable<T>> {
+   // Note that this has *never* supported a selector function like `publish` and `publishReplay`.
+-  return (source) => {
++  return debugOperatorName((source) => {
+     const subject = new AsyncSubject<T>();
+     return new ConnectableObservable(source, () => subject);
+-  };
++  }, 'publishLast');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/publishReplay.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/publishReplay.ts
+index 47494e2..35f204b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/publishReplay.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/publishReplay.ts
+@@ -3,6 +3,7 @@ import { ReplaySubject } from '../ReplaySubject';
+ import { multicast } from './multicast';
+ import { MonoTypeOperatorFunction, OperatorFunction, TimestampProvider, ObservableInput, ObservedValueOf } from '../types';
+ import { isFunction } from '../util/isFunction';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Creates a {@link ConnectableObservable} that uses a {@link ReplaySubject}
+@@ -92,5 +93,8 @@ export function publishReplay<T, R>(
+   const selector = isFunction(selectorOrScheduler) ? selectorOrScheduler : undefined;
+   // Note, we're passing `selector!` here, because at runtime, `undefined` is an acceptable argument
+   // but it makes our TypeScript signature for `multicast` unhappy (as it should, because it's gross).
+-  return (source: Observable<T>) => multicast(new ReplaySubject<T>(bufferSize, windowTime, timestampProvider), selector!)(source);
++  return debugOperatorName(
++    (source: Observable<T>) => multicast(new ReplaySubject<T>(bufferSize, windowTime, timestampProvider), selector!)(source),
++    'publishReplay'
++  );
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/race.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/race.ts
+index efa8cd9..a8815b2 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/race.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/race.ts
+@@ -1,5 +1,6 @@
+ import { ObservableInputTuple, OperatorFunction } from '../types';
+ import { argsOrArgArray } from '../util/argsOrArgArray';
++import { debugOperatorName } from '../util/debug';
+ import { raceWith } from './raceWith';
+
+ /** @deprecated Replaced with {@link raceWith}. Will be removed in v8. */
+@@ -16,5 +17,5 @@ export function race<T, A extends readonly unknown[]>(...otherSources: [...Obser
+  * @deprecated Replaced with {@link raceWith}. Will be removed in v8.
+  */
+ export function race<T>(...args: any[]): OperatorFunction<T, unknown> {
+-  return raceWith(...argsOrArgArray(args));
++  return debugOperatorName(raceWith(...argsOrArgArray(args)), 'race');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/raceWith.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/raceWith.ts
+index 6e72929..88d3172 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/raceWith.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/raceWith.ts
+@@ -36,5 +36,5 @@ export function raceWith<T, A extends readonly unknown[]>(
+     ? identity
+     : operate((source, subscriber) => {
+         raceInit<T | A[number]>([source, ...otherSources])(subscriber);
+-      });
++      }, 'raceWith');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/reduce.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/reduce.ts
+index c9bdda0..eba989b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/reduce.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/reduce.ts
+@@ -58,5 +58,5 @@ export function reduce<V, A, S = A>(accumulator: (acc: A | S, value: V, index: n
+  * is the result of accumulating the values emitted by the source Observable.
+  */
+ export function reduce<V, A>(accumulator: (acc: V | A, value: V, index: number) => A, seed?: any): OperatorFunction<V, V | A> {
+-  return operate(scanInternals(accumulator, seed, arguments.length >= 2, false, true));
++  return operate(scanInternals(accumulator, seed, arguments.length >= 2, false, true), 'reduce');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/refCount.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/refCount.ts
+index c4162c0..ab64c35 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/refCount.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/refCount.ts
+@@ -115,5 +115,5 @@ export function refCount<T>(): MonoTypeOperatorFunction<T> {
+     if (!refCounter.closed) {
+       connection = (source as ConnectableObservable<T>).connect();
+     }
+-  });
++  }, 'refCount');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/repeat.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/repeat.ts
+index fa0b3a3..4c39ba4 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/repeat.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/repeat.ts
+@@ -168,5 +168,5 @@ export function repeat<T>(countOrConfig?: number | RepeatConfig): MonoTypeOperat
+         };
+
+         subscribeToSource();
+-      });
++      }, 'repeat');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/repeatWhen.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/repeatWhen.ts
+index 8d3e0de..f6eb630 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/repeatWhen.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/repeatWhen.ts
+@@ -119,5 +119,5 @@ export function repeatWhen<T>(notifier: (notifications: Observable<void>) => Obs
+
+     // Start the subscription
+     subscribeForRepeatWhen();
+-  });
++  }, 'repeatWhen');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/retry.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/retry.ts
+index ed04776..073c028 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/retry.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/retry.ts
+@@ -163,5 +163,5 @@ export function retry<T>(configOrCount: number | RetryConfig = Infinity): MonoTy
+           }
+         };
+         subscribeForRetry();
+-      });
++      }, 'retry');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/retryWhen.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/retryWhen.ts
+index 31d6a6c..26110e2 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/retryWhen.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/retryWhen.ts
+@@ -106,5 +106,5 @@ export function retryWhen<T>(notifier: (errors: Observable<any>) => Observable<a
+
+     // Start the subscription
+     subscribeForRetryWhen();
+-  });
++  }, 'retryWhen');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/sample.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/sample.ts
+index 9685405..24fc3cb 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/sample.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/sample.ts
+@@ -68,5 +68,5 @@ export function sample<T>(notifier: Observable<any>): MonoTypeOperatorFunction<T
+         noop
+       )
+     );
+-  });
++  }, 'sample');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/sampleTime.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/sampleTime.ts
+index 6558fa0..2a3eeeb 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/sampleTime.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/sampleTime.ts
+@@ -2,6 +2,7 @@ import { asyncScheduler } from '../scheduler/async';
+ import { MonoTypeOperatorFunction, SchedulerLike } from '../types';
+ import { sample } from './sample';
+ import { interval } from '../observable/interval';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Emits the most recently emitted value from the source Observable within
+@@ -47,5 +48,5 @@ import { interval } from '../observable/interval';
+  * interval.
+  */
+ export function sampleTime<T>(period: number, scheduler: SchedulerLike = asyncScheduler): MonoTypeOperatorFunction<T> {
+-  return sample(interval(period, scheduler));
++  return debugOperatorName(sample(interval(period, scheduler)), 'sampleTime');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/scan.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/scan.ts
+index e97e967..77c0d4b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/scan.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/scan.ts
+@@ -91,5 +91,5 @@ export function scan<V, A, S>(accumulator: (acc: V | A | S, value: V, index: num
+   // For this reason, we have to check it here at the original call site
+   // otherwise inside Operator/Subscriber we won't know if `undefined`
+   // means they didn't provide anything or if they literally provided `undefined`
+-  return operate(scanInternals(accumulator, seed as S, arguments.length >= 2, true));
++  return operate(scanInternals(accumulator, seed as S, arguments.length >= 2, true), 'scan');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/sequenceEqual.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/sequenceEqual.ts
+index ba51444..47ae3e5 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/sequenceEqual.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/sequenceEqual.ts
+@@ -120,7 +120,7 @@ export function sequenceEqual<T>(
+     // Subscribe to each source.
+     source.subscribe(createSubscriber(aState, bState));
+     compareTo.subscribe(createSubscriber(bState, aState));
+-  });
++  }, 'sequenceEqual');
+ }
+
+ /**
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/share.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/share.ts
+index 6666bdf..dad17c3 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/share.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/share.ts
+@@ -4,6 +4,7 @@ import { Subject } from '../Subject';
+ import { SafeSubscriber } from '../Subscriber';
+ import { Subscription } from '../Subscription';
+ import { MonoTypeOperatorFunction, SubjectLike } from '../types';
++import { debugAddSourceSubscriber, debugObservableName, debugRemoveSourceSubscriber } from '../util/debug';
+ import { operate } from '../util/lift';
+
+ export interface ShareConfig<T> {
+@@ -141,7 +142,7 @@ export function share<T>(options: ShareConfig<T>): MonoTypeOperatorFunction<T>;
+  * @return A function that returns an Observable that mirrors the source.
+  */
+ export function share<T>(options: ShareConfig<T> = {}): MonoTypeOperatorFunction<T> {
+-  const { connector = () => new Subject<T>(), resetOnError = true, resetOnComplete = true, resetOnRefCountZero = true } = options;
++  const { connector = () => debugObservableName(new Subject<T>(), 'share'), resetOnError = true, resetOnComplete = true, resetOnRefCountZero = true } = options;
+   // It's necessary to use a wrapper here, as the _operator_ must be
+   // referentially transparent. Otherwise, it cannot be used in calls to the
+   // static `pipe` function - to create a partial pipeline.
+@@ -229,17 +230,20 @@ export function share<T>(options: ShareConfig<T> = {}): MonoTypeOperatorFunction
+             cancelReset();
+             resetConnection = handleReset(reset, resetOnError, err);
+             dest.error(err);
++            connection && debugRemoveSourceSubscriber(subscriber, connection);
+           },
+           complete: () => {
+             hasCompleted = true;
+             cancelReset();
+             resetConnection = handleReset(reset, resetOnComplete);
+             dest.complete();
++            connection && debugRemoveSourceSubscriber(subscriber, connection);
+           },
+         });
+         innerFrom(source).subscribe(connection);
++        debugAddSourceSubscriber(subscriber, connection);
+       }
+-    })(wrapperSource);
++    }, 'share')(wrapperSource);
+   };
+ }
+
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/shareReplay.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/shareReplay.ts
+index 28149a6..d483563 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/shareReplay.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/shareReplay.ts
+@@ -1,5 +1,6 @@
+ import { ReplaySubject } from '../ReplaySubject';
+ import { MonoTypeOperatorFunction, SchedulerLike } from '../types';
++import { debugObservableName } from '../util/debug';
+ import { share } from './share';
+
+ export interface ShareReplayConfig {
+@@ -164,7 +165,7 @@ export function shareReplay<T>(
+     bufferSize = (configOrBufferSize ?? Infinity) as number;
+   }
+   return share<T>({
+-    connector: () => new ReplaySubject(bufferSize, windowTime, scheduler),
++    connector: () => debugObservableName(new ReplaySubject(bufferSize, windowTime, scheduler), 'shareReplay'),
+     resetOnError: true,
+     resetOnComplete: false,
+     resetOnRefCountZero: refCount,
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/single.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/single.ts
+index b91ab2a..040bd67 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/single.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/single.ts
+@@ -113,5 +113,5 @@ export function single<T>(predicate?: (value: T, index: number, source: Observab
+         }
+       )
+     );
+-  });
++  }, 'single');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/skip.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/skip.ts
+index 76e3eff..0a06812 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/skip.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/skip.ts
+@@ -1,4 +1,5 @@
+ import { MonoTypeOperatorFunction } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { filter } from './filter';
+
+ /**
+@@ -35,5 +36,5 @@ import { filter } from './filter';
+  * values emitted by the source Observable.
+  */
+ export function skip<T>(count: number): MonoTypeOperatorFunction<T> {
+-  return filter((_, index) => count <= index);
++  return debugOperatorName(filter((_, index) => count <= index), 'skip');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/skipLast.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/skipLast.ts
+index e0f75b5..1eb02a4 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/skipLast.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/skipLast.ts
+@@ -91,5 +91,5 @@ export function skipLast<T>(skipCount: number): MonoTypeOperatorFunction<T> {
+           // Release our values in memory
+           ring = null!;
+         };
+-      });
++      }, 'skipLast');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/skipUntil.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/skipUntil.ts
+index 38fcdb9..768ef04 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/skipUntil.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/skipUntil.ts
+@@ -63,5 +63,5 @@ export function skipUntil<T>(notifier: Observable<any>): MonoTypeOperatorFunctio
+     innerFrom(notifier).subscribe(skipSubscriber);
+
+     source.subscribe(createOperatorSubscriber(subscriber, (value) => taking && subscriber.next(value)));
+-  });
++  }, 'skipUntil');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/skipWhile.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/skipWhile.ts
+index 68aeca6..def70ee 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/skipWhile.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/skipWhile.ts
+@@ -56,5 +56,5 @@ export function skipWhile<T>(predicate: (value: T, index: number) => boolean): M
+     source.subscribe(
+       createOperatorSubscriber(subscriber, (value) => (taking || (taking = !predicate(value, index++))) && subscriber.next(value))
+     );
+-  });
++  }, 'skipWhile');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/startWith.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/startWith.ts
+index 8c11ddb..8ac6ebb 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/startWith.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/startWith.ts
+@@ -63,5 +63,5 @@ export function startWith<T, D>(...values: D[]): OperatorFunction<T, T | D> {
+     // code inside of `concat` would be confused by the `undefined`, and treat it
+     // like an invalid observable. So we have to split it two different ways.
+     (scheduler ? concat(values, source, scheduler) : concat(values, source)).subscribe(subscriber);
+-  });
++  }, 'startWith');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/subscribeOn.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/subscribeOn.ts
+index 17240d0..de7b50c 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/subscribeOn.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/subscribeOn.ts
+@@ -63,5 +63,5 @@ import { operate } from '../util/lift';
+ export function subscribeOn<T>(scheduler: SchedulerLike, delay: number = 0): MonoTypeOperatorFunction<T> {
+   return operate((source, subscriber) => {
+     subscriber.add(scheduler.schedule(() => source.subscribe(subscriber), delay));
+-  });
++  }, 'subscribeOn');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/switchAll.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/switchAll.ts
+index 69e9cbb..272e639 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/switchAll.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/switchAll.ts
+@@ -1,6 +1,7 @@
+ import { OperatorFunction, ObservableInput, ObservedValueOf } from '../types';
+ import { switchMap } from './switchMap';
+ import { identity } from '../util/identity';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Converts a higher-order Observable into a first-order Observable
+@@ -61,5 +62,5 @@ import { identity } from '../util/identity';
+  * recent Observable sequence.
+  */
+ export function switchAll<O extends ObservableInput<any>>(): OperatorFunction<O, ObservedValueOf<O>> {
+-  return switchMap(identity);
++  return debugOperatorName(switchMap(identity), 'switchAll');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/switchMap.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/switchMap.ts
+index ba2a360..b1cefde 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/switchMap.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/switchMap.ts
+@@ -129,5 +129,5 @@ export function switchMap<T, R, O extends ObservableInput<any>>(
+         }
+       )
+     );
+-  });
++  }, 'switchMap');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/switchMapTo.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/switchMapTo.ts
+index 28a45c1..8f1dc96 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/switchMapTo.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/switchMapTo.ts
+@@ -1,6 +1,7 @@
+ import { switchMap } from './switchMap';
+ import { ObservableInput, OperatorFunction, ObservedValueOf } from '../types';
+ import { isFunction } from '../util/isFunction';
++import { debugOperatorName } from '../util/debug';
+
+ /** @deprecated Will be removed in v9. Use {@link switchMap} instead: `switchMap(() => result)` */
+ export function switchMapTo<O extends ObservableInput<unknown>>(observable: O): OperatorFunction<unknown, ObservedValueOf<O>>;
+@@ -60,5 +61,7 @@ export function switchMapTo<T, R, O extends ObservableInput<unknown>>(
+   innerObservable: O,
+   resultSelector?: (outerValue: T, innerValue: ObservedValueOf<O>, outerIndex: number, innerIndex: number) => R
+ ): OperatorFunction<T, ObservedValueOf<O> | R> {
+-  return isFunction(resultSelector) ? switchMap(() => innerObservable, resultSelector) : switchMap(() => innerObservable);
++  return isFunction(resultSelector)
++    ? debugOperatorName(switchMap(() => innerObservable, resultSelector), 'switchMapTo')
++    : debugOperatorName(switchMap(() => innerObservable), 'switchMapTo');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/switchScan.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/switchScan.ts
+index 902a2a7..2737d2f 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/switchScan.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/switchScan.ts
+@@ -46,5 +46,5 @@ export function switchScan<T, R, O extends ObservableInput<any>>(
+       // Release state on finalization
+       state = null!;
+     };
+-  });
++  }, 'switchScan');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/take.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/take.ts
+index b2054e7..bb774bc 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/take.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/take.ts
+@@ -67,5 +67,5 @@ export function take<T>(count: number): MonoTypeOperatorFunction<T> {
+             }
+           })
+         );
+-      });
++      }, 'take');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/takeLast.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/takeLast.ts
+index 972d147..dda36df 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/takeLast.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/takeLast.ts
+@@ -77,5 +77,5 @@ export function takeLast<T>(count: number): MonoTypeOperatorFunction<T> {
+             }
+           )
+         );
+-      });
++      }, 'takeLast');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/takeUntil.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/takeUntil.ts
+index 8ac6c23..9ec5b3d 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/takeUntil.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/takeUntil.ts
+@@ -47,5 +47,5 @@ export function takeUntil<T>(notifier: ObservableInput<any>): MonoTypeOperatorFu
+   return operate((source, subscriber) => {
+     innerFrom(notifier).subscribe(createOperatorSubscriber(subscriber, () => subscriber.complete(), noop));
+     !subscriber.closed && source.subscribe(subscriber);
+-  });
++  }, 'takeUntil');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/takeWhile.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/takeWhile.ts
+index 27da59d..577328b 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/takeWhile.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/takeWhile.ts
+@@ -62,5 +62,5 @@ export function takeWhile<T>(predicate: (value: T, index: number) => boolean, in
+         !result && subscriber.complete();
+       })
+     );
+-  });
++  }, 'takeWhile');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/tap.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/tap.ts
+index cc0063d..96b18fc 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/tap.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/tap.ts
+@@ -147,7 +147,7 @@ export function tap<T>(
+             }
+           )
+         );
+-      })
++      }, 'tap')
+     : // Tap was called with no valid tap observer or handler
+       // (e.g. `tap(null, null, null)` or `tap(null)` or `tap()`)
+       // so we're going to just mirror the source.
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/throttle.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/throttle.ts
+index 191de58..159c533 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/throttle.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/throttle.ts
+@@ -122,5 +122,5 @@ export function throttle<T>(
+         }
+       )
+     );
+-  });
++  }, 'throttle');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/throttleTime.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/throttleTime.ts
+index c0af582..4465ae4 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/throttleTime.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/throttleTime.ts
+@@ -2,6 +2,7 @@ import { asyncScheduler } from '../scheduler/async';
+ import { defaultThrottleConfig, throttle } from './throttle';
+ import { MonoTypeOperatorFunction, SchedulerLike } from '../types';
+ import { timer } from '../observable/timer';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Emits a value from the source Observable, then ignores subsequent source
+@@ -58,5 +59,5 @@ export function throttleTime<T>(
+   config = defaultThrottleConfig
+ ): MonoTypeOperatorFunction<T> {
+   const duration$ = timer(duration, scheduler);
+-  return throttle(() => duration$, config);
++  return debugOperatorName(throttle(() => duration$, config), 'throttleTime');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/throwIfEmpty.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/throwIfEmpty.ts
+index 76497a2..26be898 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/throwIfEmpty.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/throwIfEmpty.ts
+@@ -52,7 +52,7 @@ export function throwIfEmpty<T>(errorFactory: () => any = defaultErrorFactory):
+         () => (hasValue ? subscriber.complete() : subscriber.error(errorFactory()))
+       )
+     );
+-  });
++  }, 'throwIfEmpty');
+ }
+
+ function defaultErrorFactory() {
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/timeInterval.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/timeInterval.ts
+index 5baa145..a809dd3 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/timeInterval.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/timeInterval.ts
+@@ -53,7 +53,7 @@ export function timeInterval<T>(scheduler: SchedulerLike = asyncScheduler): Oper
+         subscriber.next(new TimeInterval(value, interval));
+       })
+     );
+-  });
++  }, 'timeInterval');
+ }
+
+ // TODO(benlesh): make this an interface, export the interface, but not the implemented class,
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/timeout.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/timeout.ts
+index a63febc..6564ec4 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/timeout.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/timeout.ts
+@@ -392,7 +392,7 @@ export function timeout<T, O extends ObservableInput<any>, M>(
+     // If `first` was provided and it's not a number, it's a Date, and we get the difference between it and "now".
+     // If `first` was not provided at all, then our first timer will be the value from `each`.
+     !seen && startTimer(first != null ? (typeof first === 'number' ? first : +first - scheduler!.now()) : each!);
+-  });
++  }, 'timeout');
+ }
+
+ /**
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/timeoutWith.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/timeoutWith.ts
+index 1a4d0ca..85a17fc 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/timeoutWith.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/timeoutWith.ts
+@@ -2,6 +2,7 @@ import { async } from '../scheduler/async';
+ import { isValidDate } from '../util/isDate';
+ import { ObservableInput, OperatorFunction, SchedulerLike } from '../types';
+ import { timeout } from './timeout';
++import { debugOperatorName } from '../util/debug';
+
+ /** @deprecated Replaced with {@link timeout}. Instead of `timeoutWith(someDate, a$, scheduler)`, use the configuration object
+  * `timeout({ first: someDate, with: () => a$, scheduler })`. Will be removed in v8. */
+@@ -107,10 +108,10 @@ export function timeoutWith<T, R>(
+     throw new TypeError('No timeout provided.');
+   }
+
+-  return timeout<T, ObservableInput<R>>({
++  return debugOperatorName(timeout<T, ObservableInput<R>>({
+     first,
+     each,
+     scheduler,
+     with: _with,
+-  });
++  }), 'timeoutWith');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/timestamp.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/timestamp.ts
+index bb388de..32fe3e5 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/timestamp.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/timestamp.ts
+@@ -1,6 +1,7 @@
+ import { OperatorFunction, TimestampProvider, Timestamp } from '../types';
+ import { dateTimestampProvider } from '../scheduler/dateTimestampProvider';
+ import { map } from './map';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Attaches a timestamp to each item emitted by an observable indicating when it was emitted
+@@ -35,5 +36,5 @@ import { map } from './map';
+  * each item emitted by the source Observable indicating when it was emitted.
+  */
+ export function timestamp<T>(timestampProvider: TimestampProvider = dateTimestampProvider): OperatorFunction<T, Timestamp<T>> {
+-  return map((value: T) => ({ value, timestamp: timestampProvider.now() }));
++  return debugOperatorName(map((value: T) => ({ value, timestamp: timestampProvider.now() })), 'timestamp');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/toArray.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/toArray.ts
+index 8c60ace..65c63fc 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/toArray.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/toArray.ts
+@@ -40,5 +40,5 @@ export function toArray<T>(): OperatorFunction<T, T[]> {
+   // array within this `operate` function.
+   return operate((source, subscriber) => {
+     reduce(arrReducer, [] as T[])(source).subscribe(subscriber);
+-  });
++  }, 'toArray');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/window.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/window.ts
+index 31ef626..3214925 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/window.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/window.ts
+@@ -92,5 +92,5 @@ export function window<T>(windowBoundaries: Observable<any>): OperatorFunction<T
+       windowSubject?.unsubscribe();
+       windowSubject = null!;
+     };
+-  });
++  }, 'window');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/windowCount.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/windowCount.ts
+index e568d42..baa96be 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/windowCount.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/windowCount.ts
+@@ -126,5 +126,5 @@ export function windowCount<T>(windowSize: number, startWindowEvery: number = 0)
+         }
+       )
+     );
+-  });
++  }, 'windowCount');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/windowTime.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/windowTime.ts
+index b54656b..2dcb2e5 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/windowTime.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/windowTime.ts
+@@ -197,7 +197,7 @@ export function windowTime<T>(windowTimeSpan: number, ...otherArgs: any[]): Oper
+       // Ensure that the buffer is released.
+       windowRecords = null!;
+     };
+-  });
++  }, 'windowTime');
+ }
+
+ interface WindowRecord<T> {
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/windowToggle.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/windowToggle.ts
+index e9744ce..e05acac 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/windowToggle.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/windowToggle.ts
+@@ -130,5 +130,5 @@ export function windowToggle<T, O>(
+         }
+       )
+     );
+-  });
++  }, 'windowToggle');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/windowWhen.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/windowWhen.ts
+index 5038cc3..92d84c3 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/windowWhen.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/windowWhen.ts
+@@ -120,5 +120,5 @@ export function windowWhen<T>(closingSelector: () => ObservableInput<any>): Oper
+         }
+       )
+     );
+-  });
++  }, 'windowWhen');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/withLatestFrom.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/withLatestFrom.ts
+index 80576e1..6d32947 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/withLatestFrom.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/withLatestFrom.ts
+@@ -106,5 +106,5 @@ export function withLatestFrom<T, R>(...inputs: any[]): OperatorFunction<T, R |
+         }
+       })
+     );
+-  });
++  }, 'withLatestFrom');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/zip.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/zip.ts
+index f8c2f68..556318a 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/zip.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/zip.ts
+@@ -22,5 +22,5 @@ export function zip<T, A extends readonly unknown[], R>(
+ export function zip<T, R>(...sources: Array<ObservableInput<any> | ((...values: Array<any>) => R)>): OperatorFunction<T, any> {
+   return operate((source, subscriber) => {
+     zipStatic(source as ObservableInput<any>, ...(sources as Array<ObservableInput<any>>)).subscribe(subscriber);
+-  });
++  }, 'zip');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/zipAll.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/zipAll.ts
+index 697cff5..77d849e 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/zipAll.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/zipAll.ts
+@@ -1,6 +1,7 @@
+ import { OperatorFunction, ObservableInput } from '../types';
+ import { zip } from '../observable/zip';
+ import { joinAllInternals } from './joinAllInternals';
++import { debugOperatorName } from '../util/debug';
+
+ /**
+  * Collects all observable inner sources from the source, once the source completes,
+@@ -16,5 +17,5 @@ export function zipAll<T, R>(project: (...values: T[]) => R): OperatorFunction<O
+ export function zipAll<R>(project: (...values: Array<any>) => R): OperatorFunction<any, R>;
+
+ export function zipAll<T, R>(project?: (...values: T[]) => R) {
+-  return joinAllInternals(zip, project);
++  return debugOperatorName(joinAllInternals(zip, project), 'zipAll');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/operators/zipWith.ts b/node_modules/easyhard-rxjs-debug/src/internal/operators/zipWith.ts
+index 22eaad7..b03a4a2 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/operators/zipWith.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/operators/zipWith.ts
+@@ -1,4 +1,5 @@
+ import { ObservableInputTuple, OperatorFunction, Cons } from '../types';
++import { debugOperatorName } from '../util/debug';
+ import { zip } from './zip';
+
+ /**
+@@ -25,5 +26,5 @@ import { zip } from './zip';
+  * array.
+  */
+ export function zipWith<T, A extends readonly unknown[]>(...otherInputs: [...ObservableInputTuple<A>]): OperatorFunction<T, Cons<T, A>> {
+-  return zip(...otherInputs);
++  return debugOperatorName(zip(...otherInputs), 'zipWith');
+ }
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/util/debug.ts b/node_modules/easyhard-rxjs-debug/src/internal/util/debug.ts
+new file mode 100644
+index 0000000..fb4d2d7
+--- /dev/null
++++ b/node_modules/easyhard-rxjs-debug/src/internal/util/debug.ts
+@@ -0,0 +1,94 @@
++import { Observable } from '../Observable';
++import { EMPTY_OBSERVER, Subscriber } from '../Subscriber';
++import { Observer, Subscribable, UnaryFunction } from '../types';
++
++function getUID() {
++  return Math.random().toString(36).split('.')[1];
++}
++
++class ReplayBuffer {
++  buffer: any[] = []
++  subscribers: any[] = [];
++  snapshot() {
++    return this.buffer.reduce((acc, item) => {
++      if ('add' in item) { return [...acc, item.add]; }
++      if ('remove' in item) { return acc.filter((n: any) => n !== item.remove); }
++      return acc;
++    }, []);
++  }
++  next(v: any) {
++    this.buffer.push(v);
++    this.subscribers.forEach(cb => cb(v));
++  }
++  subscribe(cb: any) {
++    this.subscribers.push(cb);
++    this.buffer.forEach(v => cb(v));
++
++    return {
++      unsubscribe: () => {
++        this.subscribers = this.subscribers.filter(c => c !== cb);
++      }
++    };
++  }
++}
++
++export function debugObservable(ob: Observable<any>) {
++  (ob as any).__debug = {
++    id: getUID(),
++    name: 'Observable'
++  };
++}
++
++// lazy - don't override if debugging info is already defined
++export function debugObservableName<T extends Observable<any> | Subscribable<any>>(ob: T, name: string, lazy = false): T {
++  if ((ob as any).__debug && lazy) { return ob; }
++
++  (ob as any).__debug.name = name;
++  return ob;
++}
++
++export function debugOperatorName<N extends UnaryFunction<any, any>>(operator: N, name: string): N {
++  return ((source: any) => debugObservableName(operator(source), name)) as N;
++}
++
++export function debugSubscriber(sub: Observer<any>) {
++  (sub as any).__debug = {
++    id: getUID(),
++    observable: null,
++    sources: new ReplayBuffer(),
++    nextBuffer: new ReplayBuffer()
++  };
++}
++
++export function debugSubscriberNext(sub: Subscriber<any>, value: any) {
++  const valueId = getUID();
++
++  (sub as any).__debug.nextBuffer.next({ valueId, value, time: Date.now() });
++}
++
++export function debugSubscribed(sub: Subscriber<any>, ob: Observable<any>) {
++  // if ((sub as any).__debug.observable) {
++  //   console.log('cannot reassign observable');
++  //   throw new Error('cannot reassign observable');
++  // }
++  (sub as any).__debug.observable = ob;
++  if ((sub as any).destination?.__debug) {
++    (sub as any).destination.__debug.sources.next({ add: sub });
++  }
++}
++
++export function debugSubscriberUnsubscribe(sub: Subscriber<any>) {
++  if (!(sub as any).destination) { return; }
++
++  ((sub as any).destination.__debug.sources).next({ remove: sub });
++}
++
++export function debugAddSourceSubscriber(target: Subscriber<any>, source: Subscriber<any>) {
++  (source as any).destination = target;
++  (target as any).__debug.sources.next({ add: source });
++}
++
++export function debugRemoveSourceSubscriber(target: Subscriber<any>, source: Subscriber<any>) {
++  (source as any).destination = EMPTY_OBSERVER;
++  (target as any).__debug.sources.next({ remove: source });
++}
+diff --git a/node_modules/easyhard-rxjs-debug/src/internal/util/lift.ts b/node_modules/easyhard-rxjs-debug/src/internal/util/lift.ts
+index e841ec3..d870b36 100644
+--- a/node_modules/easyhard-rxjs-debug/src/internal/util/lift.ts
++++ b/node_modules/easyhard-rxjs-debug/src/internal/util/lift.ts
+@@ -1,6 +1,7 @@
+ import { Observable } from '../Observable';
+ import { Subscriber } from '../Subscriber';
+ import { OperatorFunction } from '../types';
++import { debugObservableName } from './debug';
+ import { isFunction } from './isFunction';
+
+ /**
+@@ -15,17 +16,18 @@ export function hasLift(source: any): source is { lift: InstanceType<typeof Obse
+  * @param init The logic to connect the liftedSource to the subscriber at the moment of subscription.
+  */
+ export function operate<T, R>(
+-  init: (liftedSource: Observable<T>, subscriber: Subscriber<R>) => (() => void) | void
++  init: (liftedSource: Observable<T>, subscriber: Subscriber<R>) => (() => void) | void,
++  name?: string
+ ): OperatorFunction<T, R> {
+   return (source: Observable<T>) => {
+     if (hasLift(source)) {
+-      return source.lift(function (this: Subscriber<R>, liftedSource: Observable<T>) {
++      return debugObservableName(source.lift(function (this: Subscriber<R>, liftedSource: Observable<T>) {
+         try {
+           return init(liftedSource, this);
+         } catch (err) {
+           this.error(err);
+         }
+-      });
++      }), name || 'Observable');
+     }
+     throw new TypeError('Unable to lift unknown Observable type');
+   };
