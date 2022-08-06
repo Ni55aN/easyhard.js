@@ -2052,10 +2052,10 @@ index 22eaad7..b03a4a2 100644
  }
 diff --git a/node_modules/easyhard-rxjs-debug/src/internal/util/debug.ts b/node_modules/easyhard-rxjs-debug/src/internal/util/debug.ts
 new file mode 100644
-index 0000000..fb4d2d7
+index 0000000..e90bb6b
 --- /dev/null
 +++ b/node_modules/easyhard-rxjs-debug/src/internal/util/debug.ts
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,104 @@
 +import { Observable } from '../Observable';
 +import { EMPTY_OBSERVER, Subscriber } from '../Subscriber';
 +import { Observer, Subscribable, UnaryFunction } from '../types';
@@ -2063,6 +2063,15 @@ index 0000000..fb4d2d7
 +function getUID() {
 +  return Math.random().toString(36).split('.')[1];
 +}
++
++function getGlobal() {
++  if (typeof self !== 'undefined') { return self; }
++  if (typeof window !== 'undefined') { return window; }
++  if (typeof global !== 'undefined') { return global; }
++  throw new Error('unable to locate global object');
++}
++
++const globalScope = <{ __debugScope?: string }>getGlobal();
 +
 +class ReplayBuffer {
 +  buffer: any[] = []
@@ -2093,7 +2102,8 @@ index 0000000..fb4d2d7
 +export function debugObservable(ob: Observable<any>) {
 +  (ob as any).__debug = {
 +    id: getUID(),
-+    name: 'Observable'
++    name: 'Observable',
++    scope: globalScope.__debugScope
 +  };
 +}
 +
