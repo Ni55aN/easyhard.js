@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Subscriber, Subscription } from 'rxjs'
 
 function getGlobal() {
   if (typeof self !== 'undefined') { return self }
@@ -7,21 +7,11 @@ function getGlobal() {
   throw new Error('unable to locate global object')
 }
 
-type ObservableDebugMeta = { __debug?: { id: string, name: string, groupName?: string, groupStart?: string, parent: unknown[] } }
-
 const debugWindow = <{ __easyhardDebug?: boolean }>getGlobal()
 
-export function debugSkipInternal<A, B>(name: string, start: Observable<A> & ObservableDebugMeta, end: Observable<B> & ObservableDebugMeta) {
-  if (debugWindow.__easyhardDebug && end.__debug && start.__debug) {
-    end.__debug = start.__debug
-    end.__debug.name = name
-  }
-  return end
-}
-
-
-export function debugAddParent<A, B>(source: Observable<A> & ObservableDebugMeta, observable: Observable<B> & ObservableDebugMeta) {
-  if (debugWindow.__easyhardDebug && source.__debug && observable.__debug) {
-    observable.__debug.parent.push({ type: 'other', link: source })
+export function debugBindSubscribers(source: (Subscription | Subscriber<any>) & { destination?: any }, next: Subscriber<any> & { __debug?: any }) {
+  if (debugWindow.__easyhardDebug) {
+    source.destination = next
+    next.__debug.sources.next({ add: source })
   }
 }

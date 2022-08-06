@@ -1,6 +1,6 @@
 import { $$ } from 'easyhard-common'
 
-export type TableItem =  { time: number, valueId: string, parents: string[] }
+export type TableItem =  { time: number, valueId: string, subscriberId: string, sourceSubscriberIds: string[] }
 export type TableObservable = { id: string, data: TableItem }
 
 export class Table {

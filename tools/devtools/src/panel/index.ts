@@ -138,13 +138,9 @@ easyhardResponser<ServicesScheme>(connection, {
   })),
   requestEmissionValue,
   emission: _catch(tap(data => {
-    const { id, time, valueId } = data.next
+    const { id, time, valueId, subscriberId, sourceSubscriberIds } = data.next
 
-    const incomers = graph.getElementById(id).incomers()
-      .filter((n): n is cytoscape.NodeSingular => n.isNode())
-    const incomersIds = incomers.map(incomer => incomer.data('id') as string)
-
-    marbles.add(id, incomersIds, time, valueId)
+    marbles.add(id, subscriberId, sourceSubscriberIds, time, valueId)
 
     requestEmissionValue.next({ id, valueId, source: 'tooltip' })
   })),

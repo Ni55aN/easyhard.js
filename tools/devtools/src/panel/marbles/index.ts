@@ -29,8 +29,8 @@ export function createMarbles(props: Props) {
 
   return {
     container,
-    add(id: string, parents: string[], time: number, valueId: string) {
-      table.add(id, { time, parents, valueId })
+    add(id: string, subscriberId: string, sourceSubscriberIds: string[], time: number, valueId: string) {
+      table.add(id, { time, subscriberId, sourceSubscriberIds, valueId })
     },
     remove(id: string) {
       table.remove(id)

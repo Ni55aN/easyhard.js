@@ -21,9 +21,8 @@ export function $for<T>(collection: $$Observable<T>, render: (item: T) =>  Child
   const list: T[] = []
 
   debugFragmentLabel(fragment.anchor, '$for')
-  debugFragmentAddParent(fragment.anchor, collection)
 
-  collection.pipe(untilExist(fragment.anchor)).subscribe({
+  const sub = collection.pipe(untilExist(fragment.anchor)).subscribe({
     next(args) {
       if ('insert' in args) {
         const i = props?.comparator ? getIndex(list, args.item, props.comparator) : list.length
@@ -43,5 +42,8 @@ export function $for<T>(collection: $$Observable<T>, render: (item: T) =>  Child
       fragment.anchor.remove()
     }
   })
+
+  debugFragmentAddParent(fragment.anchor, sub)
+
   return fragment.anchor
 }

@@ -1,77 +1,15 @@
-import { Attrs, TagName } from 'easyhard'
+// import { Attrs, TagName } from 'easyhard'
 import { nanoid } from 'nanoid'
-import { EdgeType, Graph, GraphNode } from '../types'
+import { /*EdgeType, */EdgeType, Graph, GraphNode } from '../types'
 import { findParent } from '../utils/dom'
-import { EhMeta, EhNode, EhObservable, Parent } from '../dom-types'
+import { EhMeta, EhNode, EhSubscriber, Parent } from '../dom-types'
+import { Attrs, TagName } from 'easyhard'
 
 export class DomToGraph {
   graph: Graph
 
-  constructor(private events: { add: (arg: EhNode | EhObservable) => void }) {
+  constructor(private events: { add: (arg: EhNode | EhSubscriber, props?: { type?: EdgeType, label?: string }) => void }) {
     this.graph = { edges: [], nodes: [] }
-  }
-
-  private initParentObservableNodes(ob: EhObservable | EhMeta) {
-    if ('__easyhard' in ob) {
-      // TODO
-    } else if ('__debug' in ob) {
-      const id = ob.__debug.id
-      if (!this.graph.nodes.find(n => n.id === id)) {
-        this.graph.nodes.push({
-          id,
-          label: ob.__debug.name,
-          type: 'observable',
-          group: ob.__debug.groupName && ob.__debug.groupStart ? {
-            name: ob.__debug.groupName,
-            start: ob.__debug.groupStart
-          } : null
-        })
-        this.events.add(ob)
-
-        const flatParent = ob.__debug.parent.flat() as Parent[]
-
-        flatParent.forEach(parent => {
-          this.initParentObservableNodes(parent.link)
-
-          if (!ob.__debug.id) throw new Error('__debug id is undefined')
-
-          if ('__debug' in parent.link) {
-            this.graph.edges.push({
-              id: [ob.__debug.id, parent.link.__debug.id].join('_'),
-              source: parent.link.__debug.id,
-              target: ob.__debug.id,
-              type: parent.type
-            })
-          } else if ('__easyhard' in parent.link && parent.link.__easyhard) {
-            this.graph.edges.push({
-              id: [ob.__debug.id, parent.link.__easyhard.id].join('_'),
-              source: parent.link.__easyhard.id,
-              target: ob.__debug.id,
-              type: parent.type
-            })
-          } else {
-            throw new Error('not found __debug or __easyhard property')
-          }
-        })
-      }
-    } else {
-      console.log(ob)
-      throw new Error('ob doesnt have __debug or __easyhard')
-    }
-  }
-
-  private addObservable(ob: EhObservable, edge: { type: EdgeType, label?: string }, dependentNode: GraphNode) {
-    this.initParentObservableNodes(ob)
-
-    if (!dependentNode.id) throw new Error('dependentNode id is undefined')
-
-    this.graph.edges.push({
-      id: [ob.__debug.id, dependentNode.id].join('_'),
-      source: ob.__debug.id,
-      target: dependentNode.id,
-      type: edge.type,
-      label: edge.label
-    })
   }
 
   private isIgnored(ehNode: EhNode) {
@@ -110,10 +48,8 @@ export class DomToGraph {
       for (const name in attrs) {
         const attr = attrs[name as keyof Attrs<TagName>] as Attrs<TagName>
 
-        if (typeof attr === 'object' && 'subscribe' in attr) {
-          const ob = attr as EhObservable
-
-          this.addObservable(ob, { type: 'argument', label: name }, node)
+        if (typeof attr === 'object' && 'unsubscribe' in attr) {
+          this.events.add(attr, { type: 'argument', label: name })
         }
       }
     }
@@ -121,9 +57,9 @@ export class DomToGraph {
 
     if (parent) {
       (parent.flat() as Parent[]).forEach(item => {
-        if ('subscribe' in item.link) {
-          this.addObservable(item.link, { type: item.type }, node)
-        } else if (item.link.__easyhard) {
+        if ('__debug' in item.link) {
+          this.events.add(item.link)
+        } else if ('__easyhard' in item.link) {
           const linkNode = this.ensure(item.link)
 
           if (!linkNode) throw new Error('cannot create node')

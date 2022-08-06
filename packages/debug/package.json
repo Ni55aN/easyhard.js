@@ -14,15 +14,17 @@
   },
   "rollup": {
     "inputs": [
-      "rx",
-      "core",
-      "common",
+      "setup",
       "webpack",
       "node"
+    ],
+    "copy": [
+      "patches"
     ]
   },
   "devDependencies": {
     "@types/module-alias": "^2.0.1",
-    "module-alias": "^2.2.2"
+    "module-alias": "^2.2.2",
+    "patch-package": "^6.4.7"
   }
 }

@@ -1,4 +1,5 @@
 
+(global as { __debugScope?: string }).__debugScope = 'server'
 import express from 'express'
 import expressWs from 'express-ws'
 import * as http from 'http'

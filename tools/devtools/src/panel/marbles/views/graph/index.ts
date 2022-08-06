@@ -103,10 +103,12 @@ export function Graph(props: Props) {
       map(({ id, data: item }) => {
         const currentId = item.valueId
         const currentTime = item.time
+        const subscriberId = item.subscriberId
+        const sourceSubscriberIds = item.sourceSubscriberIds
 
         cy.add({
           group: 'nodes',
-          data: { id: currentId, time: currentTime, parent: id, label: '...', emissionValueFetched: false },
+          data: { id: currentId, subscriberId, sourceSubscriberIds, time: currentTime, parent: id, label: '...', emissionValueFetched: false },
           position: { x: (currentTime - now) / 100, y: 0 }
         })
         return { currentId, item }
@@ -114,17 +116,13 @@ export function Graph(props: Props) {
       delay(100),
       tap(({ currentId, item }) => {
         const currentTime = item.time
-        const parentNodes = cy.nodes().filter((n: cytoscape.NodeSingular) => {
-          return item.parents.includes(n.data('id') as string)
+        const sourceNodes = cy.nodes().filter((n: cytoscape.NodeSingular) => {
+          return item.sourceSubscriberIds.includes(n.data('subscriberId') as string)
         })
-        const nestedNodes = parentNodes.map((parentNode: cytoscape.NodeSingular) => {
-          return {
-            parentNode,
-            last: parentNode.children().filter((n: cytoscape.NodeSingular) => n.data('time') <= currentTime).last()
-          }
-        })
+        const lastNodes = sourceNodes
+          .filter((source: cytoscape.NodeSingular) => source.outgoers().length === 0 && +source.data('time') <= currentTime)
 
-        nestedNodes.forEach(({ last }) => {
+        lastNodes.forEach(last => {
           cy.add({ group: 'edges', data: { id: nanoid(), source: last.data('id'), target: currentId }})
         })
 

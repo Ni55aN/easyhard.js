@@ -48,12 +48,12 @@ const injections = new Injections()
 export function $provide<T, K>(id: DiKey<K>, value: DiValue<T>): Child {
   const anchor = createAnchor()
 
-  debugFragment(anchor, '$provide', value)
-
-  value.pipe(untilExist(anchor)).subscribe(value => {
+  const sub = value.pipe(untilExist(anchor)).subscribe(value => {
     if (!anchor.parentNode) throw new Error('parentNode is undefined')
     injections.next(id, anchor.parentNode, value)
   })
+
+  debugFragment(anchor, '$provide', sub)
 
   return anchor
 }
@@ -62,9 +62,7 @@ export function $inject<T, K>(id: DiKey<K>, act: DiValue<T>): Child {
   const anchor = createAnchor()
   const injection = injections.observe<T, K>(id)
 
-  debugFragment(anchor, '$inject', act)
-
-  injection.pipe(untilExist(anchor)).subscribe(injectionValue => {
+  const sub = injection.pipe(untilExist(anchor)).subscribe(injectionValue => {
     const target = anchor.parentNode
     if (!target) return
 
@@ -74,6 +72,8 @@ export function $inject<T, K>(id: DiKey<K>, act: DiValue<T>): Child {
       act.next(result.value)
     }
   })
+
+  debugFragment(anchor, '$inject', sub)
 
   return anchor
 }

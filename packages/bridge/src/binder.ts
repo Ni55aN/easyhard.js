@@ -2,7 +2,7 @@ import { Observable, OperatorFunction, Subscriber, Subscription } from 'rxjs'
 import { getUID } from 'easyhard-common'
 import { NOT_FOUND_STREAM_ERROR } from './constants'
 import { sanitize } from './utils'
-import { debugBindInit, debugBind, debugCompleteSub, debugListenObservable } from './devtools'
+import { debugAddSubscriber, debugBind, debugRemoveSubscriber, EhSubscriber } from './devtools'
 
 export type RequestId = string
 type UnsubscribeRequest = { id: RequestId, unsubscribe: true }
@@ -11,7 +11,7 @@ type CompleteResponse = { id: RequestId, complete: true }
 type ErrorResponse<T> = { id: RequestId, error: T }
 
 export type Key = string | number | symbol
-export type ClientToServer<K> = { key: K, id: RequestId, source: RequestId | null, subscribe: true } | UnsubscribeRequest
+export type ClientToServer<K> = { key: K, id: RequestId, source: RequestId | null, subscribe: true, debug?: { destinationId?: string  } } | UnsubscribeRequest
 export type ServerToClient<T> = { id: RequestId, value: T } | ErrorResponse<string> | CompleteResponse
 
 export enum ConnectionState {
@@ -68,7 +68,7 @@ type BindProps = {
 }
 
 export function bindObservable<T>(key: Key, source: RequestId | null, client: Connection<ClientToServer<Key>, ServerToClient<T>>, props?: BindProps): Observable<T> {
-  const observable = new Observable<T>(subscriber => {
+  return new Observable<T>(subscriber => {
     const nextData: ClientToServer<Key>[] = []
     const send = <T extends ClientToServer<Key>>(data: T) => {
       if (client.readyState === ConnectionState.OPEN) {
@@ -102,12 +102,14 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Co
     const onError = (error: ErrorEvent) => {
       subscriber.error(error)
     }
+
+    const debug = debugBind(id, subscriber as EhSubscriber, client)
+
     client.addEventListener('open', onOpen)
     client.addEventListener('error', onError)
-    send({ key, id, source, subscribe: true })
+    send({ key, id, source, subscribe: true, debug: debug?.payload })
     props?.subscribe && props?.subscribe(id, subscriber)
 
-    const debugDestroy = debugBind(id, observable, client)
 
     const handler = (event: MessageEvent<ServerToClient<T>>) => {
       const data = event.data
@@ -126,11 +128,9 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Co
       subscriber.unsubscribe()
       send({ id, unsubscribe: true })
       props?.unsubscribe && props?.unsubscribe(id, subscriber)
-      debugDestroy && debugDestroy()
+      debug && debug.destroy()
     }
   })
-
-  return debugBindInit(observable)
 }
 
 type RegisterProps = {
@@ -159,7 +159,6 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
       } finally {
         subscriptions.delete(id)
         props?.unsubscribe && props?.unsubscribe(id)
-        debugCompleteSub(id)
       }
     }
   }
@@ -178,24 +177,21 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
         return send({ id: data.id, error: NOT_FOUND_STREAM_ERROR })
       }
 
-      debugListenObservable(data.id, observable, send)
-        .then(console.log)
-        .catch(console.error)
-
       const subscription = observable.subscribe({
         next(value) {
           send({ id: data.id, value })
         },
         error(error) {
           send({ id: data.id, error })
-          debugCompleteSub(data.id)
+          debugRemoveSubscriber(data.id, subscription)
         },
         complete() {
           send({ id: data.id, complete: true })
-          debugCompleteSub(data.id)
+          debugRemoveSubscriber(data.id, subscription)
         }
       })
 
+      debugAddSubscriber(data.id, data.debug?.destinationId, subscription, send)
       subscriptions.set(data.id, subscription)
       props?.subscribe && props?.subscribe(data.id)
     } else if ('unsubscribe' in data) {

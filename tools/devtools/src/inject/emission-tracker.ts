@@ -19,7 +19,8 @@ export function emissionTracker() {
     subscription.add(nextBuffer.subscribe(({ time, value }) => {
       const valueId = nanoid()
 
-      values.next({ id, valueId, time })
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      values.next({ id, valueId, time } as any) // TODO
       valuesCache.set(valueId, value)
     }))
     subscription.add(subscribe.subscribe(count => {

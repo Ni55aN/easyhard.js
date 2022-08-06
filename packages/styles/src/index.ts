@@ -1,6 +1,6 @@
 import { Child, createAnchor, onLife, debug } from 'easyhard'
 import { getUID } from 'easyhard-common'
-import { Observable, combineLatest } from 'rxjs'
+import { Observable, combineLatest, Subscription } from 'rxjs'
 import { CssMedia, CssMediaItem, CssMediaValue, Keys as MediaKeys, stringifyMedia } from './media'
 import { untilExistStyle } from './operators'
 import { CssSimpleValue, StyleDeclaration, RootStyleDeclaration, Style } from './types'
@@ -15,9 +15,9 @@ function prepareCssValue(val: CssSimpleValue): string {
   return typeof val === 'number' ? unit('px')(val) : val
 }
 
-function debugStyleAttr(style: HTMLStyleElement, path: string[], ob: Observable<CssMediaValue | number>) {
+function debugStyleAttr(style: HTMLStyleElement, path: string[], sub: Subscription) {
   const attrName = path.join(' ')
-  debug.debugElementAttr(style, attrName, ob)
+  debug.debugElementAttr(style, attrName, sub)
 }
 
 function injectCssProperties(selector: string, media: CssMediaItem<StyleDeclaration>[], style: HTMLStyleElement, props: StyleDeclaration, head: HTMLHeadElement, parent: ChildNode | null, debugPath: string[] = []): void {
@@ -34,9 +34,9 @@ function injectCssProperties(selector: string, media: CssMediaItem<StyleDeclarat
 
     rule.media.mediaText = stringifyMedia<StyleDeclaration>(mediaStatic)
 
-    mediaObservable
-      .filter(([_, ob]) => ob instanceof Observable)
-      .forEach(([key, ob]) => debugStyleAttr(style, [...debugPath, 'query', key], ob as Observable<CssMediaValue>))
+    // mediaObservable
+    //   .filter(([_, ob]) => ob instanceof Observable)
+    //   .forEach(([key, ob]) => debugStyleAttr(style, [...debugPath, 'query', key], ob as Observable<CssMediaValue>))
 
     combineLatest<CssMediaValue[]>(...mediaObservable.map(([_, value]) => value as Observable<CssMediaValue>))
       .pipe(untilExistStyle(style, parent))
@@ -62,8 +62,8 @@ function injectCssProperties(selector: string, media: CssMediaItem<StyleDeclarat
 
       injectCssProperties(`${selector}${key}`, media, style, localProps, head, parent, [...debugPath, key])
     } else if (val instanceof Observable) {
-      debugStyleAttr(style, [...debugPath, key], val)
-      val.pipe(untilExistStyle(style, parent)).subscribe(value => ruleStyles.setProperty(toHyphenCase(key), prepareCssValue(value)))
+      const sub = val.pipe(untilExistStyle(style, parent)).subscribe(value => ruleStyles.setProperty(toHyphenCase(key), prepareCssValue(value)))
+      debugStyleAttr(style, [...debugPath, key], sub)
     } else if (val !== undefined) {
       ruleStyles.setProperty(toHyphenCase(key), prepareCssValue(val))
     }

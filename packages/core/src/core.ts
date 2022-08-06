@@ -17,14 +17,13 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
 
         if (attr instanceof Subject) {
           element.addEventListener(attrName, ((e: HTMLElementEventMap[EventName]) => attr.next(e)) as EventListener)
-          debugElementAttr(element, name, attr)
+          debugElementAttr(element, name, attr.pipe(untilExist(element)).subscribe(() => 1))
         } else if (attr) {
           const subject = new Subject<HTMLElementEventMap[EventName]>()
-          const observable = subject.pipe(attr)
+          const sub = subject.pipe(untilExist(element), attr).subscribe()
 
-          observable.pipe(untilExist(element)).subscribe()
           element.addEventListener(attrName, ((e: HTMLElementEventMap[EventName]) => subject.next(e)) as EventListener)
-          debugElementAttr(element, name, observable)
+          debugElementAttr(element, name, sub)
         }
       } else {
         const attrName = name as keyof PropAttrs<K>
@@ -33,10 +32,10 @@ export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...chi
         if (attr === true) {
           element[attrName] = true as unknown as HTMLElementTagNameMap[K][typeof attrName]
         } else if (attr instanceof Observable) {
-          attr.pipe(untilExist(element)).subscribe(value => {
+          const sub = attr.pipe(untilExist(element)).subscribe(value => {
             element[attrName] = value as unknown as HTMLElementTagNameMap[K][typeof attrName]
           })
-          debugElementAttr(element, name, attr)
+          debugElementAttr(element, name, sub)
         } else if (attr !== false && attr != null) {
           element[attrName] = attr as unknown as HTMLElementTagNameMap[K][typeof attrName]
         }
@@ -63,9 +62,7 @@ function resolveChild(child: Child): DomElement {
   if (child instanceof Observable) {
     const anchor = createAnchor()
 
-    debugFragment(anchor, '', child)
-
-    child.pipe(untilExist(anchor)).subscribe(v => {
+    const sub = child.pipe(untilExist(anchor)).subscribe(v => {
       if (typeof v !== 'object' && anchor.edge instanceof Text) { // performance optimization
         anchor.edge.textContent = v as string
         return
@@ -94,6 +91,8 @@ function resolveChild(child: Child): DomElement {
       anchor.edge && anchor.edge.remove()
       anchor.remove()
     })
+
+    debugFragment(anchor, '', sub)
 
     return anchor
   }

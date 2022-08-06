@@ -5,7 +5,7 @@ export type GraphNode = {
   id: string
   type: GraphNodeType
   label: string | null
-  scope?: 'client' | 'server'
+  scope?: string
   group?: null | { name: string, start: string }
 } | {
   id: string
@@ -15,7 +15,7 @@ export type EdgeType = 'argument' | 'other'
 export type GraphEdge = { id: string, source: string, target: string, type: EdgeType, label?: string }
 export type Graph = { nodes: GraphNode[], edges: GraphEdge[] }
 
-export type ObservableEmission = { id: string, time: number, valueId: string }
+export type ObservableEmission = { id: string, time: number, valueId: string, subscriberId: string, sourceSubscriberIds: string[] }
 export type ObservableEmissionType = 'string' | 'number' | 'boolean' | 'function' | 'array' | 'object' | 'null' | 'undefined'
 
 
@@ -33,7 +33,7 @@ export type Services = 'easyhard-devtools' | 'easyhard-content'
 export type InpectorAction = { id: string }
 export type InspectorPayload = InpectorAction | { active: boolean } | null
 export type GraphPayload = { clear: true } | { added: Graph } | { removed: string[] } | { text: { id: string, value: string }}
-export type SubsPayload = ({ subscribe: { id: string, count: number }} | { unsubscribe: { id: string, count: number }}) & { scope?: 'client' | 'server' }
+export type SubsPayload = ({ subscribe: { id: string, count: number }} | { unsubscribe: { id: string, count: number }})
 export type ServicesScheme = {
   graph: OperatorFunction<GraphPayload, unknown>
   subscriptions: OperatorFunction<SubsPayload, unknown>
