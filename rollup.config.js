@@ -73,6 +73,9 @@ export default packages.map(({ folder, pkg }) => {
           fs.mkdirSync(`${destination}/${pkg.name}`, { recursive: true })
           fs.copyFileSync(path.resolve(`packages/${folder}/package-lock.json`), path.resolve(`${destination}/${pkg.name}/package-lock.json`))
           fs.writeFileSync(path.resolve(`${destination}/${pkg.name}/package.json`), JSON.stringify(packageJson, null, 4))
+          if (pkg.rollup?.copy) pkg.rollup.copy.forEach(copyFolder => {
+            fs.copySync(path.resolve(`packages/${folder}/${copyFolder}`),  path.resolve(`${destination}/${pkg.name}/${copyFolder}`))
+          })
         }
       }
     ]
