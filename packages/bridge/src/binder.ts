@@ -103,7 +103,7 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Co
       subscriber.error(error)
     }
 
-    const debug = debugBind(id, subscriber as EhSubscriber, client)
+    const debug = debugBind(id, subscriber as EhSubscriber, client, send)
 
     client.addEventListener('open', onOpen)
     client.addEventListener('error', onError)
@@ -191,7 +191,7 @@ export function registerObservable<P, T>(key: Key, stream: Observable<T> | Opera
         }
       })
 
-      debugAddSubscriber(data.id, data.debug?.destinationId, subscription, send)
+      debugAddSubscriber(data.id, data.debug?.destinationId, subscription, connection, send)
       subscriptions.set(data.id, subscription)
       props?.subscribe && props?.subscribe(data.id)
     } else if ('unsubscribe' in data) {

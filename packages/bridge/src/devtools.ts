@@ -10,21 +10,27 @@ function getGlobal() {
 
 const debugWindow = <{ __easyhardDebug?: boolean }>getGlobal()
 
-export function debugBind(bridgeId: string, sub: EhSubscriber, client: Connection<any, any>) {
+export function debugBind(bridgeId: string, sub: EhSubscriber, client: Connection<any, any>, send: (data: any) => void) {
   if (debugWindow.__easyhardDebug) {
     if (!sub.__debug) return null
     const bridge = sub.__debug.bridge || (sub.__debug.bridge = new ReplaySubject())
+    const bridgeIn = sub.__debug.bridgeIn || (sub.__debug.bridgeIn = new ReplaySubject())
     const onMessage = (event: MessageEvent<any>) => {
       if (bridgeId === event.data.bridgeId && event.data.debug) {
         bridge.next(event.data.debug)
       }
     }
+    const bridgeInSub = bridgeIn.subscribe(arg => {
+      send({ bridgeId, debug: arg })
+    })
+
     client.addEventListener('message', onMessage)
     return {
       payload: { destinationId: sub.__debug.observable?.__debug.id },
       destroy: () => {
         setTimeout(() => { // wait until "unsubscribe" messages received
           client.removeEventListener('message', onMessage)
+          bridgeInSub.unsubscribe()
         }, 500)
       }
     }
@@ -43,6 +49,7 @@ export type EhSubscriber = Subscriber<any> & {
     nextBuffer: ReplayBuffer<Emission>
     sources: ReplayBuffer<any>
     bridge?: ReplaySubject<any>
+    bridgeIn?: ReplaySubject<any>
   }
 }
 type Emission = { valueId: string, value: any, time: number }
@@ -118,19 +125,82 @@ function sanitizeSubscriber(sub: EhSubscriber) {
     }
   }
 }
+type ObservableEmissionType = 'string' | 'number' | 'boolean' | 'function' | 'array' | 'object' | 'null' | 'undefined'
+function stringify<T extends object>(value: T): { value: string, type: ObservableEmissionType } {
+  const type = typeof value
+
+  if (value === null || value === undefined) {
+    return {
+      value: String(value),
+      type: value === null ? 'null' : 'undefined'
+    }
+  }
+
+  if (type === 'function') {
+    return {
+      value: value.constructor.name,
+      type: 'function'
+    }
+  }
+
+  const valueString = value && value.toString()
+
+  if (['string', 'number', 'boolean'].includes(type)) {
+    return {
+      value: valueString,
+      type: type as 'string' | 'number' | 'boolean'
+    }
+  }
+
+  if (Array.isArray(value)) {
+    return {
+      value: `[${valueString}]`,
+      type: 'array'
+    }
+  }
+
+  if (type === 'object') {
+    return {
+      value: value.constructor.name,
+      type: 'object'
+    }
+  }
+
+  return {
+    value: valueString,
+    type: 'object'
+  }
+}
 
 const trackers = new Map<string, SubscribersTracker>()
 const bridgeSubs = new Map<EhSubscriber, Subscription>()
 
-export function debugAddSubscriber(id: string, observableId: string | undefined, sub: EhSubscriber | Subscription, send: (data: any) => void) {
+export function debugAddSubscriber(id: string, observableId: string | undefined, sub: EhSubscriber | Subscription, connection: Connection<any, any>, send: (data: any) => void) {
   if (debugWindow.__easyhardDebug) {
     const destination = (sub as EhSubscriber).destination
-    if (destination.__debug && observableId) destination.__debug.observable = { // replace destination to connect end server node and start client node
+    if (destination?.__debug && observableId) destination.__debug.observable = { // replace destination to connect end server node and start client node
       __debug: {
         id: observableId,
         name: 'Observable!!'
       }
     } as any
+
+    connection.addEventListener('message', e => {
+      if (e.data.bridgeId === id && e.data.debug) {
+        if (e.data.debug.logEmission) {
+          const valueId: string = e.data.debug.logEmission.valueId
+          if (valuesCache.has(valueId)) {
+            console.log('[Easyhard.js log emission]', valuesCache.get(valueId))
+          }
+        }
+        if (e.data.debug.getEmissionValue) {
+          const valueId: string = e.data.debug.getEmissionValue.valueId
+          const { type, value } = stringify(valuesCache.get(valueId))
+
+          send({ bridgeId: id, debug: { emissionValue: { type, value, valueId } }})
+        }
+      }
+    })
 
     const valuesCache = new Map<string, any>()
     const tracker = new SubscribersTracker({
@@ -139,7 +209,7 @@ export function debugAddSubscriber(id: string, observableId: string | undefined,
           added: true,
           subscriber: sanitizeSubscriber(sub)
         }})
-        if (sub.__debug?.bridge) {
+        if (sub.__debug?.bridge && sub.__debug.bridgeIn) {
           bridgeSubs.set(sub, sub.__debug.bridge.subscribe(v => {
             send({ bridgeId: id, debug: v })
           }))

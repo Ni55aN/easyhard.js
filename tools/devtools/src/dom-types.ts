@@ -1,6 +1,6 @@
 import { Attrs, TagName } from 'easyhard'
 import { Observable, ReplaySubject, Subscriber } from 'rxjs'
-import { EdgeType } from './types'
+import { EdgeType, ObservableEmissionType } from './types'
 
 export type Parent = { type: EdgeType, link: EhSubscriber | EhNode }
 export type NestedParent = Parent | NestedParent[]
@@ -23,6 +23,8 @@ export type EhObservable = Observable<unknown> & {
     bridge?: ReplaySubject<BridgeChanges>
   }
 }
+export type SubscriberValue = { valueId: string, value: any, time: number }
+export type JsonSubscriberValue = { valueId: string, time: number }
 export type EhSubscriber = Subscriber<any> & {
   destination?: EhSubscriber
   __debug?: {
@@ -32,7 +34,10 @@ export type EhSubscriber = Subscriber<any> & {
     sources: ReplayBuffer,
     bridge?: ReplaySubject<{ added: true, subscriber: JsonSubscriber }
     | { removed: true, subscriber: JsonSubscriber }
-    | { next: true, subscriber: JsonSubscriber, value: any }>
+    | { next: true, subscriber: JsonSubscriber, value: JsonSubscriberValue }
+    | { emissionValue: { value: string, type: ObservableEmissionType, valueId: string } }
+    >
+    bridgeIn?: ReplaySubject<any>
   }
 }
 

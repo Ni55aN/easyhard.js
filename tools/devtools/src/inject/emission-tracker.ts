@@ -1,6 +1,6 @@
 import { ReplaySubject } from 'rxjs'
 import { ObservableEmission, SubsPayload } from '../types'
-import { EhSubscriber, JsonSubscriber } from '../dom-types'
+import { EhSubscriber, JsonSubscriber, JsonSubscriberValue, SubscriberValue } from '../dom-types'
 
 export function emissionTracker() {
   const subscribers = new Map<string, any>()
@@ -27,9 +27,10 @@ export function emissionTracker() {
     return { count }
   }
 
-  function next(sub: EhSubscriber | JsonSubscriber, { value, valueId, time }: { value: any, valueId: string, time: number }) {
+  function next(sub: EhSubscriber | JsonSubscriber, props: JsonSubscriberValue | SubscriberValue) {
     if (!sub.__debug?.observable) throw new Error('doesnt have observable')
     const id = sub.__debug.observable.__debug.id
+    const { valueId, time } = props
 
     values.next({
       id,
@@ -38,7 +39,13 @@ export function emissionTracker() {
       subscriberId: sub.__debug.id,
       sourceSubscriberIds: 'sourcesId' in sub.__debug ? sub.__debug.sourcesId : sub.__debug.sources.snapshot().map((s: any) => s.__debug.id)
     })
-    valuesCache.set(valueId, value)
+    if ('value' in props) {
+      valuesCache.set(valueId, props.value)
+    }
+  }
+
+  function has(valueId: string) {
+    return valuesCache.has(valueId)
   }
 
   function get(valueId: string) {
@@ -49,6 +56,7 @@ export function emissionTracker() {
     add,
     remove,
     next,
+    has,
     get,
     subscriptions,
     values
