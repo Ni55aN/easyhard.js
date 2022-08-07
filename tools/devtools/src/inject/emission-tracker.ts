@@ -1,44 +1,46 @@
-import { nanoid } from 'nanoid'
-import { ReplaySubject, Subscription } from 'rxjs'
+import { ReplaySubject } from 'rxjs'
 import { ObservableEmission, SubsPayload } from '../types'
-import { EhObservable } from '../dom-types'
+import { EhSubscriber, JsonSubscriber } from '../dom-types'
 
 export function emissionTracker() {
-  const trackedSubscriptions = new Map<string, Subscription>()
-  const valuesCache = new Map<string, any>()
+  const subscribers = new Map<string, any>()
   const subscriptions = new ReplaySubject<SubsPayload>()
+  const valuesCache = new Map<string, any>()
   const values = new ReplaySubject<ObservableEmission>()
 
-  function add(ob: EhObservable) {
-    const { __debug } = ob
-    const { id, nextBuffer, subscribe, unsubscribe } = __debug
-    const subscription = new Subscription()
+  function add(sub: EhSubscriber | JsonSubscriber) {
+    if (!sub.__debug?.observable) return
+    const source: string = sub.__debug.observable.__debug.id
 
-    if (trackedSubscriptions.has(id)) return
-
-    subscription.add(nextBuffer.subscribe(({ time, value }) => {
-      const valueId = nanoid()
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      values.next({ id, valueId, time } as any) // TODO
-      valuesCache.set(valueId, value)
-    }))
-    subscription.add(subscribe.subscribe(count => {
-      subscriptions.next({ subscribe: { id, count }})
-    }))
-    subscription.add(unsubscribe.subscribe(count => {
-      subscriptions.next({ unsubscribe: { id, count }})
-    }))
-
-    trackedSubscriptions.set(id, subscription)
+    subscribers.set(source, [...(subscribers.get(source) || []), sub])
+    subscriptions.next({ subscribe: { id: source, count: subscribers.get(source).length }})
   }
-  function remove(id: string) {
-    trackedSubscriptions.get(id)?.unsubscribe()
-    trackedSubscriptions.delete(id)
+  function remove(sub: EhSubscriber | JsonSubscriber) {
+    if (!sub.__debug?.observable) throw new Error('doesnt have observable')
+    const source: string = sub.__debug.observable.__debug.id
+
+    subscribers.set(source, (subscribers.get(source) || []).filter((s: any) => s !== sub))
+    const count = subscribers.get(source).length
+
+    subscriptions.next({ subscribe: { id: source, count }})
+
+    return { count }
   }
-  function clear() {
-    Array.from(trackedSubscriptions.keys()).forEach(remove)
+
+  function next(sub: EhSubscriber | JsonSubscriber, { value, valueId, time }: { value: any, valueId: string, time: number }) {
+    if (!sub.__debug?.observable) throw new Error('doesnt have observable')
+    const id = sub.__debug.observable.__debug.id
+
+    values.next({
+      id,
+      valueId,
+      time,
+      subscriberId: sub.__debug.id,
+      sourceSubscriberIds: 'sourcesId' in sub.__debug ? sub.__debug.sourcesId : sub.__debug.sources.snapshot().map((s: any) => s.__debug.id)
+    })
+    valuesCache.set(valueId, value)
   }
+
   function get(valueId: string) {
     return valuesCache.get(valueId)
   }
@@ -46,7 +48,7 @@ export function emissionTracker() {
   return {
     add,
     remove,
-    clear,
+    next,
     get,
     subscriptions,
     values

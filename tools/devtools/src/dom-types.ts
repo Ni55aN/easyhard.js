@@ -30,9 +30,27 @@ export type EhSubscriber = Subscriber<any> & {
     observable: null | DebugObservable
     nextBuffer: ReplayBuffer
     sources: ReplayBuffer,
-    bridge?: ReplaySubject<any>
+    bridge?: ReplaySubject<{ added: true, subscriber: JsonSubscriber }
+    | { removed: true, subscriber: JsonSubscriber }
+    | { next: true, subscriber: JsonSubscriber, value: any }>
   }
 }
+
+export type JsonSubscriber = {
+  destination?: JsonSubscriber
+  __debug: {
+    id: string
+    observable: {
+      __debug: {
+        id: string
+        name: string
+        scope?: string
+      }
+    }
+    sourcesId: string[]
+  }
+}
+
 export type EhMeta = {
   __easyhard?: { id: string, label?: string, attrs?: Attrs<TagName>, indirect?: boolean, type?: 'fragment', static?: boolean, parent?: NestedParent[] },
   __easyhardIgnore?: true

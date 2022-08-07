@@ -1,18 +1,19 @@
 import { easyhardRequester } from 'easyhard-post-message'
-// import { emissionTracker } from './emission-tracker'
+import { filter, map, pluck } from 'rxjs/operators'
 import { createHighlighter } from './highlighter'
-import { EhNode, EhSubscriber, Parent } from '../dom-types'
+import { EhNode, EhSubscriber, JsonSubscriber, Parent } from '../dom-types'
+import { useEffects } from '../utils/effects'
+import { ConnectionTunnelKey, GraphPayload, ServicesScheme } from '../types'
+import { connectionTunnelExit } from '../utils/tunnel'
 import { findElementByDebugId, traverseSubtree } from '../utils/dom'
 import { DomToGraph } from './dom-to-graph'
 import { createInspector } from './inspector'
 import { stringify } from './stringify'
-import { filter, map, pluck } from 'rxjs/operators'
-import { ConnectionTunnelKey, Graph, GraphPayload, ObservableEmission, ServicesScheme, SubsPayload } from '../types'
-import { connectionTunnelExit } from '../utils/tunnel'
-import { merge, ReplaySubject, Subscription, tap } from 'rxjs'
-import { useEffects } from '../utils/effects'
-import './register-window-utils'
 import { SubscribersTracker } from './subscribers-tracker'
+import { emissionTracker } from './emission-tracker'
+import { merge, ReplaySubject, Subscription, tap } from 'rxjs'
+import './register-window-utils'
+import { SubscriberToGraph } from './subscriber-to-graph'
 
 const connection = connectionTunnelExit<ConnectionTunnelKey>('connectionTunnel')
 const requester = easyhardRequester<ServicesScheme>(connection)
@@ -21,48 +22,23 @@ const graph = new ReplaySubject<GraphPayload>()
 graph.next({ clear: true })
 
 const highlighter = createHighlighter()
-// const server = serverToGraph()
-// const emissions = emissionTracker()
+const emissions = emissionTracker()
 
-const subscribers = new Map<string, any>()
-const subscriptions = new ReplaySubject<SubsPayload>()
-const valuesCache = new Map<string, any>()
-const values = new ReplaySubject<ObservableEmission>()
-function getValue(valueId: string) {
-  return valuesCache.get(valueId)
-}
 const bridgeSubs = new Map<EhSubscriber, Subscription>()
 
-function added(sub: EhSubscriber, props?: any) {
+function added(sub: EhSubscriber | JsonSubscriber, props?: any) {
   if (!sub.__debug?.observable) return
-  const data: Graph = { nodes: [], edges: [] }
-  const source: string = sub.__debug.observable.__debug.id
+  const subscriberToGraph = new SubscriberToGraph()
 
-  if (!sub.destination) return
-  if (!sub.destination.__debug) throw new Error('should have __debug')
+  subscriberToGraph.add(sub, props)
 
-  const target = sub.destination?.__debug?.observable ? sub.destination.__debug.observable.__debug.id :  sub.destination.__debug.id
-
-  data.nodes.push({ id: source, scope: sub.__debug.observable.__debug.scope, label: sub.__debug.observable.__debug.name || 'Observable', type: 'observable' })
-  if (sub.destination?.__debug?.observable) {
-    data.nodes.push({ id: sub.destination.__debug.observable.__debug.id, scope: sub.__debug.observable.__debug.scope, label: 'Observable', type: 'observable' })
-  } else {
-    data.nodes.push({ id: target, placeholder: true })
+  if (!subscriberToGraph.isEmpty()) {
+    graph.next({ added: subscriberToGraph.serialize() })
   }
+  emissions.add(sub)
 
-  data.edges.push({ id: [source, target].join('_'), source, target, type: props?.type || 'other', label: props?.label })
-
-  graph.next({ added: data })
-  subscribers.set(source, [...(subscribers.get(source) || []), sub])
-  subscriptions.next({ subscribe: { id: source, count: subscribers.get(source).length }})
-
-  if (sub.__debug.bridge) {
-    bridgeSubs.set(sub, sub.__debug.bridge.subscribe((v:
-    { added: true, subscriber: EhSubscriber }
-    | { removed: true, subscriber: EhSubscriber }
-    | { next: true, subscriber: EhSubscriber, value: any }
-      /* TODO sanitized */
-    ) => {
+  if ('bridge' in sub.__debug && sub.__debug.bridge) {
+    bridgeSubs.set(sub as EhSubscriber, sub.__debug.bridge.subscribe(v => {
       if ('added' in v) {
         added(v.subscriber)
       } else if ('removed' in v) {
@@ -73,34 +49,20 @@ function added(sub: EhSubscriber, props?: any) {
     }))
   }
 }
-function removed(sub: EhSubscriber) {
+function removed(sub: EhSubscriber | JsonSubscriber) {
   if (!sub.__debug?.observable) throw new Error('doesnt have observable')
   const source: string = sub.__debug.observable.__debug.id
+  const { count } = emissions.remove(sub)
 
-  subscribers.set(source, (subscribers.get(source) || []).filter((s: any) => s !== sub))
-  const count = subscribers.get(source).length
-
-  if (count) {
-    subscriptions.next({ subscribe: { id: source, count }})
-  } else {
+  if (count === 0) {
     graph.next({ removed: [source] })
   }
-  if (sub.__debug.bridge) {
-    bridgeSubs.get(sub)?.unsubscribe()
+  if ('bridge' in sub.__debug && sub.__debug.bridge) {
+    bridgeSubs.get(sub as EhSubscriber)?.unsubscribe()
   }
 }
-function next(sub: EhSubscriber, { value, valueId, time }: any) {
-  if (!sub.__debug?.observable) throw new Error('doesnt have observable')
-  const id = sub.__debug.observable.__debug.id
-
-  values.next({
-    id,
-    valueId,
-    time,
-    subscriberId: sub.__debug.id,
-    sourceSubscriberIds: (sub.__debug as unknown as { sourcesId: string[] }).sourcesId || sub.__debug.sources.snapshot().map((s: any) => s.__debug.id)
-  })
-  valuesCache.set(valueId as string, value)
+function next(sub: EhSubscriber | JsonSubscriber, { value, valueId, time }: any) {
+  emissions.next(sub, { value, valueId, time })
 }
 
 const subscribersTracker = new SubscribersTracker({
@@ -116,19 +78,20 @@ effects.add(graph.pipe(
   requester.pipe('graph')
 ))
 
-effects.add(merge(/*emissions.subscriptions, server.subscriptions, */subscriptions).pipe(
+effects.add(merge(emissions.subscriptions).pipe(
   requester.pipe('subscriptions')
 ))
 
-effects.add(merge(/*emissions.values, server.values, */values).pipe(
+effects.add(merge(emissions.values).pipe(
   map(next => ({ next })),
   requester.pipe('emission')
 ))
 
 effects.add(requester.call('requestEmissionValue').pipe(
   map(data => {
+    console.log('requestEmissionValue', data)
     const { valueId, id, source } = data
-    const { value, type } = stringify(getValue(valueId)) //emissions.get(valueId))
+    const { value, type } = stringify(emissions.get(valueId))
 
     return { id, valueId, value, type, source }
   }),
@@ -137,7 +100,7 @@ effects.add(requester.call('requestEmissionValue').pipe(
 
 effects.add(requester.call('logEmission').pipe(
   pluck('valueId'),
-  map(getValue),//emissions.get),
+  map(emissions.get),
   tap(console.log)
 ))
 
