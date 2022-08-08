@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, OperatorFunction } from 'rxjs'
 
 function getGlobal() {
   if (typeof self !== 'undefined') { return self }
@@ -17,4 +17,19 @@ export function debugSkipInternal<A, B>(name: string | null, start: Observable<A
     if (name) end.__debug.name = name
   }
   return end
+}
+
+export function debugObservableInternal<T extends Observable<any>>(ob: T): T {
+  if (debugWindow.__easyhardDebug) {
+    (ob as any).__debug.internal = true
+  }
+  return ob
+}
+
+export function debugOperatorInternal<T extends OperatorFunction<any, any>>(op: T): T {
+  if (debugWindow.__easyhardDebug) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return ((...args) => debugObservableInternal(op(...args))) as T
+  }
+  return op
 }

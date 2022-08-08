@@ -13,9 +13,19 @@ export class SubscriberToGraph {
 
     const target = sub.destination?.__debug?.observable ? sub.destination.__debug.observable.__debug.id :  sub.destination.__debug.id
 
-    this.data.nodes.push({ id: source, scope: sub.__debug.observable.__debug.scope, label: sub.__debug.observable.__debug.name || 'Observable', type: 'observable' })
+    this.data.nodes.push({
+      id: source,
+      scope: sub.__debug.observable.__debug.scope, label: sub.__debug.observable.__debug.name || 'Observable',
+      type: 'observable',
+      internal: sub.__debug.observable.__debug.internal
+    })
     if (sub.destination?.__debug?.observable) {
-      this.data.nodes.push({ id: sub.destination.__debug.observable.__debug.id, scope: sub.__debug.observable.__debug.scope, label: 'Observable', type: 'observable' })
+      this.data.nodes.push({
+        id: sub.destination.__debug.observable.__debug.id,
+        scope: sub.__debug.observable.__debug.scope,
+        label: 'Observable',
+        type: 'observable'
+      })
     } else {
       this.data.nodes.push({ id: target, placeholder: true })
     }

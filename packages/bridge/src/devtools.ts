@@ -246,3 +246,10 @@ export function debugRemoveSubscriber(id: string, sub: EhSubscriber | Subscripti
     }
   }
 }
+
+export function debugObservableInternal<T extends Observable<any>>(ob: T): T {
+  if (debugWindow.__easyhardDebug) {
+    (ob as any).__debug.internal = true
+  }
+  return ob
+}

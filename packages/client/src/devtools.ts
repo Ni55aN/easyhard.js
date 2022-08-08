@@ -1,4 +1,4 @@
-import { Subscriber, Subscription } from 'rxjs'
+import { Observable, OperatorFunction, Subscriber, Subscription } from 'rxjs'
 
 function getGlobal() {
   if (typeof self !== 'undefined') { return self }
@@ -14,4 +14,19 @@ export function debugBindSubscribers(source: (Subscription | Subscriber<any>) & 
     source.destination = next
     next.__debug.sources.next({ add: source })
   }
+}
+
+export function debugObservableInternal<T extends Observable<any>>(ob: T): T {
+  if (debugWindow.__easyhardDebug) {
+    (ob as any).__debug.internal = true
+  }
+  return ob
+}
+
+export function debugOperatorInternal<T extends OperatorFunction<any, any>>(op: T): T {
+  if (debugWindow.__easyhardDebug) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return ((...args) => debugObservableInternal(op(...args))) as T
+  }
+  return op
 }

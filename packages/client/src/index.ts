@@ -3,6 +3,7 @@ import { getUID } from 'easyhard-common'
 import { NEVER, Observable, OperatorFunction, throwError } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 import { createConnection } from './connection'
+import { debugOperatorInternal } from './devtools'
 import { useHttp } from './http'
 import { requestTransformer, responseTransformer } from './transformers'
 import { ConnectionArgs, JSONPayload } from './types'
@@ -48,9 +49,9 @@ export function easyhardClient<T>({
     const transformValue = map<JSONResponse, Type>(value => value && responseTransformer.apply(value, null) as Type)
 
     return bindObservable<JSONResponse>(key, null, connection).pipe(
-      transformError,
-      transformValue,
-      mergeMap(setCookies)
+      debugOperatorInternal(transformError),
+      debugOperatorInternal(transformValue),
+      debugOperatorInternal(mergeMap(setCookies))
     )
   }
 
@@ -73,7 +74,7 @@ export function easyhardClient<T>({
       const sourceId = getUID()
       const paramsDestroy: ((() => void) | undefined)[] = []
       const jsonSource = source.pipe(
-        mapWithSubscriber((params, subscriber) => {
+        debugOperatorInternal(mapWithSubscriber((params, subscriber) => {
           const jsonParams = (params ? requestTransformer.apply(params, null) : {}) as JSONPayload<Input>
           const paramsDiffs = requestTransformer.diffs(params as Record<string, unknown>, jsonParams || {})
 
@@ -117,21 +118,21 @@ export function easyhardClient<T>({
           }))
 
           return jsonParams
-        })
+        }))
       )
 
       return bindObservable<JSONResponse>(key, sourceId, connection).pipe(
-        transformError,
-        transformValue,
-        mergeMap(setCookies),
-        mount(() => {
+        debugOperatorInternal(transformError),
+        debugOperatorInternal(transformValue),
+        debugOperatorInternal(mergeMap(setCookies)),
+        debugOperatorInternal(mount(() => {
           const destroy = registerObservable(sourceId, jsonSource, connection)
 
           return () => {
             destroy()
             while(paramsDestroy.length) (paramsDestroy.shift() || (() => null))()
           }
-        })
+        }))
       )
     })
   }

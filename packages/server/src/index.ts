@@ -4,6 +4,7 @@ import { requestTransformer, responseTransformer } from './transformers'
 import { ExtractPayload, registerObservable, Connection } from 'easyhard-bridge'
 import { Observable, OperatorFunction, pipe, throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
+import { debugOperatorInternal } from './devtools'
 
 export function attach<T, R>(actions: Handlers<T, R>, ws: Connection<unknown, unknown>, req: R, http: Http): Attachment {
   const keys = Object.keys(actions).map(key => key as keyof T)
@@ -12,11 +13,12 @@ export function attach<T, R>(actions: Handlers<T, R>, ws: Connection<unknown, un
 
   const registrations = keys.map(key => {
     const stream = actions[key]
+    const internal = debugOperatorInternal
     const transformError = catchError<Return, Observable<Return>>(error => throwError(responseTransformer.prop(error, { ws, cookieSetters: http.cookieSetters })))
     const transformParams = map<Request, HandlerPayload<T[keyof T]>>(v => v && requestTransformer.apply(v, { ws, reqListeners: http.reqListeners, bodyListeners: http.bodyListeners }))
     const transformValue = map<Return, ResponsePayload<T[keyof T]>>(v => v && responseTransformer.apply(v, { ws, cookieSetters: http.cookieSetters }))
-    const preMap = pipe(transformParams, map(params => ({ ...params, $request: req })))
-    const postMap = pipe(transformError, transformValue, map(params => ({ ...params, $request: undefined })))
+    const preMap = pipe(internal(transformParams), internal(map(params => ({ ...params, $request: req }))))
+    const postMap = pipe(internal(transformError), internal(transformValue), internal(map(params => ({ ...params, $request: undefined }))))
 
     if (stream instanceof Observable) {
       const s = stream as Observable<Return>

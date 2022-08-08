@@ -2,7 +2,7 @@ import { Observable, OperatorFunction, Subscriber, Subscription } from 'rxjs'
 import { getUID } from 'easyhard-common'
 import { NOT_FOUND_STREAM_ERROR } from './constants'
 import { sanitize } from './utils'
-import { debugAddSubscriber, debugBind, debugRemoveSubscriber, EhSubscriber } from './devtools'
+import { debugAddSubscriber, debugBind, debugObservableInternal, debugRemoveSubscriber, EhSubscriber } from './devtools'
 
 export type RequestId = string
 type UnsubscribeRequest = { id: RequestId, unsubscribe: true }
@@ -68,7 +68,7 @@ type BindProps = {
 }
 
 export function bindObservable<T>(key: Key, source: RequestId | null, client: Connection<ClientToServer<Key>, ServerToClient<T>>, props?: BindProps): Observable<T> {
-  return new Observable<T>(subscriber => {
+  return debugObservableInternal(new Observable<T>(subscriber => {
     const nextData: ClientToServer<Key>[] = []
     const send = <T extends ClientToServer<Key>>(data: T) => {
       if (client.readyState === ConnectionState.OPEN) {
@@ -130,7 +130,7 @@ export function bindObservable<T>(key: Key, source: RequestId | null, client: Co
       props?.unsubscribe && props?.unsubscribe(id, subscriber)
       debug && debug.destroy()
     }
-  })
+  }))
 }
 
 type RegisterProps = {

@@ -31,7 +31,7 @@ export type EhSubscriber = Subscriber<any> & {
     id: string
     observable: null | DebugObservable
     nextBuffer: ReplayBuffer
-    sources: ReplayBuffer,
+    sources: ReplayBuffer
     bridge?: ReplaySubject<{ added: true, subscriber: JsonSubscriber }
     | { removed: true, subscriber: JsonSubscriber }
     | { next: true, subscriber: JsonSubscriber, value: JsonSubscriberValue }
@@ -45,13 +45,7 @@ export type JsonSubscriber = {
   destination?: JsonSubscriber
   __debug: {
     id: string
-    observable: {
-      __debug: {
-        id: string
-        name: string
-        scope?: string
-      }
-    }
+    observable: DebugObservableMeta
     sourcesId: string[]
   }
 }
@@ -64,4 +58,12 @@ export type EhNode = Node & EhMeta
 
 export type ReplayBufferSubscription = { unsubscribe: () => void }
 export type ReplayBuffer = { next: any, subscribe: (v: any) => ReplayBufferSubscription, snapshot: any }
-export type DebugObservable = Observable<any> & { __debug: { id: string, name: string, scope?: string }}
+export type DebugObservableMeta = {
+  __debug: {
+    id: string
+    name: string
+    scope?: string
+    internal?: boolean
+  }
+}
+export type DebugObservable = Observable<any> & DebugObservableMeta

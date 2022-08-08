@@ -7,6 +7,7 @@ export type GraphNode = {
   label: string | null
   scope?: string
   group?: null | { name: string, start: string }
+  internal?: boolean
 } | {
   id: string
   placeholder: true
