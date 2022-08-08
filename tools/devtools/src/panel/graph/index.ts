@@ -7,6 +7,8 @@ import { toggleObservables, TogglerKey, toggleSubGraph } from './toggler'
 import * as selectors from './selectors'
 import { initGroups, syncGroups } from './group'
 import { setupTooltips } from './tooltip'
+import { PlaceholderPreprocessing } from './data-preprocessing/placeholder'
+import { ExistingPreprocessing } from './data-preprocessing/existing'
 
 function getLabelStyle(key: string, maxLength: number, sizes: [number, number], debug?: boolean) {
   return {
@@ -268,6 +270,8 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
   initGroups(cy)
 
   let originElements = cy.collection()
+  const placeholder = new PlaceholderPreprocessing(() => originElements)
+  const existing = new ExistingPreprocessing(() => originElements)
 
   return {
     cy,
@@ -279,19 +283,9 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
       return originElements
     },
     add(eles) {
-      const placeholderElements = originElements.filter(n => n.data('placeholder'))
-      const newEles = eles.filter(el => !originElements.toArray().find(n => n.data('id') === el.data.id))
-      const newPlaceholderElements = placeholderElements.filter(n => {
-        return Boolean(eles.find(el => n.data('id') === el.data.id))
-      })
-
-      newPlaceholderElements.forEach(node => {
-        const data = eles.find(el => el.data.id === node.data('id'))?.data
-
-        node.data(data)
-      })
-
-      const added = cy.add(newEles)
+      eles = placeholder.add(eles)
+      eles = existing.add(eles)
+      const added = cy.add(eles)
 
       originElements = originElements.add(added)
       setupTooltips(added)
@@ -299,7 +293,10 @@ export function createGraph(container: HTMLElement, props: { toggle?: (id: strin
       return added
     },
     remove(eles) {
+      eles = placeholder.remove(eles)
+      eles = existing.remove(eles)
       originElements = originElements.subtract(eles)
+
       return cy.remove(eles)
     },
     getElementById(id) {
