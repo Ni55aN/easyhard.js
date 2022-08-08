@@ -141,10 +141,15 @@ effects.add(merge(emissions.values).pipe(
 effects.add(requester.call('requestEmissionValue').pipe(
   mergeMap(async data => {
     const { valueId, id, source } = data
-    const { value, type } = await getEmissionValue(valueId)
+    try {
+      const { value, type } = await getEmissionValue(valueId)
 
-    return { id, valueId, value, type, source }
+      return { id, valueId, value, type, source }
+    } catch {
+      return null
+    }
   }),
+  filter((n): n is Exclude<typeof n, null> => n !== null),
   requester.pipe('emissionValue')
 ))
 
