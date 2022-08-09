@@ -450,9 +450,9 @@ void async function () {
   const current = $<string | null>(null)
   const main = h('div', { style: 'width: 100vw; height: 100vh;' },
     h('div', {}, injectStyles({ position: 'absolute', top: 0, left: 0 }),
-      $for(tabs, map(v => h('button', { click: tap(() => openScope(v.name))}, v.name))),
+      $for(tabs, v => h('button', { click: tap(() => openScope(v.name))}, v.name)),
     ),
-    $for(containers, map(v => v.el))
+    $for(containers, v => v.el)
   )
   document.body.appendChild(main)
 

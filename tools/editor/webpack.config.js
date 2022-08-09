@@ -27,6 +27,7 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
     fallback: {
+      assert: false,
       os: require.resolve("os-browserify/browser")
     }
   },
