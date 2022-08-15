@@ -6,7 +6,7 @@ import { Node as ASTNode } from '@babel/types'
 import { arrangeRoot, createEditor } from './view'
 import { Editor } from './types'
 import { process } from './transpiler'
-import source from './assets/basic.js?raw'
+import source from './assets/easyhard?raw'
 
 const tsAst = parse(source)
 
