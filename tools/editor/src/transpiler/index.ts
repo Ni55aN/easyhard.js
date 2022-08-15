@@ -2,7 +2,8 @@ import { $ } from 'easyhard'
 import {
   Node as ASTNode, Statement, Expression, ObjectExpression, ObjectProperty, BinaryExpression,
   CallExpression, MemberExpression, SpreadElement, JSXNamespacedName, ArgumentPlaceholder,
-  Identifier, ConditionalExpression, FunctionDeclaration, ArrowFunctionExpression
+  Identifier, ConditionalExpression, FunctionDeclaration, ArrowFunctionExpression,
+  FunctionExpression
 } from '@babel/types'
 import { Editor } from '../types'
 import { arrangeSubnodes, NestedNode, Node } from '../view'
@@ -195,6 +196,8 @@ async function processExpression(expression: Expression, scope: Scope, editor: E
   }
   if (expression.type === 'ArrowFunctionExpression') {
     return await processFunction(expression, editor, props)
+  } else if (expression.type === 'FunctionExpression') {
+    return await processFunction(expression, editor, props)
   }
   if (expression.type === 'ObjectExpression') {
     return await processObject(expression, editor, props)
@@ -261,12 +264,16 @@ async function processNode(statement: Statement | Expression, scope: Scope, edit
     }
   } else if (statement.type === 'FunctionDeclaration') {
     await processFunction(statement, editor, props)
+  } else if (statement.type === 'BlockStatement') {
+    for (const item of statement.body) {
+      await processNode(item, null, editor, props)
+    }
   } else {
     throw new Error('processNode: cannot process statement ' + statement.type)
   }
 }
 
-async function processFunction(expression: FunctionDeclaration | ArrowFunctionExpression, editor: Editor, props: ProcessProps) {
+async function processFunction(expression: FunctionDeclaration | ArrowFunctionExpression | FunctionExpression, editor: Editor, props: ProcessProps) {
   const node = await editor.addNode(editor.components.FunctionDeclaration, [280, 200], {})
   props.nodeCreated && props.nodeCreated(node)
 
