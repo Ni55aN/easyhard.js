@@ -1,0 +1,34 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "tsconfig.json"
+  },
+  "env": {
+    "es6": true
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "functional",
+    "easyhard-editor"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:functional/external-recommended",
+    "plugin:functional/all"
+  ],
+  "rules": {
+    "no-unused-vars": "error",
+    "no-new-func": "error",
+    "no-plusplus": "error",
+    "max-params": ["error", 1],
+    "functional/functional-parameters": ["error", {
+      "enforceParameterCount": false
+    }],
+    "easyhard-editor/no-new-operator": "error",
+    "easyhard-editor/no-async-await": "error",
+    "functional/prefer-readonly-type": "off"
+  }
+}

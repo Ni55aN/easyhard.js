@@ -4,7 +4,7 @@ import { Component } from './base'
 import * as sockets from '../sockets'
 
 export class ImportDeclaration extends Component {
-  scope: 'root' = 'root'
+  scope = 'root' as const
   constructor() {
     super("Import");
   }

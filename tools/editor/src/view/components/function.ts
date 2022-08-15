@@ -4,7 +4,7 @@ import { Component } from './base'
 import * as sockets from '../sockets'
 
 export class FunctionDeclaration extends Component {
-  scope: 'root' = 'root'
+  scope = 'root' as const
   constructor(private componentsGetter: () => {[key: string]: Component }) {
     super("Function");
   }
