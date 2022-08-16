@@ -1,4 +1,5 @@
 
 const a = 1, b = 2, c = 3
 
-return a == 1 ? b : c
+// eslint-disable-next-line no-unused-vars
+const n = a == 1 ? b : c

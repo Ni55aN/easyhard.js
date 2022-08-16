@@ -1,16 +1,20 @@
+
 function a(num: number) {
-  return num > 0 ? 1 : 2
+  const n1 = 1
+  const n2 = 1
+
+  return num > 0 ? n1 : n2
 }
 // eslint-disable-next-line no-unused-vars
 function b(num: number) {
-  return 1
+  return num
 }
 // eslint-disable-next-line no-unused-vars
-function c(num: string) {
-  return 1
+function c(num: number) {
+  return num
 }
 
 // eslint-disable-next-line no-unused-vars
-const d = a(b(c('abc')))
+const d = a(b(c(3)))
 
 export {};
