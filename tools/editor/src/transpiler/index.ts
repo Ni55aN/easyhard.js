@@ -1,14 +1,19 @@
 import { $ } from 'easyhard'
+import { Core } from 'cytoscape'
 import {
   Node as ASTNode, Statement, Expression, ObjectExpression, ObjectProperty, BinaryExpression,
   CallExpression, MemberExpression, SpreadElement, JSXNamespacedName, ArgumentPlaceholder,
   Identifier, ConditionalExpression, FunctionDeclaration, ArrowFunctionExpression,
-  FunctionExpression
+  FunctionExpression, Literal
 } from '@babel/types'
-import { Editor } from '../types'
-import { arrangeSubnodes, NestedNode, Node } from '../view'
 
-type Scope = Node | null | undefined
+type Graph = Core
+
+function getUID(): string {
+  return (Date.now()+Math.random()).toString(36).replace('.', '')
+}
+
+type Scope = string | undefined
 
 function getValue(exp: Expression | SpreadElement | JSXNamespacedName | ArgumentPlaceholder) {
   const literal = ['StringLiteral', 'NumericLiteral', 'BooleanLiteral']
@@ -17,200 +22,176 @@ function getValue(exp: Expression | SpreadElement | JSXNamespacedName | Argument
   return 'value' in exp ? exp.value : null
 }
 
-async function processObject(exp: ObjectExpression, editor: Editor, props: any) {
+function isNode(arg: any): arg is ({ id: string }) {
+  return arg && typeof arg === 'object' && 'id' in arg
+}
+
+function processObject(exp: ObjectExpression, parent: Scope, editor: Graph): { id: string } {
   const properties = exp.properties
     .filter((p): p is ObjectProperty => p.type === 'ObjectProperty' && p.key.type === 'Identifier')
 
-  const objectNode = await editor.addNode(editor.components.Object, [4, 100], { properties: properties.map(p => (p.key as Identifier).name).join(', ') })
-  props.nodeCreated && props.nodeCreated(objectNode)
+
+  const id = getUID()
+  editor.add({ group: 'nodes', data: { id, parent, type: 'Object', label: 'object', properties: properties.map(p => (p.key as Identifier).name).join(', ') }})
+
   for (const p of properties) {
+    console.log('property', p)
     const value =  p.value
-    const key =  p.key as Identifier
-    if (value.type === 'Identifier') {
-      const identNode = await processExpression(value, objectNode.belongsTo, editor, props)
+    const key =  p.key
 
-      if (identNode instanceof Node) {
-        const objInput = objectNode.inputs.get(key.name)
-        const identOutput = identNode.outputs.get('return')
-        editor.connect(identOutput as any, objInput as any)
-      }
+    if (key.type === 'Identifier') {
+      const identNode = processExpression(value as Expression, parent, editor) // TOOD
+
+      editor.add({ group: 'edges', data: { id: getUID(), source: identNode.id, target: id, label: key.name }})
     }
-
   }
 
-  return objectNode
+  return { id }
 }
 
-async function processMember(expression: MemberExpression, editor: Editor, props: ProcessProps) {
+function processMember(expression: MemberExpression, parent: Scope, editor: Graph): { id: string } {
   const object = expression.object
   const property = expression.property
 
   if (property.type === 'Identifier') {
-    const memberNode = await editor.addNode(editor.components.Member, [4, 100], { property: property.name })
-    props.nodeCreated && props.nodeCreated(memberNode)
-    const identNode = await processExpression(object, memberNode.belongsTo, editor, props)
+    const id = getUID()
+    editor.add({ group: 'nodes', data: { id, parent, type: 'Member', label: 'property ' + property.name, property: property.name }})
 
-    if (!(identNode instanceof Node)) throw new Error('cannot find identNode')
+    const identNode = processExpression(object, parent, editor)
 
-    const identOutput = identNode.outputs.get('return') as any
-    const memberInput = memberNode.inputs.get('object') as any
-
-    editor.connect(identOutput, memberInput)
-    return memberNode
+    editor.add({ group: 'edges', data: { id: getUID(), source: identNode.id, target: id } })
+    return { id }
   } else {
     throw new Error('processMember: cannot process object ' + object.type + ' and property ' + property.type)
   }
 }
 
-function isLiteral(arg: Expression) {
+function isLiteral(arg: Expression): arg is Literal {
   return arg.type === 'StringLiteral' || arg.type === 'NumericLiteral' ||  arg.type === 'BooleanLiteral'
 }
 
-async function processCall(expression: CallExpression, scope: Scope, editor: Editor, props: ProcessProps): Promise<Node | undefined> {
-  const args = await Promise.all(expression.arguments.map(async arg => {
+function processLiteral(arg: Literal, parent: Scope, editor: Graph) {
+  const id = getUID()
+
+  editor.add({ group: 'nodes', data: { id, parent, type: 'Literal', label: getValue(arg) }})
+
+  return { id }
+}
+
+function processCall(expression: CallExpression, parent: Scope, editor: Graph): { id: string } {
+  const args = expression.arguments.map(arg => {
     if (arg.type === 'SpreadElement' || arg.type === 'JSXNamespacedName' || arg.type === 'ArgumentPlaceholder') return null
-    if (isLiteral(arg)) return getValue(arg)
 
-    return await processExpression(arg, scope, editor, props)
-  }))
-  const callNode = await editor.addNode(editor.components.Call, [0,0], { arguments: args.map(arg => arg instanceof Node ? '' : arg) })
-  props.nodeCreated && props.nodeCreated(callNode)
+    return processExpression(arg, parent, editor)
+  })
+  const id = getUID()
+  editor.add({ group: 'nodes', data: { id, parent, type: 'Call', label: 'call', arguments: args.map(arg => isNode(arg) ? '' : arg)}})
+
   args.forEach((arg, i) => {
-    if (arg instanceof Node) {
-      const inputArg = callNode.inputs.get('arg'+i)
-      const outputIdent = arg.outputs.get('return')
-
-      editor.connect(outputIdent as any, inputArg as any)
+    if (isNode(arg)) {
+      editor.add({ group: 'edges', data: { id: getUID(), source: arg.id, target: id, label: 'argument ' + i }})
     }
   })
 
   if (expression.callee.type !== 'V8IntrinsicIdentifier') {
-    const calleNode = await processExpression(expression.callee, scope, editor, props)
+    const calleNode = processExpression(expression.callee, parent, editor)
 
-    if (!(calleNode instanceof Node)) throw new Error('cannot process CallExpression\'s callee')
-
-    const memberOutput = calleNode.outputs.get('return') as any
-    const funcInput = callNode.inputs.get('function') as any
-
-    editor.connect(memberOutput, funcInput)
+    editor.add({ group: 'edges', data: { id: getUID(), source: calleNode.id, target: id, label: 'function' }})
   } else {
     throw new Error('cannot process CallExpression\'s callee')
   }
 
-  return callNode
+  return { id }
 }
 
-async function processBinary(statement: BinaryExpression, editor: Editor, props: ProcessProps) {
+function processBinary(statement: BinaryExpression, parent: Scope, editor: Graph): { id: string } {
   const { left, right } = statement
-  const node = await editor.addNode(editor.components.BinaryOperator, [100,0], {
-    op: statement.operator,
-    left: $(''),
-    right: $('')
-  })
-  props.nodeCreated && props.nodeCreated(node)
+  const id = getUID()
+
+  editor.add({ group: 'nodes', data: { id, parent, type: 'BinaryOperator', label: statement.operator,
+    op: statement.operator
+  }})
 
   if (left.type !== 'PrivateName') {
-    const identExp = await processExpression(left, node.belongsTo, editor, props)
+    const identExp = processExpression(left, parent, editor)
 
-    if (identExp instanceof Node) {
-      const output = identExp.outputs.get('return')
-      const input = node.inputs.get('left')
-
-      editor.connect(output as any, input as any)
-    } else {
-      (node.data.left as $<any>).next(identExp)
-    }
+    editor.add({ group: 'edges', data: { id: getUID(), source: identExp.id, target: id, label: 'left' }})
   }
-  const rightExp = await processExpression(right, node.belongsTo, editor, props)
+  const rightExp = processExpression(right, parent, editor)
 
-  if (rightExp instanceof Node) {
-    const output = rightExp.outputs.get('return')
-    const input = node.inputs.get('right')
+  editor.add({ group: 'edges', data: { id: getUID(), source: rightExp.id, target: id, label: 'right' }})
 
-    editor.connect(output as any, input as any)
-  } else {
-    (node.data.right as $<any>).next(rightExp)
-  }
-
-  return node
+  return { id }
 }
 
-async function processConditional(expression: ConditionalExpression, editor: Editor, props: ProcessProps) {
-  const node = await editor.addNode(editor.components.Conditional, [100,0], { consequent: $(''), alternate: $('') })
-  props.nodeCreated && props.nodeCreated(node)
-  const testNode = await processExpression(expression.test, node.belongsTo, editor, props)
+function processConditional(expression: ConditionalExpression, parent: Scope, editor: Graph): { id: string } {
+  const id = getUID()
+  const node = editor.add({ group: 'nodes', data: { id, parent, type: 'Conditional', label: 'if', consequent: $(''), alternate: $('') }})
 
-  if (testNode instanceof Node) {
-    const output = testNode.outputs.get('return')
-    const input = node.inputs.get('test')
+  const testNode = processExpression(expression.test, parent, editor)
 
-    editor.connect(output as any, input as any)
-  }
+  editor.add({ group: 'edges', data: { id: getUID(), source: testNode.id, target: id }})
 
-  const consequentExp = await processExpression(expression.consequent, node.belongsTo, editor, props)
+  const consequentExp = processExpression(expression.consequent, parent, editor)
 
-  if (consequentExp instanceof Node) {
-    const output = consequentExp.outputs.get('return')
-    const input = node.inputs.get('consequent')
+  editor.add({ group: 'edges', data: { id: getUID(), source: consequentExp.id, target: id, label: 'then' }})
 
-    editor.connect(output as any, input as any)
-  } else {
-    (node.data.consequent as $<any>).next(consequentExp)
-  }
+  const alternateExp = processExpression(expression.alternate, parent, editor)
 
-  const alternateExp = await processExpression(expression.alternate, node.belongsTo, editor, props)
+  editor.add({ group: 'edges', data: { id: getUID(), source: alternateExp.id, target: id, label: 'else' }})
 
-  if (alternateExp instanceof Node) {
-    const output = alternateExp.outputs.get('return')
-    const input = node.inputs.get('alternate')
-
-    editor.connect(output as any, input as any)
-  } else {
-    (node.data.alternate as $<any>).next(alternateExp)
-  }
-
-  return node
+  return { id }
 }
 
-async function processExpression(expression: Expression, scope: Scope, editor: Editor, props: ProcessProps) {
+function findIdentifier(name: string, parent: Scope, editor: Graph): null | { id: string } {
+  if (parent) {
+    const parentNode = editor.getElementById(parent)
+    const found = editor.nodes().filter(n => n.parent() === parentNode && n.data('identifier') === name)
+
+    if (!found.empty()) return { id: found.first().data('id') }
+    return findIdentifier(name, parentNode.parent().data('id'), editor)
+  }
+
+  const found = editor.nodes().filter(n => n.data('identifier') === name)
+
+  return found.empty() ? null : { id: found.first().data('id') }
+}
+
+function processExpression(expression: Expression, parent: Scope, editor: Graph): { id: string } {
   if (expression.type === 'CallExpression') {
-    return await processCall(expression, scope, editor, props)
+    return processCall(expression, parent, editor)
   }
   if (expression.type === 'MemberExpression') {
-    return await processMember(expression, editor, props)
+    return processMember(expression, parent, editor)
   }
   if (expression.type === 'BinaryExpression') {
-    return await processBinary(expression, editor, props)
+    return processBinary(expression, parent, editor)
   }
   if (expression.type === 'ConditionalExpression') {
-    return await processConditional(expression, editor, props)
+    return processConditional(expression, parent, editor)
   }
   if (expression.type === 'Identifier') {
-    const matchName = (n: Node) => n.meta.identifier === expression.name
-    const scopeNodes = editor.origin.nodes.filter((n: NestedNode) => scope ? n.belongsTo === scope : false)
-    const rootNodes = editor.origin.nodes
-    const node = scopeNodes.find(matchName) || rootNodes.find(matchName)
+    const node = findIdentifier(expression.name, parent, editor)
 
     if (!node) throw new Error(`cannot find Identifier "${expression.name}"`)
     return node
   }
   if (expression.type === 'ArrowFunctionExpression') {
-    return await processFunction(expression, editor, props)
+    return processFunction(expression, parent, editor)
   } else if (expression.type === 'FunctionExpression') {
-    return await processFunction(expression, editor, props)
+    return processFunction(expression, parent, editor)
   }
   if (expression.type === 'ObjectExpression') {
-    return await processObject(expression, editor, props)
+    return processObject(expression, parent, editor)
   }
   if (isLiteral(expression)) {
-    return getValue(expression)
+    return processLiteral(expression, parent, editor)
   }
   throw new Error('processExpression: cannot process ' + expression.type)
 }
 
-type ProcessProps = { nodeCreated?: (node: NestedNode) => void }
 
-async function processNode(statement: Statement | Expression, scope: Scope, editor: Editor, props: ProcessProps) {
+function processNode(statement: Statement | Expression, parent: Scope, editor: Graph): void {
   if (statement.type === 'ImportDeclaration') {
     const module = statement.source.value
 
@@ -223,9 +204,9 @@ async function processNode(statement: Statement | Expression, scope: Scope, edit
     })
 
     for (const specifier of specifiers) {
-      const node = await editor.addNode(editor.components.ImportDeclaration, [-100,0], { module, source: specifier?.source })
-      props.nodeCreated && props.nodeCreated(node)
-      node.meta.identifier = specifier?.local
+      const id = getUID()
+
+      editor.add({ group: 'nodes', data: { id, parent, type: 'ImportDeclaration', label: 'import ' + specifier?.local, identifier: specifier?.local, module, source: specifier?.source }})
     }
   } else if (statement.type === 'VariableDeclaration') {
     for (const declarator of statement.declarations) {
@@ -234,98 +215,78 @@ async function processNode(statement: Statement | Expression, scope: Scope, edit
         console.info('Skipped VariableDeclaration without "init"')
         continue
       }
-      const id = declarator.id.name
 
       if (isLiteral(declarator.init)) {
         const value = getValue(declarator.init)
-        const node = await editor.addNode(editor.components.VariableDeclaration, [0,0], { value })
-        props.nodeCreated && props.nodeCreated(node)
-        node.meta.identifier = id
+        const id = getUID()
+        editor.add({ group: 'nodes', data: { id, parent, type: 'VariableDeclaration', label: value, value, identifier: declarator.id.name }})
       } else {
-        const expNode = await processExpression(declarator.init, scope, editor, props)
+        const expNode = processExpression(declarator.init, parent, editor)
 
-        if (!(expNode instanceof Node)) throw new Error('VariableDeclaration: cannot find init\'s node')
-
-        expNode.meta.identifier = id
+        editor.nodes().filter(n => n.data('id') === expNode.id).data('identifier', declarator.id.name)
       }
     }
   } else if (statement.type === 'ExpressionStatement') {
-    await processExpression(statement.expression, scope, editor, props)
+    processExpression(statement.expression, parent, editor)
   } else if (statement.type === 'ReturnStatement') {
-    const node = await editor.addNode(editor.components.Return, [280, 200], {})
-    props.nodeCreated && props.nodeCreated(node)
-    const expNode = statement.argument && await processExpression(statement.argument, node.belongsTo, editor, props)
+    const id = getUID()
+    editor.add({ group: 'nodes', data: { id, parent, type: 'Return', label: 'return' }})
 
-    if (expNode instanceof Node) {
-      const outputReturn = expNode.outputs.get('return')
-      const inputArgument = node.inputs.get('argument')
+    if (statement.argument) {
+      const expNode = processExpression(statement.argument, parent, editor)
 
-      editor.connect(outputReturn as any, inputArgument as any)
+      editor.add({ group: 'edges', data: { id: getUID(), source: expNode.id, target: id }})
     }
   } else if (statement.type === 'FunctionDeclaration') {
-    await processFunction(statement, editor, props)
+    processFunction(statement, parent, editor)
   } else if (statement.type === 'BlockStatement') {
     for (const item of statement.body) {
-      await processNode(item, null, editor, props)
+      processNode(item, parent, editor)
     }
+  } else if (statement.type === 'ExportNamedDeclaration') {
   } else {
     throw new Error('processNode: cannot process statement ' + statement.type)
   }
 }
 
-async function processFunction(expression: FunctionDeclaration | ArrowFunctionExpression | FunctionExpression, editor: Editor, props: ProcessProps) {
-  const node = await editor.addNode(editor.components.FunctionDeclaration, [280, 200], {})
-  props.nodeCreated && props.nodeCreated(node)
-
-  if (expression.type === 'FunctionDeclaration') {
-    node.meta.identifier = expression.id?.name
-  }
-
-  const subnodes: NestedNode[] = []
-  const subprops = {
-    nodeCreated: (nestedNode: NestedNode) => {
-      subnodes.push(nestedNode)
-      nestedNode.belongsTo = node
-    }
-  }
+function processFunction(expression: FunctionDeclaration | ArrowFunctionExpression | FunctionExpression, parent: Scope, editor: Graph): { id: string } {
+  const id = getUID()
+  editor.add({ group: 'nodes', data: {
+    id,
+    parent,
+    type: 'FunctionDeclaration',
+    label: expression.type === 'FunctionDeclaration' ? expression.id?.name : 'function',
+    identifier: expression.type === 'FunctionDeclaration' ? expression.id?.name : null
+  }})
 
   for (const statement of expression.params) {
     if (statement.type !== 'Identifier') throw new Error('FunctionDeclaration: cannot process ' + statement.type)
     const { name } = statement
-    const node = await editor.addNode(editor.components.ParameterDeclaration, [0,0], { name })
+    const index = expression.params.indexOf(statement)
 
-    subprops.nodeCreated && subprops.nodeCreated(node)
-    node.meta.identifier = name
+    editor.add({ group: 'nodes', data: { id: getUID(), parent: id, type: 'ParameterDeclaration', label: 'parameter ' + index, name, identifier: name }})
   }
 
   if (expression.body.type === 'BlockStatement') {
     for (const statement of expression.body.body) {
-      await processNode(statement, null, editor, subprops)
+      processNode(statement, id, editor)
     }
   } else {
-    const returnNode = await editor.addNode(editor.components.Return, [280, 200], {})
-    subprops.nodeCreated && subprops.nodeCreated(returnNode)
+    const id = getUID()
+    editor.add({ group: 'nodes', data: { id, parent, type: 'Return', label: 'return' }})
 
-    const expNode = await processExpression(expression.body, returnNode.belongsTo, editor, subprops)
+    const expNode = processExpression(expression.body, id, editor)
 
-    if (expNode instanceof Node) {
-      const outputReturn = expNode.outputs.get('return')
-      const inputArgument = returnNode.inputs.get('argument')
-
-      editor.connect(outputReturn as any, inputArgument as any)
-    }
+    editor.add({ group: 'edges', data: { id: getUID(), source: expNode.id, target: id }})
   }
 
-  arrangeSubnodes(node, editor, subnodes)
-
-  return node
+  return { id }
 }
 
-export async function process(node: ASTNode, editor: Editor, props: ProcessProps) {
-  console.log('process', node)
+export function process(node: ASTNode, editor: Graph) {
   if (node.type === 'File') {
     for (const statement of node.program.body) {
-      await processNode(statement, null, editor, props)
+      processNode(statement, undefined, editor)
     }
   } else {
     throw new Error('process: cannot process ' + node.type)

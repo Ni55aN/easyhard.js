@@ -3,18 +3,19 @@ import { map, tap } from 'rxjs/operators'
 import { injectStyles } from 'easyhard-styles'
 import { parse } from 'recast/parsers/typescript'
 import { Node as ASTNode } from '@babel/types'
-import { arrangeRoot, createEditor } from './view'
-import { Editor } from './types'
+import { createEditor, layout } from './cy-view'
 import { process } from './transpiler'
-import source from './assets/easyhard?raw'
+import source from './assets/subject?raw'
+import cytoscape from 'cytoscape'
 
 const tsAst = parse(source)
 
+console.log('Source', source)
 console.log('Root', tsAst.program.body)
 
 
 void async function () {
-  const tabs = $$<{ name: string, editor: Editor }>([])
+  const tabs = $$<{ name: string, editor: cytoscape.Core }>([])
   const containers = $$<{ name: string, el: HTMLElement }>([])
   const current = $<string | null>(null)
   const main = h('div', { style: 'width: 100vw; height: 100vh;' },
@@ -30,10 +31,12 @@ void async function () {
     const container = h('div', { style: current.pipe(map(c => c === name ? 'width: 100%; height: 100%; overflow: hidden' : 'visibility: hidden'))})
     containers.insert({ name, el: container })
     await new Promise((res) => setTimeout(res, 200))
-    const editor = await createEditor(container)
+    const editor = createEditor(container)
 
-    await process(ast, editor, {  })
-    arrangeRoot(editor)
+    process(ast, editor)
+    console.log(editor.nodes().map(n => n.data()))
+    await layout(editor)
+
     tabs.insert({ name, editor })
 
     return name

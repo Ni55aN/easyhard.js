@@ -12,6 +12,9 @@
   "dependencies": {
     "@types/react": "^17.0.35",
     "babylon": "^6.18.0",
+    "cytoscape": "^3.22.1",
+    "cytoscape-dagre": "^2.4.0",
+    "cytoscape-klay": "^3.1.4",
     "easyhard": "file:../../build/easyhard-0.9.1.tgz",
     "easyhard-common": "file:../../build/easyhard-common-0.4.1.tgz",
     "easyhard-styles": "file:../../build/easyhard-styles-0.4.0.tgz",
@@ -31,6 +34,7 @@
     "rete-vue-render-plugin": "1.0.0-rc2"
   },
   "devDependencies": {
+    "@types/cytoscape": "^3.19.7",
     "@types/lodash": "^4.14.177",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.33.0",

@@ -4,6 +4,9 @@ declare module 'rete-area-plugin'
 declare module 'rete-auto-arrange-plugin'
 declare module 'rete-context-menu-plugin'
 
+declare module 'cytoscape-dagre'
+declare module 'cytoscape-klay'
+
 declare module 'builtins' {
   export const console: Console
   // eslint-disable-next-line @typescript-eslint/ban-types
