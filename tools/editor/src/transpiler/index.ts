@@ -1,5 +1,3 @@
-import { $ } from 'easyhard'
-import { Core } from 'cytoscape'
 import {
   Node as ASTNode, Statement, Expression, ObjectExpression, ObjectProperty, BinaryExpression,
   CallExpression, MemberExpression, SpreadElement, JSXNamespacedName, ArgumentPlaceholder,
@@ -7,13 +5,14 @@ import {
   FunctionExpression, Literal
 } from '@babel/types'
 
-type Graph = Core
-
-function getUID(): string {
-  return (Date.now()+Math.random()).toString(36).replace('.', '')
+export type Graph = {
+  addNode(data: Record<string, any>): Promise<{ id: string }>
+  addEdge(source: string, target: string,  data: Record<string, any>): Promise<{ id: string }>
+  findIdentifier(name: string, parent: Scope): Promise<null | { id: string }>
+  patchData(id: string, data: Record<string, any>): Promise<void>
 }
+export type Scope = string | undefined
 
-type Scope = string | undefined
 
 function getValue(exp: Expression | SpreadElement | JSXNamespacedName | ArgumentPlaceholder) {
   const literal = ['StringLiteral', 'NumericLiteral', 'BooleanLiteral']
@@ -26,13 +25,11 @@ function isNode(arg: any): arg is ({ id: string }) {
   return arg && typeof arg === 'object' && 'id' in arg
 }
 
-function processObject(exp: ObjectExpression, parent: Scope, editor: Graph): { id: string } {
+async function processObject(exp: ObjectExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
   const properties = exp.properties
     .filter((p): p is ObjectProperty => p.type === 'ObjectProperty' && p.key.type === 'Identifier')
 
-
-  const id = getUID()
-  editor.add({ group: 'nodes', data: { id, parent, type: 'Object', label: 'object', properties: properties.map(p => (p.key as Identifier).name).join(', ') }})
+  const { id } = await editor.addNode({ parent, type: 'Object', label: 'object', properties: properties.map(p => (p.key as Identifier).name).join(', ') })
 
   for (const p of properties) {
     console.log('property', p)
@@ -40,26 +37,25 @@ function processObject(exp: ObjectExpression, parent: Scope, editor: Graph): { i
     const key =  p.key
 
     if (key.type === 'Identifier') {
-      const identNode = processExpression(value as Expression, parent, editor) // TOOD
+      const identNode = await processExpression(value as Expression, parent, editor) // TOOD
 
-      editor.add({ group: 'edges', data: { id: getUID(), source: identNode.id, target: id, label: key.name }})
+      await editor.addEdge(identNode.id, id, { label: key.name })
     }
   }
 
   return { id }
 }
 
-function processMember(expression: MemberExpression, parent: Scope, editor: Graph): { id: string } {
+async function processMember(expression: MemberExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
   const object = expression.object
   const property = expression.property
 
   if (property.type === 'Identifier') {
-    const id = getUID()
-    editor.add({ group: 'nodes', data: { id, parent, type: 'Member', label: 'property ' + property.name, property: property.name }})
+    const { id } = await editor.addNode({ parent, type: 'Member', label: 'property ' + property.name, property: property.name })
 
-    const identNode = processExpression(object, parent, editor)
+    const identNode = await processExpression(object, parent, editor)
 
-    editor.add({ group: 'edges', data: { id: getUID(), source: identNode.id, target: id } })
+    await editor.addEdge(identNode.id, id, { } )
     return { id }
   } else {
     throw new Error('processMember: cannot process object ' + object.type + ' and property ' + property.type)
@@ -70,33 +66,28 @@ function isLiteral(arg: Expression): arg is Literal {
   return arg.type === 'StringLiteral' || arg.type === 'NumericLiteral' ||  arg.type === 'BooleanLiteral'
 }
 
-function processLiteral(arg: Literal, parent: Scope, editor: Graph) {
-  const id = getUID()
-
-  editor.add({ group: 'nodes', data: { id, parent, type: 'Literal', label: getValue(arg) }})
-
-  return { id }
+async function processLiteral(arg: Literal, parent: Scope, editor: Graph) {
+  return editor.addNode({ parent, type: 'Literal', label: getValue(arg) })
 }
 
-function processCall(expression: CallExpression, parent: Scope, editor: Graph): { id: string } {
-  const args = expression.arguments.map(arg => {
+async function processCall(expression: CallExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
+  const args = await Promise.all(expression.arguments.map(async arg => {
     if (arg.type === 'SpreadElement' || arg.type === 'JSXNamespacedName' || arg.type === 'ArgumentPlaceholder') return null
 
     return processExpression(arg, parent, editor)
-  })
-  const id = getUID()
-  editor.add({ group: 'nodes', data: { id, parent, type: 'Call', label: 'call', arguments: args.map(arg => isNode(arg) ? '' : arg)}})
+  }))
+  const { id } = await editor.addNode({ parent, type: 'Call', label: 'call', arguments: args.map(arg => isNode(arg) ? '' : arg)})
 
-  args.forEach((arg, i) => {
+  await Promise.all(args.map(async (arg, i) => {
     if (isNode(arg)) {
-      editor.add({ group: 'edges', data: { id: getUID(), source: arg.id, target: id, label: 'argument ' + i }})
+      await editor.addEdge(arg.id, id, { label: 'argument ' + i })
     }
-  })
+  }))
 
   if (expression.callee.type !== 'V8IntrinsicIdentifier') {
-    const calleNode = processExpression(expression.callee, parent, editor)
+    const calleNode = await processExpression(expression.callee, parent, editor)
 
-    editor.add({ group: 'edges', data: { id: getUID(), source: calleNode.id, target: id, label: 'function' }})
+    await editor.addEdge(calleNode.id, id, { label: 'function' })
   } else {
     throw new Error('cannot process CallExpression\'s callee')
   }
@@ -104,60 +95,43 @@ function processCall(expression: CallExpression, parent: Scope, editor: Graph): 
   return { id }
 }
 
-function processBinary(statement: BinaryExpression, parent: Scope, editor: Graph): { id: string } {
+async function processBinary(statement: BinaryExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
   const { left, right } = statement
-  const id = getUID()
-
-  editor.add({ group: 'nodes', data: { id, parent, type: 'BinaryOperator', label: statement.operator,
+  const { id } = await editor.addNode({ parent, type: 'BinaryOperator', label: statement.operator,
     op: statement.operator
-  }})
+  })
 
   if (left.type !== 'PrivateName') {
-    const identExp = processExpression(left, parent, editor)
+    const identExp = await processExpression(left, parent, editor)
 
-    editor.add({ group: 'edges', data: { id: getUID(), source: identExp.id, target: id, label: 'left' }})
+    await editor.addEdge(identExp.id, id, { label: 'left' })
   }
-  const rightExp = processExpression(right, parent, editor)
+  const rightExp = await processExpression(right, parent, editor)
 
-  editor.add({ group: 'edges', data: { id: getUID(), source: rightExp.id, target: id, label: 'right' }})
+  await editor.addEdge(rightExp.id, id, { label: 'right' })
 
   return { id }
 }
 
-function processConditional(expression: ConditionalExpression, parent: Scope, editor: Graph): { id: string } {
-  const id = getUID()
-  const node = editor.add({ group: 'nodes', data: { id, parent, type: 'Conditional', label: 'if', consequent: $(''), alternate: $('') }})
+async function processConditional(expression: ConditionalExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
+  const { id } = await editor.addNode({ parent, type: 'Conditional', label: 'if' })
 
-  const testNode = processExpression(expression.test, parent, editor)
+  const testNode = await processExpression(expression.test, parent, editor)
 
-  editor.add({ group: 'edges', data: { id: getUID(), source: testNode.id, target: id }})
+  await editor.addEdge(testNode.id, id, {})
 
-  const consequentExp = processExpression(expression.consequent, parent, editor)
+  const consequentExp = await processExpression(expression.consequent, parent, editor)
 
-  editor.add({ group: 'edges', data: { id: getUID(), source: consequentExp.id, target: id, label: 'then' }})
+  await editor.addEdge(consequentExp.id, id, { label: 'then' })
 
-  const alternateExp = processExpression(expression.alternate, parent, editor)
+  const alternateExp = await processExpression(expression.alternate, parent, editor)
 
-  editor.add({ group: 'edges', data: { id: getUID(), source: alternateExp.id, target: id, label: 'else' }})
+  await editor.addEdge(alternateExp.id, id, { label: 'else' })
 
   return { id }
 }
 
-function findIdentifier(name: string, parent: Scope, editor: Graph): null | { id: string } {
-  if (parent) {
-    const parentNode = editor.getElementById(parent)
-    const found = editor.nodes().filter(n => n.parent() === parentNode && n.data('identifier') === name)
-
-    if (!found.empty()) return { id: found.first().data('id') }
-    return findIdentifier(name, parentNode.parent().data('id'), editor)
-  }
-
-  const found = editor.nodes().filter(n => n.data('identifier') === name)
-
-  return found.empty() ? null : { id: found.first().data('id') }
-}
-
-function processExpression(expression: Expression, parent: Scope, editor: Graph): { id: string } {
+async function processExpression(expression: Expression, parent: Scope, editor: Graph): Promise<{ id: string }> {
   if (expression.type === 'CallExpression') {
     return processCall(expression, parent, editor)
   }
@@ -171,7 +145,7 @@ function processExpression(expression: Expression, parent: Scope, editor: Graph)
     return processConditional(expression, parent, editor)
   }
   if (expression.type === 'Identifier') {
-    const node = findIdentifier(expression.name, parent, editor)
+    const node = await editor.findIdentifier(expression.name, parent)
 
     if (!node) throw new Error(`cannot find Identifier "${expression.name}"`)
     return node
@@ -191,7 +165,7 @@ function processExpression(expression: Expression, parent: Scope, editor: Graph)
 }
 
 
-function processNode(statement: Statement | Expression, parent: Scope, editor: Graph): void {
+async function processNode(statement: Statement | Expression, parent: Scope, editor: Graph): Promise<void> {
   if (statement.type === 'ImportDeclaration') {
     const module = statement.source.value
 
@@ -204,9 +178,7 @@ function processNode(statement: Statement | Expression, parent: Scope, editor: G
     })
 
     for (const specifier of specifiers) {
-      const id = getUID()
-
-      editor.add({ group: 'nodes', data: { id, parent, type: 'ImportDeclaration', label: 'import ' + specifier?.local, identifier: specifier?.local, module, source: specifier?.source }})
+      await editor.addNode({ parent, type: 'ImportDeclaration', label: 'import ' + specifier?.local, identifier: specifier?.local, module, source: specifier?.source })
     }
   } else if (statement.type === 'VariableDeclaration') {
     for (const declarator of statement.declarations) {
@@ -218,30 +190,29 @@ function processNode(statement: Statement | Expression, parent: Scope, editor: G
 
       if (isLiteral(declarator.init)) {
         const value = getValue(declarator.init)
-        const id = getUID()
-        editor.add({ group: 'nodes', data: { id, parent, type: 'VariableDeclaration', label: value, value, identifier: declarator.id.name }})
-      } else {
-        const expNode = processExpression(declarator.init, parent, editor)
 
-        editor.nodes().filter(n => n.data('id') === expNode.id).data('identifier', declarator.id.name)
+        await editor.addNode({ parent, type: 'VariableDeclaration', label: value, value, identifier: declarator.id.name })
+      } else {
+        const expNode = await processExpression(declarator.init, parent, editor)
+
+        editor.patchData(expNode.id, { identifier: declarator.id.name })
       }
     }
   } else if (statement.type === 'ExpressionStatement') {
-    processExpression(statement.expression, parent, editor)
+    await processExpression(statement.expression, parent, editor)
   } else if (statement.type === 'ReturnStatement') {
-    const id = getUID()
-    editor.add({ group: 'nodes', data: { id, parent, type: 'Return', label: 'return' }})
+    const { id } = await editor.addNode({ parent, type: 'Return', label: 'return' })
 
     if (statement.argument) {
-      const expNode = processExpression(statement.argument, parent, editor)
+      const expNode = await processExpression(statement.argument, parent, editor)
 
-      editor.add({ group: 'edges', data: { id: getUID(), source: expNode.id, target: id }})
+      await editor.addEdge(expNode.id, id, {})
     }
   } else if (statement.type === 'FunctionDeclaration') {
-    processFunction(statement, parent, editor)
+    await processFunction(statement, parent, editor)
   } else if (statement.type === 'BlockStatement') {
     for (const item of statement.body) {
-      processNode(item, parent, editor)
+      await processNode(item, parent, editor)
     }
   } else if (statement.type === 'ExportNamedDeclaration') {
   } else {
@@ -249,44 +220,41 @@ function processNode(statement: Statement | Expression, parent: Scope, editor: G
   }
 }
 
-function processFunction(expression: FunctionDeclaration | ArrowFunctionExpression | FunctionExpression, parent: Scope, editor: Graph): { id: string } {
-  const id = getUID()
-  editor.add({ group: 'nodes', data: {
-    id,
+async function processFunction(expression: FunctionDeclaration | ArrowFunctionExpression | FunctionExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
+  const { id } = await editor.addNode({
     parent,
     type: 'FunctionDeclaration',
     label: expression.type === 'FunctionDeclaration' ? expression.id?.name : 'function',
     identifier: expression.type === 'FunctionDeclaration' ? expression.id?.name : null
-  }})
+  })
 
   for (const statement of expression.params) {
     if (statement.type !== 'Identifier') throw new Error('FunctionDeclaration: cannot process ' + statement.type)
     const { name } = statement
     const index = expression.params.indexOf(statement)
 
-    editor.add({ group: 'nodes', data: { id: getUID(), parent: id, type: 'ParameterDeclaration', label: 'parameter ' + index, name, identifier: name }})
+    await editor.addNode({ parent: id, type: 'ParameterDeclaration', label: 'parameter ' + index, name, identifier: name })
   }
 
   if (expression.body.type === 'BlockStatement') {
     for (const statement of expression.body.body) {
-      processNode(statement, id, editor)
+      await processNode(statement, id, editor)
     }
   } else {
-    const id = getUID()
-    editor.add({ group: 'nodes', data: { id, parent, type: 'Return', label: 'return' }})
+    const { id } = await editor.addNode({ parent, type: 'Return', label: 'return' })
 
-    const expNode = processExpression(expression.body, id, editor)
+    const expNode = await processExpression(expression.body, id, editor)
 
-    editor.add({ group: 'edges', data: { id: getUID(), source: expNode.id, target: id }})
+    await editor.addEdge(expNode.id, id, {})
   }
 
   return { id }
 }
 
-export function process(node: ASTNode, editor: Graph) {
+export async function process(node: ASTNode, editor: Graph) {
   if (node.type === 'File') {
     for (const statement of node.program.body) {
-      processNode(statement, undefined, editor)
+      await processNode(statement, undefined, editor)
     }
   } else {
     throw new Error('process: cannot process ' + node.type)

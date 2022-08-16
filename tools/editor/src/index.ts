@@ -5,14 +5,14 @@ import { parse } from 'recast/parsers/typescript'
 import { Node as ASTNode } from '@babel/types'
 import { createEditor, layout } from './cy-view'
 import { process } from './transpiler'
-import source from './assets/subject?raw'
+import source from './assets/easyhard?raw'
 import cytoscape from 'cytoscape'
+import { cytoscapeAdapter } from './cy-view/adapter'
 
 const tsAst = parse(source)
 
 console.log('Source', source)
 console.log('Root', tsAst.program.body)
-
 
 void async function () {
   const tabs = $$<{ name: string, editor: cytoscape.Core }>([])
@@ -33,7 +33,7 @@ void async function () {
     await new Promise((res) => setTimeout(res, 200))
     const editor = createEditor(container)
 
-    process(ast, editor)
+    await process(ast, cytoscapeAdapter(editor))
     console.log(editor.nodes().map(n => n.data()))
     await layout(editor)
 
