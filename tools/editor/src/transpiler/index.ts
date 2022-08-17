@@ -32,7 +32,6 @@ async function processObject(exp: ObjectExpression, parent: Scope, editor: Graph
   const { id } = await editor.addNode({ parent, type: 'Object', label: 'object', properties: properties.map(p => (p.key as Identifier).name).join(', ') })
 
   for (const p of properties) {
-    console.log('property', p)
     const value =  p.value
     const key =  p.key
 
@@ -71,7 +70,7 @@ async function processLiteral(arg: Literal, parent: Scope, editor: Graph) {
 }
 
 async function processCall(expression: CallExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
-  const args = await Promise.all(expression.arguments.map(async arg => {
+  const args = await Promise.all(expression.arguments.map(arg => {
     if (arg.type === 'SpreadElement' || arg.type === 'JSXNamespacedName' || arg.type === 'ArgumentPlaceholder') return null
 
     return processExpression(arg, parent, editor)
@@ -195,7 +194,7 @@ async function processNode(statement: Statement | Expression, parent: Scope, edi
       } else {
         const expNode = await processExpression(declarator.init, parent, editor)
 
-        editor.patchData(expNode.id, { identifier: declarator.id.name })
+        await editor.patchData(expNode.id, { identifier: declarator.id.name })
       }
     }
   } else if (statement.type === 'ExpressionStatement') {
