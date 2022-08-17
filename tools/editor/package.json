@@ -5,7 +5,8 @@
   "scripts": {
     "start": "webpack serve",
     "build": "webpack",
-    "build-deps": "DEST=tools/editor/node_modules npm run build:dev --prefix ../.."
+    "build-deps": "DEST=tools/editor/node_modules npm run build:dev --prefix ../..",
+    "db": "docker run --publish=7474:7474 --publish=7687:7687  --env NEO4J_AUTH=neo4j/test --env NEO4JLABS_PLUGINS='[\"apoc\",\"graph-data-science\"]'--volume=$(pwd)/db-data:/data --volume=$(pwd)/plugins:/plugins neo4j"
   },
   "author": "",
   "license": "ISC",
@@ -20,6 +21,7 @@
     "easyhard-styles": "file:../../build/easyhard-styles-0.4.0.tgz",
     "eslint-plugin-easyhard-editor": "file:plugin",
     "lodash": "^4.17.21",
+    "neo4j-driver": "^4.4.7",
     "os-browserify": "^0.3.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
