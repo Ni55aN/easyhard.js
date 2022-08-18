@@ -43,9 +43,10 @@ export function createEditor(container: HTMLElement) {
           // 'text-margin-y': -10,
           'text-background-color': '#ffffff',
           'target-arrow-shape': 'triangle',
-          'curve-style': 'straight',
+          'curve-style': 'unbundled-bezier',
           'source-endpoint'(el: EdgeSingular) {
-            return `${el.connectedNodes()[0].outerWidth() / 2}px 0`
+            const node = el.connectedNodes()[0]
+            return node.isParent() ? 'outside-to-line' : `${node.outerWidth() / 2}px 0` // prevent incorrect curve for parent source
           },
           'target-endpoint'(el: EdgeSingular) {
             return `-${el.connectedNodes()[1].outerWidth() / 2}px 0`
@@ -57,6 +58,13 @@ export function createEditor(container: HTMLElement) {
 
   cy.on('position', 'node', e => {
     e.target.parent().connectedEdges().data('rnd', true) // force update edge styles
+  })
+
+  cy.on('layoutstop', () => {
+    cy.edges().forEach(edge => adjustEdgeCurve(edge))
+  })
+  cy.on('drag', (el: EventObjectNode) => {
+    el.target.connectedEdges().forEach(edge => adjustEdgeCurve(edge))
   })
 
   return cy
