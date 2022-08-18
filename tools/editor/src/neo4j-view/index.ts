@@ -18,7 +18,7 @@ export async function getNodes(driver: Driver): Promise<(Node | Relationship)[]>
   const result = await session.run(`
     match (n)
     with collect(n) as nodes
-    match ()-[r]-()
+    optional match ()-[r]-()
     where not r:Parent
     with nodes, collect(r) as rels
     unwind nodes + rels as element
