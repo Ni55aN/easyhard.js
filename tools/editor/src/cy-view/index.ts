@@ -43,6 +43,7 @@ export function createEditor(container: HTMLElement) {
           // 'text-margin-y': -10,
           'text-background-color': '#ffffff',
           'target-arrow-shape': 'triangle',
+          'curve-style': 'straight',
           'source-endpoint'(el: EdgeSingular) {
             return `${el.connectedNodes()[0].outerWidth() / 2}px 0`
           },
