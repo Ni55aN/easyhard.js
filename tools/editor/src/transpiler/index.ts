@@ -240,11 +240,11 @@ async function processFunction(expression: FunctionDeclaration | ArrowFunctionEx
       await processNode(statement, id, editor)
     }
   } else {
-    const { id } = await editor.addNode({ parent, type: 'Return', label: 'return' })
+    const { id: returnId } = await editor.addNode({ parent: id, type: 'Return', label: 'return' })
 
     const expNode = await processExpression(expression.body, id, editor)
 
-    await editor.addEdge(expNode.id, id, {})
+    await editor.addEdge(expNode.id, returnId, {})
   }
 
   return { id }
