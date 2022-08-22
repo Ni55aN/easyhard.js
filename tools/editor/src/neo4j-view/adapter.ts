@@ -35,31 +35,33 @@ export function neo4jAdapter(driver: Driver): Graph {
 
       return { id: node.identity.toNumber() }
     },
-    async findIdentifier(name, parent) {
+    async findIdentifier(name, prop, parent) {
       const session = driver.session()
       const result = await session.run(parent ? `
         match (p:FunctionDeclaration) where id(p) = $parent
         call {
             with p
-            match (n)-[:Parent]->(p) where n.identifier = $name
+            match (n)-[:Parent]->(p) where n.${prop} = $name
             return n
             union
             with p
-            match (n)-[:Parent]->(:FunctionDeclaration)<-[pp:Parent*1..]-(p) where n.identifier = $name
+            match (n)-[:Parent]->(:FunctionDeclaration)<-[pp:Parent*1..]-(p) where n.${prop} = $name
             with n, size(pp) as s order by s asc
             return n
             union
             with p
-            match (n) where n.identifier = $name and not (n)-[:Parent]->()
+            match (n) where n.${prop} = $name and not (n)-[:Parent]->()
             return n
         }
         with collect(distinct n) as nodes
         return nodes[0]
       ` : `
-        match (n { identifier: $name })
+        match (n { ${prop}: $name })
         return n
       `, { name, parent })
       await session.close()
+
+      if (!result.records.length) throw new Error('cannot find identifier "' + name + '" in scope ' + parent)
 
       const singleRecord = result.records[0]
       const node = singleRecord.get(0)

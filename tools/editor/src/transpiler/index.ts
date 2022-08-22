@@ -2,13 +2,13 @@ import {
   Node as ASTNode, Statement, Expression, ObjectExpression, ObjectProperty, BinaryExpression,
   CallExpression, MemberExpression, SpreadElement, JSXNamespacedName, ArgumentPlaceholder,
   Identifier, ConditionalExpression, FunctionDeclaration, ArrowFunctionExpression,
-  FunctionExpression, Literal
+  FunctionExpression, Literal, TSType, TypeAnnotation, TSTypeAnnotation, Noop
 } from '@babel/types'
 
 export type Graph = {
   addNode(data: Record<string, any>): Promise<{ id: string }>
   addEdge(source: string, target: string,  data: Record<string, any>): Promise<{ id: string }>
-  findIdentifier(name: string, parent: Scope): Promise<null | { id: string }>
+  findIdentifier(name: string, prop: 'identifier' | 'typeIdentifier', parent: Scope): Promise<null | { id: string }>
   patchData(id: string, data: Record<string, any>): Promise<void>
 }
 export type Scope = string | undefined
@@ -83,6 +83,14 @@ async function processCall(expression: CallExpression, parent: Scope, editor: Gr
     }
   }))
 
+  if (expression.typeParameters) {
+    await Promise.all(expression.typeParameters.params.map(async (p, i) => {
+      const typeNode = await processType(p, parent, editor)
+
+      await editor.addEdge(typeNode.id, id, { label: 'type ' + i })
+    }))
+  }
+
   if (expression.callee.type !== 'V8IntrinsicIdentifier') {
     const calleNode = await processExpression(expression.callee, parent, editor)
 
@@ -144,7 +152,7 @@ async function processExpression(expression: Expression, parent: Scope, editor: 
     return processConditional(expression, parent, editor)
   }
   if (expression.type === 'Identifier') {
-    const node = await editor.findIdentifier(expression.name, parent)
+    const node = await editor.findIdentifier(expression.name, 'identifier', parent)
 
     if (!node) throw new Error(`cannot find Identifier "${expression.name}"`)
     return node
@@ -163,6 +171,34 @@ async function processExpression(expression: Expression, parent: Scope, editor: 
   throw new Error('processExpression: cannot process ' + expression.type)
 }
 
+async function processType(statement: TSType | TypeAnnotation | TSTypeAnnotation | Noop, parent: Scope, editor: Graph): Promise<{ id: string }> {
+  if (statement.type === 'TSUnionType' || statement.type === 'TSIntersectionType') {
+    const type = statement.type.replace(/TS(.*)Type/, '$1')
+    const { id } = await editor.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
+
+    for (const type of statement.types) {
+      const typeNode = await processType(type, parent, editor)
+
+      await editor.addEdge(typeNode.id, id, {})
+    }
+    return { id }
+  } else if (statement.type === 'TSParenthesizedType') {
+    return processType(statement.typeAnnotation, parent, editor)
+  } else if (statement.type === 'TSTypeAnnotation') {
+    return processType(statement.typeAnnotation, parent, editor)
+  } else if (['TSNumberKeyword', 'TSStringKeyword', 'TSBooleanKeyword'].includes(statement.type)) {
+    const type = statement.type.replace(/TS(.*)Keyword/, '$1')
+
+    return editor.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
+  } else if (statement.type === 'TSTypeReference' && statement.typeName.type === 'Identifier') {
+    const ident = await editor.findIdentifier(statement.typeName.name, 'typeIdentifier', parent)
+
+    if (!ident) throw new Error('cannot find type identifier')
+    return ident
+  } else {
+    throw new Error('cannot process processType: ' + statement.type)
+  }
+}
 
 async function processNode(statement: Statement | Expression, parent: Scope, editor: Graph): Promise<void> {
   if (statement.type === 'ImportDeclaration') {
@@ -177,7 +213,15 @@ async function processNode(statement: Statement | Expression, parent: Scope, edi
     })
 
     for (const specifier of specifiers) {
-      await editor.addNode({ parent, type: 'ImportDeclaration', label: 'import ' + specifier?.local, identifier: specifier?.local, module, source: specifier?.source })
+      await editor.addNode({
+        parent,
+        type: 'ImportDeclaration',
+        label: 'import ' + specifier?.local,
+        identifier: specifier?.local,
+        typeIdentifier: specifier?.local,
+        module,
+        source: specifier?.source
+      })
     }
   } else if (statement.type === 'VariableDeclaration') {
     for (const declarator of statement.declarations) {
@@ -214,6 +258,17 @@ async function processNode(statement: Statement | Expression, parent: Scope, edi
       await processNode(item, parent, editor)
     }
   } else if (statement.type === 'ExportNamedDeclaration') {
+  } else if (statement.type === 'TSTypeAliasDeclaration') {
+    const { id } = await editor.addNode({
+      parent,
+      type: 'Type',
+      label: 'type',
+      typeIdentifier: statement.id.name
+    })
+
+    const type = await processType(statement.typeAnnotation, parent, editor)
+
+    await editor.addEdge(type.id, id, {})
   } else {
     throw new Error('processNode: cannot process statement ' + statement.type)
   }
@@ -232,7 +287,13 @@ async function processFunction(expression: FunctionDeclaration | ArrowFunctionEx
     const { name } = statement
     const index = expression.params.indexOf(statement)
 
-    await editor.addNode({ parent: id, type: 'ParameterDeclaration', label: 'parameter ' + index, name, identifier: name })
+    const statementNope = await editor.addNode({ parent: id, type: 'ParameterDeclaration', label: 'parameter ' + index, name, identifier: name })
+
+    if (statement.typeAnnotation) {
+      const typeAnnotationNode = await processType(statement.typeAnnotation, parent, editor)
+
+      await editor.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type' })
+    }
   }
 
   if (expression.body.type === 'BlockStatement') {
