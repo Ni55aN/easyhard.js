@@ -28,10 +28,16 @@ export function adjustEdgeCurve(edge: EdgeSingular) {
 
   const distanceX = Math.abs(start[0] - end[0])
   const alpha = 0.25
-  const startControl = toLocalCoordinates(start, end, vec2.add(vec2.create(), start, [distanceX * alpha, 0]))
-  const middle = toLocalCoordinates(start, end, vec2.div(vec2.create(), vec2.add(vec2.create(), start, end), [2,2]))
-  const endControl = toLocalCoordinates(start, end, vec2.add(vec2.create(), end, [-distanceX * alpha, 0]))
+  try {
+    const startControl = toLocalCoordinates(start, end, vec2.add(vec2.create(), start, [distanceX * alpha, 0]))
+    const middle = toLocalCoordinates(start, end, vec2.div(vec2.create(), vec2.add(vec2.create(), start, end), [2,2]))
+    const endControl = toLocalCoordinates(start, end, vec2.add(vec2.create(), end, [-distanceX * alpha, 0]))
 
-  edge.style('control-point-weights', [startControl[0],  middle[0], endControl[0]])
-  edge.style('control-point-distances', [startControl[1], middle[1], endControl[1]])
+    edge.style('control-point-weights', [startControl[0],  middle[0], endControl[0]])
+    edge.style('control-point-distances', [startControl[1], middle[1], endControl[1]])
+  } catch (e) {
+    console.error(e)
+    edge.style('control-point-weights', [0, 0.5, 1])
+    edge.style('control-point-distances', [0, 0, 0])
+  }
 }
