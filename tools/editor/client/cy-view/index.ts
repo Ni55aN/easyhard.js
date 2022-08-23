@@ -1,6 +1,7 @@
 import cytoscape, { Core, EdgeSingular, EventObjectNode, NodeSingular } from 'cytoscape'
 import dagre from 'cytoscape-dagre'
 import klay from 'cytoscape-klay'
+import _ from 'lodash'
 import { adjustEdgeCurve } from './utils/edges'
 
 cytoscape.use(dagre)
@@ -21,8 +22,25 @@ export function createEditor(container: HTMLElement) {
             return el.data('type') === 'FunctionDeclaration' ? 'top' : 'center'
           },
           'font-size': '11px',
+          'text-wrap': 'wrap',
+          'text-max-width': '60px',
           width(el: NodeSingular) {
+            return `${Math.min(60, String(el.data('label')).length * 5.5 + 10)}px`
+          },
+          backgroundColor(el: NodeSingular) {
+            const labels = el.data('labels') || []
+
+            if (labels.includes('Literal') || labels.includes('VariableDeclaration')) return '#ffcb3a'
+            if (_.intersection(labels, ['Type', 'StringType', 'NumberType', 'BooleanType', 'UnionType', 'IntersectionType']).length > 0) return '#6d9572'
+            return '#888'
           }
+        }
+      },
+      {
+        'selector': 'node:parent',
+        'style': {
+          backgroundColor: '#ccc',
+          "border-color": 'white'
         }
       },
       {
