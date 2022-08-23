@@ -1,6 +1,7 @@
 {
   "include": [
-    "./src/**/*.ts"
+    "server/**/*.ts",
+    "client/**/*.ts"
   ],
   "compilerOptions": {
     "outDir": "./dist/",

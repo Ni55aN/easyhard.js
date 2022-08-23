@@ -1,5 +1,6 @@
 import { Driver, Node, Relationship } from 'neo4j-driver'
 
+export * from './simplifier'
 export * from './adapter'
 
 export async function clear(driver: Driver) {

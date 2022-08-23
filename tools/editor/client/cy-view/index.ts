@@ -1,6 +1,7 @@
-import cytoscape, { Core, EdgeSingular, NodeSingular } from 'cytoscape'
+import cytoscape, { Core, EdgeSingular, EventObjectNode, NodeSingular } from 'cytoscape'
 import dagre from 'cytoscape-dagre'
 import klay from 'cytoscape-klay'
+import { adjustEdgeCurve } from './utils/edges'
 
 cytoscape.use(dagre)
 cytoscape.use(klay)
@@ -21,7 +22,6 @@ export function createEditor(container: HTMLElement) {
           },
           'font-size': '11px',
           width(el: NodeSingular) {
-            return `${String(el.data('label')).length * 5.5 + 10}px`
           }
         }
       },
@@ -33,14 +33,6 @@ export function createEditor(container: HTMLElement) {
           'font-size': 9,
           'color': '#8c8c8c',
           'text-background-opacity': 1,
-          'text-margin-x'(edge: cytoscape.EdgeSingular) {
-            const { h, w } = edge.boundingBox()
-            const d = Math.sqrt(h ** 2 + w ** 2) / 2
-
-            // edge.bodyBounds
-            return 0
-          },
-          // 'text-margin-y': -10,
           'text-background-color': '#ffffff',
           'target-arrow-shape': 'triangle',
           'curve-style': 'unbundled-bezier',

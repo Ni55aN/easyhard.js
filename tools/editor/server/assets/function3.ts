@@ -1,4 +1,4 @@
-import { String } from 'builtins'
+import { console, String } from 'builtins'
 
 function func1(props: { num: number, s: string }) {
   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-unsafe-call
@@ -6,4 +6,5 @@ function func1(props: { num: number, s: string }) {
 }
 
 // eslint-disable-next-line functional/no-expression-statement
-func1({ num: 1, s: 'abc' })
+console.log(func1({ num: 1, s: 'abc' }))
+

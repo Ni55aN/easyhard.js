@@ -4,11 +4,21 @@ const ESLintPlugin = require('eslint-webpack-plugin')
 
 module.exports = {
   mode: 'development',
-  entry: './src/index.ts',
+  entry: './client/index.ts',
   devtool: 'source-map',
   output: {
     filename: 'main.js',
     path: path.resolve(__dirname, 'dist'),
+  },
+  devServer: {
+    hot: true,
+    allowedHosts: "all",
+    proxy: {
+      '/api': {
+        target: 'ws://localhost:3000',
+        ws: true
+      }
+    }
   },
   module: {
     rules: [
@@ -20,11 +30,7 @@ module.exports = {
       {
         test: /\.tsx?$/,
         use: 'ts-loader',
-        exclude: /node_modules|assets/,
-      },
-      {
-        resourceQuery: /raw/,
-        type: 'asset/source'
+        exclude: /node_modules/,
       }
     ],
   },
