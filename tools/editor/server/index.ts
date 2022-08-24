@@ -1,7 +1,9 @@
 import { join } from 'path'
 import fs from 'fs-extra'
-import { process } from './transpiler'
-import { neo4jAdapter, getNodes, clear } from './neo4j-view'
+import ts from '@tsd/typescript'
+import { process as processRecast } from './transpiler'
+import { process as processTS } from './transpiler/typescript'
+import { neo4jAdapter, neo4jSimplify, getNodes, clear } from './neo4j-view'
 import neo4j, { Node } from 'neo4j-driver'
 import { parse } from 'recast/parsers/typescript'
 import { easyhardServer } from 'easyhard-server'
@@ -40,21 +42,46 @@ app.listen(3000, () => {
   console.log('Listen port 3000')
 })
 
-void async function () {
-  const source = await fs.promises.readFile(join(__dirname, './assets/rx.ts'), { encoding: 'utf-8' })
+async function getRecastAST(filepath: string) {
+  const source = await fs.promises.readFile(filepath, { encoding: 'utf-8' })
   const tsAst = parse(source)
 
   console.log('Source', source)
   console.log('Root', tsAst.program.body)
 
+  return tsAst
+}
+
+async function getTypeScriptAST(filepath: string) {
+  const program = ts.createProgram({
+    rootNames: [filepath],
+    options: {}
+  })
+  const checker = program.getTypeChecker()
+  const source = program.getSourceFile(filepath)
+
+  if (!source) throw new Error('source not found')
+  return source
+}
+
+void async function () {
+  await clear(driver)
+  const file = join(__dirname, './assets/rx.ts')
+  // const tsAst = await getRecastAST(file)
+  const tsAst = await getTypeScriptAST(file)
+
+
   // const cy = cytoscape()
-  // await process(tsAst, cytoscapeAdapter(cy))
+  // await processRecast(tsAst, cytoscapeAdapter(cy))
 
   // const data = cy.json() as { elements: ElementsDefinition }
   // graphData.next([...data.elements.nodes, ...data.elements.edges])
 
-  await clear(driver)
-  await process(tsAst, neo4jAdapter(driver))
+  // await processRecast(tsAst, neo4jAdapter(driver))
+  console.time('processTS')
+  await processTS(tsAst, neo4jAdapter(driver))
+  console.timeEnd('processTS')
+  // await neo4jSimplify(driver)
 
   const data = await getNodes(driver)
 
@@ -78,4 +105,3 @@ void async function () {
     }
   }))
 }()
-

@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@tsd/typescript": "^4.7.4",
     "@types/react": "^17.0.35",
     "babylon": "^6.18.0",
     "cytoscape": "^3.22.1",
