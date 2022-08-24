@@ -10,7 +10,7 @@ import { BehaviorSubject, map, mergeMap, of } from 'rxjs'
 import express from 'express'
 import expressWs from 'express-ws'
 import cytoscape, { ElementDefinition, ElementsDefinition } from 'cytoscape'
-import { cytoscapeAdapter } from './ cy-view/adapter'
+import { cytoscapeAdapter } from './cy-view/adapter'
 
 const driver = neo4j.driver(
   'neo4j://localhost',

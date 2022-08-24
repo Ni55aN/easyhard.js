@@ -1,5 +1,5 @@
 import { Core } from 'cytoscape'
-import { Graph } from '../transpiler'
+import { Graph } from '../transpiler/types'
 
 export function cytoscapeAdapter(cy: Core): Graph {
   function getUID(): string {

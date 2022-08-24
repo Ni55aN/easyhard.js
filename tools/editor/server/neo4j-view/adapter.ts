@@ -1,5 +1,5 @@
 import { Driver } from 'neo4j-driver'
-import { Graph } from '../transpiler'
+import { Graph } from '../transpiler/types'
 
 export function neo4jAdapter(driver: Driver): Graph {
   return {
