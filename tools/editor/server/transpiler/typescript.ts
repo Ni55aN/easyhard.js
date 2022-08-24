@@ -54,9 +54,9 @@ async function processObject(exp: ts.ObjectLiteralExpression, parent: Scope, edi
 }
 
 const typeKeywordMap: {[kind in SyntaxKind]?: string} = {
-  [SyntaxKind.NumberKeyword]: 'number',
-  [SyntaxKind.StringKeyword]: 'string',
-  [SyntaxKind.BooleanKeyword]: 'boolean'
+  [SyntaxKind.NumberKeyword]: 'Number',
+  [SyntaxKind.StringKeyword]: 'String',
+  [SyntaxKind.BooleanKeyword]: 'Boolean'
 }
 
 async function processType(statement: ts.TypeNode, parent: Scope, editor: Graph): Promise<{ id: string }> {

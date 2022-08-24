@@ -28,10 +28,10 @@ export function createEditor(container: HTMLElement) {
             return `${Math.min(60, String(el.data('label')).length * 5.5 + 10)}px`
           },
           backgroundColor(el: NodeSingular) {
-            const labels = el.data('labels') || []
+            const type = String(el.data('type'))
 
-            if (labels.includes('Literal') || labels.includes('VariableDeclaration')) return '#ffcb3a'
-            if (_.intersection(labels, ['Type', 'StringType', 'NumberType', 'BooleanType', 'UnionType', 'IntersectionType']).length > 0) return '#6d9572'
+            if (['Literal', 'VariableDeclaration'].includes(type)) return '#ffcb3a'
+            if (['Type', 'StringType', 'NumberType', 'BooleanType', 'UnionType', 'IntersectionType'].includes(type)) return '#6d9572'
             return '#888'
           }
         }

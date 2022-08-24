@@ -1,13 +1,11 @@
 import { join } from 'path'
-import fs from 'fs-extra'
 import ts from '@tsd/typescript'
 import { process } from './transpiler/typescript'
-import { neo4jAdapter, neo4jSimplify, getNodes, clear } from './neo4j-view'
-import neo4j, { Node } from 'neo4j-driver'
-import { parse } from 'recast/parsers/typescript'
+import { clear, setProgram } from './neo4j-view'
+import neo4j from 'neo4j-driver'
 import { easyhardServer } from 'easyhard-server'
 import { Actions } from '../shared/bridge'
-import { BehaviorSubject, map, mergeMap, of } from 'rxjs'
+import { BehaviorSubject, map } from 'rxjs'
 import express from 'express'
 import expressWs from 'express-ws'
 import cytoscape, { ElementDefinition, ElementsDefinition } from 'cytoscape'
@@ -54,45 +52,19 @@ async function getTypeScriptAST(filepath: string) {
 }
 
 void async function () {
-  await clear(driver)
   const file = join(__dirname, './assets/rx.ts')
   const tsAst = await getTypeScriptAST(file)
 
-  // const cy = cytoscape()
-  // console.time('process')
-  // await process(tsAst, cytoscapeAdapter(cy))
-  // console.timeEnd('process')
-
-  // const data = cy.json() as { elements: ElementsDefinition }
-  // graphData.next([...data.elements.nodes, ...data.elements.edges])
-
-  const session = driver.session()
-  const tr = session.beginTransaction()
+  const cy = cytoscape()
   console.time('process')
-  await process(tsAst, neo4jAdapter(tr))
+  await process(tsAst, cytoscapeAdapter(cy))
   console.timeEnd('process')
-  await tr.commit()
-  await session.close()
 
-  const data = await getNodes(driver)
+  const data = cy.json() as { elements: ElementsDefinition }
+  graphData.next([...data.elements.nodes, ...data.elements.edges])
 
-  graphData.next(data.map(v => {
-    if (v instanceof Node) {
-      return { group: 'nodes' as const, data: {
-        id: v.identity.toString(),
-        labels: v.labels,
-        ...v.properties
-      }}
-    }
-    return {
-      group: 'edges' as const,
-      data: {
-        id: `edge_${v.identity.toString()}`,
-        ...v.properties,
-        type: v.type,
-        source: v.start.toString(),
-        target: v.end.toString()
-      }
-    }
-  }))
+  await clear(driver)
+  console.time('setProgram')
+  await setProgram(driver, [...data.elements.nodes, ...data.elements.edges])
+  console.timeEnd('setProgram')
 }()
