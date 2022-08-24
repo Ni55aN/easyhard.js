@@ -29,9 +29,6 @@ void async function () {
     await new Promise((res) => setTimeout(res, 200))
     const editor = createEditor(container)
 
-
-    await new Promise(res => setTimeout(res, 500))
-
     client.call('getData').subscribe(async cyData => {
       editor.add(cyData.data)
 

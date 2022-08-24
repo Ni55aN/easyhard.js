@@ -1,11 +1,10 @@
-import { Driver } from 'neo4j-driver'
+import { Session, Transaction } from 'neo4j-driver'
 import { Graph } from '../transpiler/types'
 
-export function neo4jAdapter(driver: Driver): Graph {
+export function neo4jAdapter(transaction: Transaction): Graph {
   return {
     async addNode(data) {
-      const session = driver.session()
-      const result = await session.run(`
+      const result = await transaction.run(`
         create (n:${data.type} { ${Object.keys(data).filter(key => data[key] !== undefined).map(key => `${key}: $${key}`).join(', ')} })
         ${data.parent ? `
         with n
@@ -14,7 +13,6 @@ export function neo4jAdapter(driver: Driver): Graph {
         ` : ''}
         return n
       `, data)
-      await session.close()
 
       const singleRecord = result.records[0]
       const node = singleRecord.get(0)
@@ -22,13 +20,11 @@ export function neo4jAdapter(driver: Driver): Graph {
       return { id: node.identity.toNumber() }
     },
     async addEdge(source, target, data) {
-      const session = driver.session()
-      const result = await session.run(`
+      const result = await transaction.run(`
         match (a) where id(a) = $source
         match (b) where id(b) = $target
         create (a)-[n:EDGE { label: $label }]->(b) return n
       `, { label: data.label || '', source, target })
-      await session.close()
 
       const singleRecord = result.records[0]
       const node = singleRecord.get(0)
@@ -36,8 +32,7 @@ export function neo4jAdapter(driver: Driver): Graph {
       return { id: node.identity.toNumber() }
     },
     async findIdentifier(name, prop, parent) {
-      const session = driver.session()
-      const result = await session.run(parent ? `
+      const result = await transaction.run(parent ? `
         match (p:FunctionDeclaration) where id(p) = $parent
         call {
             with p
@@ -59,7 +54,6 @@ export function neo4jAdapter(driver: Driver): Graph {
         match (n { ${prop}: $name })
         return n
       `, { name, parent })
-      await session.close()
 
       if (!result.records.length) throw new Error('cannot find identifier "' + name + '" in scope ' + parent)
 
@@ -69,12 +63,10 @@ export function neo4jAdapter(driver: Driver): Graph {
       return { id: node.identity.toNumber() }
     },
     async patchData(id, data) {
-      const session = driver.session()
-      await session.run(`
+      await transaction.run(`
         match (n) where id(n) = $id
         ${Object.keys(data).map(key => `SET n.${key} = $${key}`).join('\n')}
       `, { id, ...data })
-      await session.close()
     }
   }
 }

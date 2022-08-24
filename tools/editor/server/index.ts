@@ -78,9 +78,13 @@ void async function () {
   // graphData.next([...data.elements.nodes, ...data.elements.edges])
 
   // await processRecast(tsAst, neo4jAdapter(driver))
+  const session = driver.session()
+  const tr = session.beginTransaction()
   console.time('processTS')
-  await processTS(tsAst, neo4jAdapter(driver))
+  await processTS(tsAst, neo4jAdapter(tr))
   console.timeEnd('processTS')
+  await tr.commit()
+  await session.close()
   // await neo4jSimplify(driver)
 
   const data = await getNodes(driver)
