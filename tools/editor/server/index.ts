@@ -1,8 +1,7 @@
 import { join } from 'path'
 import fs from 'fs-extra'
 import ts from '@tsd/typescript'
-import { process as processRecast } from './transpiler'
-import { process as processTS } from './transpiler/typescript'
+import { process } from './transpiler/typescript'
 import { neo4jAdapter, neo4jSimplify, getNodes, clear } from './neo4j-view'
 import neo4j, { Node } from 'neo4j-driver'
 import { parse } from 'recast/parsers/typescript'
@@ -42,16 +41,6 @@ app.listen(3000, () => {
   console.log('Listen port 3000')
 })
 
-async function getRecastAST(filepath: string) {
-  const source = await fs.promises.readFile(filepath, { encoding: 'utf-8' })
-  const tsAst = parse(source)
-
-  console.log('Source', source)
-  console.log('Root', tsAst.program.body)
-
-  return tsAst
-}
-
 async function getTypeScriptAST(filepath: string) {
   const program = ts.createProgram({
     rootNames: [filepath],
@@ -67,25 +56,23 @@ async function getTypeScriptAST(filepath: string) {
 void async function () {
   await clear(driver)
   const file = join(__dirname, './assets/rx.ts')
-  // const tsAst = await getRecastAST(file)
   const tsAst = await getTypeScriptAST(file)
 
-
   // const cy = cytoscape()
-  // await processRecast(tsAst, cytoscapeAdapter(cy))
+  // console.time('process')
+  // await process(tsAst, cytoscapeAdapter(cy))
+  // console.timeEnd('process')
 
   // const data = cy.json() as { elements: ElementsDefinition }
   // graphData.next([...data.elements.nodes, ...data.elements.edges])
 
-  // await processRecast(tsAst, neo4jAdapter(driver))
   const session = driver.session()
   const tr = session.beginTransaction()
-  console.time('processTS')
-  await processTS(tsAst, neo4jAdapter(tr))
-  console.timeEnd('processTS')
+  console.time('process')
+  await process(tsAst, neo4jAdapter(tr))
+  console.timeEnd('process')
   await tr.commit()
   await session.close()
-  // await neo4jSimplify(driver)
 
   const data = await getNodes(driver)
 
