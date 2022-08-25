@@ -1,28 +1,34 @@
 import { Graph, Scope } from './types'
 import ts, { Node, SyntaxKind } from 'typescript'
 
-async function processCall(expression: ts.CallExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
-  const { id } = await editor.addNode({ parent, type: 'Call', label: 'call' })
+type Context = {
+  parent?: Scope
+  graph: Graph
+}
+
+async function processCall(expression: ts.CallExpression, context: Context): Promise<{ id: string }> {
+  const { graph, parent } = context
+  const { id } = await graph.addNode({ parent, type: 'Call', label: 'call' })
 
   const args = await Promise.all(expression.arguments.map(arg => {
-    return processExpression(arg, parent, editor)
+    return processExpression(arg, context)
   }))
 
   await Promise.all(args.map(async (arg, i) => {
-    await editor.addEdge(arg.id, id, { label: 'argument ' + i })
+    await graph.addEdge(arg.id, id, { label: 'argument ' + i })
   }))
 
   if (expression.typeArguments) {
     await Promise.all(expression.typeArguments.map(async (p, i) => {
-      const typeNode = await processType(p, parent, editor)
+      const typeNode = await processType(p, context)
 
-      await editor.addEdge(typeNode.id, id, { label: 'type ' + i })
+      await graph.addEdge(typeNode.id, id, { label: 'type ' + i })
     }))
   }
 
-  const calleNode = await processExpression(expression.expression, parent, editor)
+  const calleNode = await processExpression(expression.expression, context)
 
-  await editor.addEdge(calleNode.id, id, { label: 'function' })
+  await graph.addEdge(calleNode.id, id, { label: 'function' })
 
   return { id }
 }
@@ -31,12 +37,15 @@ function isLiteral(arg: ts.Expression): arg is ts.LiteralExpression {
   return ts.isStringLiteral(arg) || ts.isNumericLiteral(arg)
 }
 
-async function processLiteral(arg: ts.LiteralExpression, parent: Scope, editor: Graph) {
-  return editor.addNode({ parent, type: 'Literal', label: arg.text })
+async function processLiteral(arg: ts.LiteralExpression, context: Context) {
+  const { graph, parent } = context
+
+  return graph.addNode({ parent, type: 'Literal', label: arg.text })
 }
 
-async function processObject(exp: ts.ObjectLiteralExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
-  const { id } = await editor.addNode({ parent, type: 'Object', label: 'object' })
+async function processObject(exp: ts.ObjectLiteralExpression, context: Context): Promise<{ id: string }> {
+  const { graph, parent } = context
+  const { id } = await graph.addNode({ parent, type: 'Object', label: 'object' })
 
   for (const p of exp.properties) {
     if (!ts.isPropertyAssignment(p)) throw new Error('property should be an assignment')
@@ -45,9 +54,9 @@ async function processObject(exp: ts.ObjectLiteralExpression, parent: Scope, edi
     const value =  p.initializer
     const key =  p.name
 
-    const identNode = await processExpression(value, parent, editor)
+    const identNode = await processExpression(value, context)
 
-    await editor.addEdge(identNode.id, id, { label: key.escapedText })
+    await graph.addEdge(identNode.id, id, { label: key.escapedText })
   }
 
   return { id }
@@ -59,27 +68,25 @@ const typeKeywordMap: {[kind in SyntaxKind]?: string} = {
   [SyntaxKind.BooleanKeyword]: 'Boolean'
 }
 
-async function processType(statement: ts.TypeNode, parent: Scope, editor: Graph): Promise<{ id: string }> {
+async function processType(statement: ts.TypeNode, context: Context): Promise<{ id: string }> {
+  const { graph, parent } = context
+
   if (ts.isUnionTypeNode(statement) || ts.isIntersectionTypeNode(statement)) {
     const type = ts.isUnionTypeNode(statement) ? 'Union' : 'Intersection'
-    const { id } = await editor.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
+    const { id } = await graph.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
 
     for (const type of statement.types) {
-      const typeNode = await processType(type, parent, editor)
+      const typeNode = await processType(type, context)
 
-      await editor.addEdge(typeNode.id, id, {})
+      await graph.addEdge(typeNode.id, id, {})
     }
     return { id }
-  // } else if (statement.type === 'TSParenthesizedType') {
-  //   return processType(statement.typeAnnotation, parent, editor)
-  // } else if (statement.type === 'TSTypeAnnotation') {
-  //   return processType(statement.typeAnnotation, parent, editor)
   } else if ([SyntaxKind.NumberKeyword, SyntaxKind.StringKeyword, SyntaxKind.BooleanKeyword].includes(statement.kind)) {
     const type = typeKeywordMap[statement.kind] || '?'
 
-    return editor.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
+    return graph.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
   } else if (ts.isTypeReferenceNode(statement) && ts.isIdentifier(statement.typeName)) {
-    const ident = await editor.findIdentifier(String(statement.typeName.escapedText), 'typeIdentifier', parent)
+    const ident = await graph.findIdentifier(String(statement.typeName.escapedText), 'typeIdentifier', parent)
 
     if (!ident) throw new Error('cannot find type identifier')
     return ident
@@ -89,60 +96,64 @@ async function processType(statement: ts.TypeNode, parent: Scope, editor: Graph)
   }
 }
 
-async function processMember(expression: ts.PropertyAccessExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
+async function processMember(expression: ts.PropertyAccessExpression, context: Context): Promise<{ id: string }> {
+  const { graph, parent } = context
   const object = expression.expression
   const property = expression.name
 
   if (ts.isIdentifier(property)) {
-    const { id } = await editor.addNode({ parent, type: 'Member', label: 'property ' + property.escapedText, property: property.escapedText })
+    const { id } = await graph.addNode({ parent, type: 'Member', label: 'property ' + property.escapedText, property: property.escapedText })
 
-    const identNode = await processExpression(object, parent, editor)
+    const identNode = await processExpression(object, context)
 
-    await editor.addEdge(identNode.id, id, { } )
+    await graph.addEdge(identNode.id, id, { } )
     return { id }
   } else {
     throw new Error('processMember: cannot process object ' + object.kind + ' and property ' + property.escapedText)
   }
 }
 
-async function processConditional(expression: ts.ConditionalExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
-  const { id } = await editor.addNode({ parent, type: 'Conditional', label: 'if' })
+async function processConditional(expression: ts.ConditionalExpression, context: Context): Promise<{ id: string }> {
+  const { graph, parent } = context
+  const { id } = await graph.addNode({ parent, type: 'Conditional', label: 'if' })
 
-  const testNode = await processExpression(expression.condition, parent, editor)
+  const testNode = await processExpression(expression.condition, context)
 
-  await editor.addEdge(testNode.id, id, {})
+  await graph.addEdge(testNode.id, id, {})
 
-  const consequentExp = await processExpression(expression.whenTrue, parent, editor)
+  const consequentExp = await processExpression(expression.whenTrue, context)
 
-  await editor.addEdge(consequentExp.id, id, { label: 'then' })
+  await graph.addEdge(consequentExp.id, id, { label: 'then' })
 
-  const alternateExp = await processExpression(expression.whenFalse, parent, editor)
+  const alternateExp = await processExpression(expression.whenFalse, context)
 
-  await editor.addEdge(alternateExp.id, id, { label: 'else' })
+  await graph.addEdge(alternateExp.id, id, { label: 'else' })
 
   return { id }
 }
 
-async function processExpression(expression: ts.Expression, parent: Scope, editor: Graph): Promise<{ id: string }> {
+async function processExpression(expression: ts.Expression, context: Context): Promise<{ id: string }> {
+  const { graph, parent } = context
+
   if (ts.isCallExpression(expression)) {
-    return processCall(expression, parent, editor)
+    return processCall(expression, context)
   } else if (isLiteral(expression)) {
-    return processLiteral(expression, parent, editor)
+    return processLiteral(expression, context)
   } else if (ts.isIdentifier(expression)) {
-    const node = await editor.findIdentifier(String(expression.escapedText), 'identifier', parent)
+    const node = await graph.findIdentifier(String(expression.escapedText), 'identifier', parent)
 
     if (!node) throw new Error(`cannot find Identifier "${expression}"`)
     return node
   } else if (ts.isBinaryExpression(expression)) {
-    return processBinary(expression, parent, editor)
+    return processBinary(expression, context)
   } else if (ts.isPropertyAccessExpression(expression)) {
-    return processMember(expression, parent, editor)
+    return processMember(expression, context)
   } else if (ts.isObjectLiteralExpression(expression)) {
-    return processObject(expression, parent, editor)
+    return processObject(expression, context)
   } else if (ts.isConditionalExpression(expression)) {
-    return processConditional(expression, parent, editor)
+    return processConditional(expression, context)
   } else if (ts.isArrowFunction(expression)) {
-    return processFunction(expression, parent, editor)
+    return processFunction(expression, context)
   } else {
     debugger
     throw new Error('processExpression for kind ' + expression.kind)
@@ -162,26 +173,29 @@ const operatorTokenMap: {[kind in SyntaxKind]?: string} = {
   [SyntaxKind.EqualsEqualsEqualsToken]: '==='
 }
 
-async function processBinary(expression: ts.BinaryExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
+async function processBinary(expression: ts.BinaryExpression, context: Context): Promise<{ id: string }> {
+  const { graph, parent } = context
   const { left, right } = expression
   const operator = operatorTokenMap[expression.operatorToken.kind] || '?'
-  const { id } = await editor.addNode({ parent, type: 'BinaryOperator', label: operator,
+  const { id } = await graph.addNode({ parent, type: 'BinaryOperator', label: operator,
     op: operator
   })
 
-  const identExp = await processExpression(left, parent, editor)
+  const identExp = await processExpression(left, context)
 
-  await editor.addEdge(identExp.id, id, { label: 'left' })
+  await graph.addEdge(identExp.id, id, { label: 'left' })
 
-  const rightExp = await processExpression(right, parent, editor)
+  const rightExp = await processExpression(right, context)
 
-  await editor.addEdge(rightExp.id, id, { label: 'right' })
+  await graph.addEdge(rightExp.id, id, { label: 'right' })
 
   return { id }
 }
 
-async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression, parent: Scope, editor: Graph): Promise<{ id: string }> {
-  const { id } = await editor.addNode({
+async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression, context: Context): Promise<{ id: string }> {
+  const { graph, parent } = context
+
+  const { id } = await graph.addNode({
     parent,
     type: 'FunctionDeclaration',
     label:  expression.name?.escapedText || 'function',
@@ -193,12 +207,12 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
     const name = statement.name.escapedText
     const index = expression.parameters.indexOf(statement)
 
-    const statementNope = await editor.addNode({ parent: id, type: 'ParameterDeclaration', label: 'parameter ' + index, name, identifier: name })
+    const statementNope = await graph.addNode({ parent: id, type: 'ParameterDeclaration', label: 'parameter ' + index, name, identifier: name })
 
     if (statement.type) {
-      const typeAnnotationNode = await processType(statement.type, parent, editor)
+      const typeAnnotationNode = await processType(statement.type, context)
 
-      await editor.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type' })
+      await graph.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type' })
     }
   }
 
@@ -206,23 +220,25 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
 
   if (ts.isBlock(expression.body)) {
     for (const statement of expression.body.statements) {
-      await processNode(statement, id, editor)
+      await processNode(statement, { ...context, parent: id })
     }
   } else {
-    const { id: returnId } = await editor.addNode({ parent: id, type: 'Return', label: 'return' })
+    const { id: returnId } = await graph.addNode({ parent: id, type: 'Return', label: 'return' })
 
-    const expNode = await processExpression(expression.body, id, editor)
+    const expNode = await processExpression(expression.body, { ...context, parent: id })
 
-    await editor.addEdge(expNode.id, returnId, {})
+    await graph.addEdge(expNode.id, returnId, {})
   }
 
   return { id }
 }
 
-async function processNode(node: Node, parent: Scope, editor: Graph) {
+async function processNode(node: Node, context: Context) {
+  const { graph, parent } = context
+
   if (node.kind === SyntaxKind.SyntaxList) {
     for (const n of node.getChildren()) {
-      await processNode(n, parent, editor)
+      await processNode(n, context)
     }
   } else if (ts.isImportDeclaration(node)) {
     const { moduleSpecifier, importClause } = node
@@ -234,7 +250,7 @@ async function processNode(node: Node, parent: Scope, editor: Graph) {
     for (const binding of importClause.namedBindings.elements) {
       const local = binding.name.escapedText
       const source = binding.propertyName?.escapedText
-      await editor.addNode({
+      await graph.addNode({
         parent,
         type: 'ImportDeclaration',
         label: 'import ' + local,
@@ -246,11 +262,11 @@ async function processNode(node: Node, parent: Scope, editor: Graph) {
     }
   } else if (node.kind === SyntaxKind.FirstStatement) {
     for (const child of node.getChildren()) {
-      await processNode(child, parent, editor)
+      await processNode(child, context)
     }
   } else if (ts.isVariableDeclarationList(node)) {
     for (const declaration of node.declarations) {
-      await processNode(declaration, parent, editor)
+      await processNode(declaration, context)
     }
   } else if (ts.isVariableDeclaration(node)) {
     if (!node.initializer) {
@@ -262,34 +278,34 @@ async function processNode(node: Node, parent: Scope, editor: Graph) {
     if (ts.isLiteralExpression(node.initializer)) {
       const value = node.initializer.text
 
-      await editor.addNode({ parent, type: 'VariableDeclaration', label: value, value, identifier })
+      await graph.addNode({ parent, type: 'VariableDeclaration', label: value, value, identifier })
     } else {
-      const expNode = await processExpression(node.initializer, parent, editor)
+      const expNode = await processExpression(node.initializer, context)
 
-      await editor.patchData(expNode.id, { identifier })
+      await graph.patchData(expNode.id, { identifier })
     }
   } else if (ts.isFunctionDeclaration(node)) {
-    return processFunction(node, parent, editor)
+    return processFunction(node, context)
   } else if (ts.isReturnStatement(node)) {
-    const { id } = await editor.addNode({ parent, type: 'Return', label: 'return' })
+    const { id } = await graph.addNode({ parent, type: 'Return', label: 'return' })
 
     if (node.expression) {
-      const expNode = await processExpression(node.expression, parent, editor)
+      const expNode = await processExpression(node.expression, context)
 
-      await editor.addEdge(expNode.id, id, {})
+      await graph.addEdge(expNode.id, id, {})
     }
   } else if (ts.isExpressionStatement(node)) {
-    return processExpression(node.expression, parent, editor)
+    return processExpression(node.expression, context)
   } else if (ts.isTypeAliasDeclaration(node)) {
-    const { id } = await editor.addNode({
+    const { id } = await graph.addNode({
       parent,
       type: 'Type',
       label: 'type',
       typeIdentifier: node.name.escapedText
     })
-    const type = await processType(node.type, parent, editor)
+    const type = await processType(node.type, context)
 
-    await editor.addEdge(type.id, id, {})
+    await graph.addEdge(type.id, id, {})
   } else if (ts.isExportDeclaration(node)) {
   } else if (node.kind === SyntaxKind.EndOfFileToken) {
   } else {
@@ -297,10 +313,10 @@ async function processNode(node: Node, parent: Scope, editor: Graph) {
   }
 }
 
-export async function process(node: Node, editor: Graph) {
+export async function process(node: Node, context: Context) {
   if (ts.isSourceFile(node)) {
     for (const statement of node.getChildren()) {
-      await processNode(statement, undefined, editor)
+      await processNode(statement, context)
     }
   } else {
     throw new Error('process: cannot process ' + node.kind)
