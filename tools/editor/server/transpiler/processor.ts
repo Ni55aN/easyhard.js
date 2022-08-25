@@ -1,14 +1,21 @@
 import { Graph, Scope } from './types'
 import ts, { Node, SyntaxKind } from 'typescript'
+import { TypeChecker } from './type-checker'
 
 type Context = {
   parent?: Scope
+  checker: TypeChecker
   graph: Graph
 }
 
 async function processCall(expression: ts.CallExpression, context: Context): Promise<{ id: string }> {
   const { graph, parent } = context
-  const { id } = await graph.addNode({ parent, type: 'Call', label: 'call' })
+  const { id } = await graph.addNode({
+    parent,
+    type: 'Call',
+    label: 'call',
+    ...context.checker.getTyping(expression)
+  })
 
   const args = await Promise.all(expression.arguments.map(arg => {
     return processExpression(arg, context)
@@ -45,7 +52,12 @@ async function processLiteral(arg: ts.LiteralExpression, context: Context) {
 
 async function processObject(exp: ts.ObjectLiteralExpression, context: Context): Promise<{ id: string }> {
   const { graph, parent } = context
-  const { id } = await graph.addNode({ parent, type: 'Object', label: 'object' })
+  const { id } = await graph.addNode({
+    parent,
+    type: 'Object',
+    label: 'object',
+    ...context.checker.getTyping(exp)
+  })
 
   for (const p of exp.properties) {
     if (!ts.isPropertyAssignment(p)) throw new Error('property should be an assignment')
@@ -73,7 +85,12 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
 
   if (ts.isUnionTypeNode(statement) || ts.isIntersectionTypeNode(statement)) {
     const type = ts.isUnionTypeNode(statement) ? 'Union' : 'Intersection'
-    const { id } = await graph.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
+    const { id } = await graph.addNode({
+      parent,
+      type: type + 'Type',
+      label: type.toLowerCase() + ' type',
+      ...context.checker.getTyping(statement)
+    })
 
     for (const type of statement.types) {
       const typeNode = await processType(type, context)
@@ -102,7 +119,13 @@ async function processMember(expression: ts.PropertyAccessExpression, context: C
   const property = expression.name
 
   if (ts.isIdentifier(property)) {
-    const { id } = await graph.addNode({ parent, type: 'Member', label: 'property ' + property.escapedText, property: property.escapedText })
+    const { id } = await graph.addNode({
+      parent,
+      type: 'Member',
+      label: 'property ' + property.escapedText,
+      ...context.checker.getTyping(expression),
+      property: property.escapedText
+    })
 
     const identNode = await processExpression(object, context)
 
@@ -115,7 +138,12 @@ async function processMember(expression: ts.PropertyAccessExpression, context: C
 
 async function processConditional(expression: ts.ConditionalExpression, context: Context): Promise<{ id: string }> {
   const { graph, parent } = context
-  const { id } = await graph.addNode({ parent, type: 'Conditional', label: 'if' })
+  const { id } = await graph.addNode({
+    parent,
+    type: 'Conditional',
+    label: 'if',
+    ...context.checker.getTyping(expression)
+  })
 
   const testNode = await processExpression(expression.condition, context)
 
@@ -177,7 +205,11 @@ async function processBinary(expression: ts.BinaryExpression, context: Context):
   const { graph, parent } = context
   const { left, right } = expression
   const operator = operatorTokenMap[expression.operatorToken.kind] || '?'
-  const { id } = await graph.addNode({ parent, type: 'BinaryOperator', label: operator,
+  const { id } = await graph.addNode({
+    parent,
+    type: 'BinaryOperator',
+    label: operator,
+    ...context.checker.getTyping(expression),
     op: operator
   })
 
@@ -199,6 +231,7 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
     parent,
     type: 'FunctionDeclaration',
     label:  expression.name?.escapedText || 'function',
+    ...context.checker.getTyping(expression),
     identifier: expression.name?.escapedText || null
   })
   for (const statement of expression.parameters) {
@@ -207,7 +240,14 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
     const name = statement.name.escapedText
     const index = expression.parameters.indexOf(statement)
 
-    const statementNope = await graph.addNode({ parent: id, type: 'ParameterDeclaration', label: 'parameter ' + index, name, identifier: name })
+    const statementNope = await graph.addNode({
+      parent: id,
+      type: 'ParameterDeclaration',
+      label: 'parameter ' + index,
+      ...context.checker.getTyping(statement),
+      name,
+      identifier: name
+    })
 
     if (statement.type) {
       const typeAnnotationNode = await processType(statement.type, context)
@@ -223,7 +263,12 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
       await processNode(statement, { ...context, parent: id })
     }
   } else {
-    const { id: returnId } = await graph.addNode({ parent: id, type: 'Return', label: 'return' })
+    const { id: returnId } = await graph.addNode({
+      parent: id,
+      type: 'Return',
+      label: 'return',
+      ...context.checker.getTyping(expression)
+    })
 
     const expNode = await processExpression(expression.body, { ...context, parent: id })
 
@@ -254,6 +299,7 @@ async function processNode(node: Node, context: Context) {
         parent,
         type: 'ImportDeclaration',
         label: 'import ' + local,
+        ...context.checker.getTyping(binding.name),
         identifier: local,
         typeIdentifier: local,
         module,
@@ -278,7 +324,14 @@ async function processNode(node: Node, context: Context) {
     if (ts.isLiteralExpression(node.initializer)) {
       const value = node.initializer.text
 
-      await graph.addNode({ parent, type: 'VariableDeclaration', label: value, value, identifier })
+      await graph.addNode({
+        parent,
+        type: 'VariableDeclaration',
+        label: value,
+        ...context.checker.getTyping(node.initializer),
+        value,
+        identifier
+      })
     } else {
       const expNode = await processExpression(node.initializer, context)
 
@@ -287,7 +340,12 @@ async function processNode(node: Node, context: Context) {
   } else if (ts.isFunctionDeclaration(node)) {
     return processFunction(node, context)
   } else if (ts.isReturnStatement(node)) {
-    const { id } = await graph.addNode({ parent, type: 'Return', label: 'return' })
+    const { id } = await graph.addNode({
+      parent,
+      type: 'Return',
+      label: 'return',
+      ...context.checker.getTyping(node)
+    })
 
     if (node.expression) {
       const expNode = await processExpression(node.expression, context)
@@ -301,6 +359,7 @@ async function processNode(node: Node, context: Context) {
       parent,
       type: 'Type',
       label: 'type',
+      ...context.checker.getTyping(node),
       typeIdentifier: node.name.escapedText
     })
     const type = await processType(node.type, context)
