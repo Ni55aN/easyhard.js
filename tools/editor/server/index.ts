@@ -5,10 +5,10 @@ import { clear, setProgram } from './neo4j-view'
 import neo4j from 'neo4j-driver'
 import { easyhardServer } from 'easyhard-server'
 import { Actions } from '../shared/bridge'
-import { BehaviorSubject, map } from 'rxjs'
+import { catchError, mergeMap, OperatorFunction, pipe, throwError } from 'rxjs'
 import express from 'express'
 import expressWs from 'express-ws'
-import cytoscape, { ElementDefinition, ElementsDefinition } from 'cytoscape'
+import cytoscape, { ElementsDefinition } from 'cytoscape'
 import { cytoscapeAdapter } from './cy-view/adapter'
 
 const driver = neo4j.driver(
@@ -16,10 +16,8 @@ const driver = neo4j.driver(
   neo4j.auth.basic('neo4j', 'test') // TODO envs
 )
 
-const graphData = new BehaviorSubject<ElementDefinition[]>([])
-
 const server = easyhardServer<Actions>({
-  getData: graphData.pipe(map(data => ({ data })))
+  openFile: debugError(mergeMap(openFile))
 })
 
 const app = express()
@@ -51,20 +49,32 @@ async function getTypeScriptAST(filepath: string) {
   return source
 }
 
-void async function () {
-  const file = join(__dirname, './assets/rx.ts')
+function debugError<T,R>(op: OperatorFunction<T, R>) {
+  return pipe(op, catchError(e => {
+    console.error(e)
+    return throwError(new Error('unhandled exception'))
+  }))
+}
+
+async function openFile({ path }: { path: string }) {
+  const file = join(__dirname, path)
   const tsAst = await getTypeScriptAST(file)
 
   const cy = cytoscape()
-  console.time('process')
+  console.time('process ' + path)
   await process(tsAst, cytoscapeAdapter(cy))
-  console.timeEnd('process')
+  console.timeEnd('process ' + path)
 
   const data = cy.json() as { elements: ElementsDefinition }
-  graphData.next([...data.elements.nodes, ...data.elements.edges])
 
-  await clear(driver)
-  console.time('setProgram')
-  await setProgram(driver, [...data.elements.nodes, ...data.elements.edges])
-  console.timeEnd('setProgram')
-}()
+  const elements = [...(data.elements.nodes || []), ...(data.elements.edges || [])]
+
+  await clear(driver, path)
+  console.time('setProgram ' + path)
+  await setProgram(driver, path, elements)
+  console.timeEnd('setProgram ' + path)
+
+  return {
+    data: elements
+  }
+}

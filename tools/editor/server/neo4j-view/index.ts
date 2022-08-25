@@ -1,28 +1,33 @@
-import { ElementDefinition, ElementsDefinition } from 'cytoscape'
+import { ElementDefinition } from 'cytoscape'
 import { Driver, Node, Relationship } from 'neo4j-driver'
 
 export * from './simplifier'
 
-export async function clear(driver: Driver) {
+export async function clear(driver: Driver, program: string) {
   const session = driver.session()
 
   await session.run(`
-    match (n) detach delete n
-  `)
+    match (n) where (n)--(:Program { path: $program })
+    detach delete n
+  `, { program })
 
   session.close()
 }
 
-export async function setProgram(driver: Driver, list: ElementDefinition[]) {
+export async function setProgram(driver: Driver, path: string, list: ElementDefinition[]) {
   const session = driver.session()
 
   await session.run(`
+    create (p:Program { path: $path })
+    with p
     unwind $list as item
     call {
-      with item
-      with item as nodeProps where nodeProps.group = 'nodes'
+      with item, p
+      with p, item as nodeProps where nodeProps.group = 'nodes'
       create (n)
       set n = nodeProps.data
+      with n, p, nodeProps
+      create (n)-[:Program]->(p)
       with n, nodeProps
       CALL apoc.create.setLabels(n, [nodeProps.data.type])
       YIELD node
@@ -44,7 +49,7 @@ export async function setProgram(driver: Driver, list: ElementDefinition[]) {
       return r as element
     }
     return element
-  `, { list })
+  `, { list, path })
 
   session.close()
 }
