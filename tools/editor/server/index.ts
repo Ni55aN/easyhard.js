@@ -4,7 +4,7 @@ import expressWs from 'express-ws'
 import neo4j from 'neo4j-driver'
 import { easyhardServer } from 'easyhard-server'
 import { catchError, mergeMap, OperatorFunction, pipe, throwError } from 'rxjs'
-import cytoscape, { ElementsDefinition } from 'cytoscape'
+import cytoscape, { Core, ElementDefinition } from 'cytoscape'
 import { Actions } from '../shared/bridge'
 import { clear, setProgram } from './neo4j-view'
 import { cytoscapeAdapter } from './cy-view/adapter'
@@ -44,6 +44,12 @@ function debugError<T,R>(op: OperatorFunction<T, R>) {
   }))
 }
 
+function exportGraph(cy: Core) {
+  const data = cy.json(true as any) as any as { elements: ElementDefinition[] }
+
+  return data
+}
+
 async function openFile({ path }: { path: string }) {
   const file = join(__dirname, path)
   const transpiler = new Transpiler(file)
@@ -53,16 +59,12 @@ async function openFile({ path }: { path: string }) {
   await transpiler.process(cytoscapeAdapter(cy))
   console.timeEnd('process ' + path)
 
-  const data = cy.json() as { elements: ElementsDefinition }
-
-  const elements = [...(data.elements.nodes || []), ...(data.elements.edges || [])]
-
   await clear(driver, path)
   console.time('setProgram ' + path)
-  await setProgram(driver, path, elements)
+  await setProgram(driver, path, exportGraph(cy).elements)
   console.timeEnd('setProgram ' + path)
 
   return {
-    data: elements
+    data: exportGraph(cy).elements
   }
 }
