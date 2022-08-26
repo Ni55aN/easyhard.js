@@ -9,6 +9,7 @@ import { Actions } from '../shared/bridge'
 import { clear, setProgram } from './neo4j-view'
 import { cytoscapeAdapter } from './cy-view/adapter'
 import { Transpiler } from './transpiler'
+import { simplify } from './simplifier'
 
 const driver = neo4j.driver(
   'neo4j://localhost',
@@ -63,6 +64,8 @@ async function openFile({ path }: { path: string }) {
   console.time('setProgram ' + path)
   await setProgram(driver, path, exportGraph(cy).elements)
   console.timeEnd('setProgram ' + path)
+
+  simplify(cy)
 
   return {
     data: exportGraph(cy).elements
