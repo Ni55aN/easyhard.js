@@ -54,6 +54,9 @@ export function createEditor(container: HTMLElement) {
           'text-background-color': '#ffffff',
           'target-arrow-shape': 'triangle',
           'curve-style': 'unbundled-bezier',
+          'width'(el: EdgeSingular) {
+            return el.data('label') ? 2 : 3
+          },
           'source-endpoint'(el: EdgeSingular) {
             const node = el.connectedNodes()[0]
             return node.isParent() ? 'outside-to-line' : `${node.outerWidth() / 2}px 0` // prevent incorrect curve for parent source
