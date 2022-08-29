@@ -107,6 +107,23 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
 
     if (!ident) throw new Error('cannot find type identifier')
     return ident
+  } else if (ts.isTypeLiteralNode(statement)) {
+    const { id } = await graph.addNode({
+      parent,
+      type: 'ObjectType',
+      label: 'object type'
+    })
+    for (const member of statement.members) {
+      if (!ts.isPropertySignature(member)) throw new Error('TODO')
+      if (!ts.isIdentifier(member.name)) throw new Error('should be an identifier')
+      if (!member.type) throw new Error('type expected')
+
+      const propertyNode = await processType(member.type, context)
+
+      await graph.addEdge(propertyNode.id, id, { label: member.name.escapedText })
+    }
+
+    return { id }
   } else {
     debugger
     throw new Error('cannot process processType: ' + statement.kind)
