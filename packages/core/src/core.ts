@@ -4,7 +4,10 @@ import { insertNode, createAnchor } from './utils'
 import { untilExist } from './operators/until-exist'
 import { debugFragment, debugElement, debugElementAttr, debugFragmentChild } from './devtools'
 
-export function createElement<K extends TagName>(tag: K, attrs: Attrs<K>, ...children: NestedChild[]): ElementType<K> {
+type CreateElement<T extends TagName = TagName> = <K extends T>(arg: K, attrs: Attrs<K>, ...children: NestedChild[]) => ElementType<K>
+
+export const createElement: CreateElement<TagName> = (tag, attrs, ...children) => {
+  type K = typeof tag
   const element = document.createElement(tag)
 
   debugElement(element)
