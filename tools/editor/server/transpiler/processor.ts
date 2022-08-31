@@ -77,7 +77,8 @@ async function processObject(exp: ts.ObjectLiteralExpression, context: Context):
 const typeKeywordMap: {[kind in SyntaxKind]?: string} = {
   [SyntaxKind.NumberKeyword]: 'Number',
   [SyntaxKind.StringKeyword]: 'String',
-  [SyntaxKind.BooleanKeyword]: 'Boolean'
+  [SyntaxKind.BooleanKeyword]: 'Boolean',
+  [SyntaxKind.NullKeyword]: 'Boolean'
 }
 
 async function processType(statement: ts.TypeNode, context: Context): Promise<{ id: string }> {
@@ -98,7 +99,7 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
       await graph.addEdge(typeNode.id, id, {})
     }
     return { id }
-  } else if ([SyntaxKind.NumberKeyword, SyntaxKind.StringKeyword, SyntaxKind.BooleanKeyword].includes(statement.kind)) {
+  } else if ([SyntaxKind.NumberKeyword, SyntaxKind.StringKeyword, SyntaxKind.BooleanKeyword, SyntaxKind.NullKeyword].includes(statement.kind)) {
     const type = typeKeywordMap[statement.kind] || '?'
 
     return graph.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
@@ -111,7 +112,8 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
     const { id } = await graph.addNode({
       parent,
       type: 'ObjectType',
-      label: 'object type'
+      label: 'object type',
+      ...context.checker.getTyping(statement)
     })
     for (const member of statement.members) {
       if (!ts.isPropertySignature(member)) throw new Error('TODO')
