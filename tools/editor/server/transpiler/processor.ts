@@ -124,6 +124,13 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
     }
 
     return { id }
+  } else if (ts.isFunctionTypeNode(statement)) {
+    return await graph.addNode({
+      parent,
+      type: 'FuncType',
+      label: 'func type',
+      ...context.checker.getTyping(statement)
+    })
   } else {
     debugger
     throw new Error('cannot process processType: ' + statement.kind)
@@ -187,7 +194,7 @@ async function processExpression(expression: ts.Expression, context: Context): P
   } else if (ts.isIdentifier(expression)) {
     const node = await graph.findIdentifier(String(expression.escapedText), 'identifier', parent)
 
-    if (!node) throw new Error(`cannot find Identifier "${expression}"`)
+    if (!node) throw new Error(`cannot find Identifier "${expression.escapedText}"`)
     return node
   } else if (ts.isBinaryExpression(expression)) {
     return processBinary(expression, context)
