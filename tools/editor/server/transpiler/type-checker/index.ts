@@ -1,7 +1,7 @@
 import { join } from 'path'
 import ts, { TypeFlags } from '@tsd/typescript'
 
-type Pattern = 'Operator' | 'Observable' | 'OperatorFactory' | 'Builtin'
+type Pattern = 'Operator' | 'Observable' | 'OperatorFactory' | 'ObservableFactory' | 'Builtin' | 'EasyhardH' | 'HtmlElement'
 type PatternsSet = {
   [key in Pattern]: ts.TypeAliasDeclaration
 }
@@ -21,7 +21,10 @@ export class TypeChecker {
       Operator: this.getTypeDeclarationNode('Operator', patternsSource),
       Observable: this.getTypeDeclarationNode('Observable', patternsSource),
       OperatorFactory: this.getTypeDeclarationNode('OperatorFactory', patternsSource),
+      ObservableFactory: this.getTypeDeclarationNode('ObservableFactory', patternsSource),
       Builtin: this.getTypeDeclarationNode('Builtin', patternsSource),
+      EasyhardH: this.getTypeDeclarationNode('EasyhardH', patternsSource),
+      HtmlElement: this.getTypeDeclarationNode('HtmlElement', patternsSource),
     }
   }
 
