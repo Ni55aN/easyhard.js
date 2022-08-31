@@ -47,7 +47,41 @@ export class TypeChecker {
 
     const isAny = this.hasFlag(sourceType, TypeFlags.Any)
 
-    return !isAny && this.checker.isTypeAssignableTo(sourceType, targetType)
+    return !isAny && this.isTypeAssignableTo(sourceType, targetType)
+  }
+
+  getReturnType(a: ts.Type) {
+    const declarations = a.getSymbol()?.getDeclarations()
+    if (!declarations || !declarations[0]) {
+      return null
+    }
+
+    const methodDeclaration = declarations[0]
+
+    try {
+      const signature = this.checker.getSignatureFromDeclaration(methodDeclaration as any);
+      if (!signature) {
+        return null
+      }
+
+      return signature.getReturnType()
+    } catch (e) {
+        return null
+    }
+  }
+
+  private isTypeAssignableTo(sourceType: ts.Type, targetType: ts.Type) {
+    const n = this.checker.isTypeAssignableTo(sourceType, targetType)
+
+    if (n) {
+      const sourceReturnType = this.getReturnType(sourceType)
+      const targetReturnType = this.getReturnType(targetType)
+
+      if ((sourceReturnType === null) !== (targetReturnType === null)) return false
+      if (sourceReturnType && targetReturnType) return this.checker.isTypeAssignableTo(sourceReturnType, targetReturnType)
+      return true
+    }
+    return n
   }
 
   public findPattern(node: ts.Node): Pattern | null {
