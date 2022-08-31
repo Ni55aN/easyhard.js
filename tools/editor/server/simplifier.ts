@@ -5,7 +5,7 @@ import { pick } from 'lodash'
 
 export function simplify(cy: Core) {
   cy.nodes()
-    .filter(node => node.data('typingKind') === 'OperatorFactory')
+    .filter(node => node.data('type') === 'ImportDeclaration' && node.data('typingKind') === 'OperatorFactory')
     .forEach(source => {
       source.outgoers('edge')
         .filter((edge: EdgeSingular) => edge.data('label') === 'function' && edge.target().data('type') === 'Call')
@@ -27,7 +27,7 @@ export function simplify(cy: Core) {
 
 
   cy.nodes()
-    .filter(node => node.data('typingKind') === 'Operator')
+    .filter(node => node.data('typingKind') === 'Operator' || (node.data('type') === 'ImportDeclaration' && node.data('typingKind') === 'ObservableFactory'))
     .forEach(source => {
       const incomers = source.incomers('edge')
       const outgoers = source.outgoers('edge')
