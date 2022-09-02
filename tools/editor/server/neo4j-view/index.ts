@@ -1,8 +1,6 @@
 import { ElementDefinition } from 'cytoscape'
 import { Driver, Node, Relationship } from 'neo4j-driver'
 
-export * from './simplifier'
-
 export async function clear(driver: Driver, program: string) {
   const session = driver.session()
 
