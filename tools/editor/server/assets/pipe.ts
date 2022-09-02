@@ -1,4 +1,4 @@
-import { console, Boolean } from 'builtins'
+import { console, Boolean } from 'easyhard-browser-builtins'
 import { of } from 'rxjs'
 import { filter, mapTo } from 'rxjs/operators'
 

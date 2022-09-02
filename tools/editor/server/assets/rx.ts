@@ -1,5 +1,5 @@
 import { Observable, map, of, tap, pipe } from 'rxjs'
-import { console, String, Number } from 'builtins'
+import { console, String, Number } from 'easyhard-browser-builtins'
 
 type N = number | string | Observable<any>
 

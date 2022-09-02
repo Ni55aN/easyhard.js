@@ -1,7 +1,7 @@
 import { join } from 'path'
 import ts, { TypeFlags } from '@tsd/typescript'
 
-type Pattern = 'Operator' | 'Observable' | 'OperatorFactory' | 'ObservableFactory' | 'Builtin' | 'EasyhardH' | 'HtmlElement'
+type Pattern = 'Operator' | 'Observable' | 'OperatorFactory' | 'ObservableFactory' | 'EasyhardH' | 'HtmlElement'
 type PatternsSet = {
   [key in Pattern]: ts.TypeAliasDeclaration
 }
@@ -22,7 +22,6 @@ export class TypeChecker {
       Observable: this.getTypeDeclarationNode('Observable', patternsSource),
       OperatorFactory: this.getTypeDeclarationNode('OperatorFactory', patternsSource),
       ObservableFactory: this.getTypeDeclarationNode('ObservableFactory', patternsSource),
-      Builtin: this.getTypeDeclarationNode('Builtin', patternsSource),
       EasyhardH: this.getTypeDeclarationNode('EasyhardH', patternsSource),
       HtmlElement: this.getTypeDeclarationNode('HtmlElement', patternsSource),
     }
@@ -53,6 +52,26 @@ export class TypeChecker {
     return !isAny && this.isTypeAssignableTo(sourceType, targetType)
   }
 
+  getParameters(a: ts.Type) {
+    const declarations = a.getSymbol()?.getDeclarations()
+    if (!declarations || !declarations[0]) {
+      return null
+    }
+
+    const methodDeclaration = declarations[0]
+
+    try {
+      const signature = this.checker.getSignatureFromDeclaration(methodDeclaration as any);
+      if (!signature) {
+        return null
+      }
+
+      return signature.getParameters()
+    } catch (e) {
+        return null
+    }
+  }
+
   getReturnType(a: ts.Type) {
     const declarations = a.getSymbol()?.getDeclarations()
     if (!declarations || !declarations[0]) {
@@ -79,6 +98,8 @@ export class TypeChecker {
     if (n) {
       const sourceReturnType = this.getReturnType(sourceType)
       const targetReturnType = this.getReturnType(targetType)
+      const sourceParameters = this.getParameters(sourceType)
+      const targetParameters = this.getParameters(targetType)
 
       if ((sourceReturnType === null) !== (targetReturnType === null)) return false
       if (sourceReturnType && targetReturnType) return this.checker.isTypeAssignableTo(sourceReturnType, targetReturnType)

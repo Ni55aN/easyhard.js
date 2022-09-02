@@ -1,4 +1,4 @@
-import { console, String } from 'builtins'
+import { console, String } from 'easyhard-browser-builtins'
 
 function func1(props: { num: number, s: string }) {
   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands, @typescript-eslint/no-unsafe-call

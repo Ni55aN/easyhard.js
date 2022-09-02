@@ -20,6 +20,7 @@
     "cytoscape-klay": "^3.1.4",
     "easyhard": "file:../../build/easyhard-0.9.1.tgz",
     "easyhard-bridge": "^0.3.0",
+    "easyhard-browser-builtins": "file:browser-builtins",
     "easyhard-client": "^0.6.0",
     "easyhard-common": "file:../../build/easyhard-common-0.4.1.tgz",
     "easyhard-server": "^0.7.0",

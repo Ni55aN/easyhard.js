@@ -111,7 +111,7 @@ export function simplify(cy: Core) {
     const source = edge.source()
     const target = edge.target()
 
-    if (source.data('typingKind') === 'Builtin' && target.data('type') === 'Member') {
+    if (source.data('type') === 'ImportDeclaration' && target.data('type') === 'Member') {
       const sourceData = pick(source.data(), ['identifier', 'module', 'type'])
       const targetData = pick(target.data(), ['type', 'parent'])
 
@@ -119,7 +119,6 @@ export function simplify(cy: Core) {
         sourceData,
         targetData,
         label: [source.data('identifier'), target.data('property')].join(' '),
-        typingKind: 'Builtin',
         type: 'Snippet'
       })
       cy.remove(source)
@@ -141,7 +140,7 @@ export function simplify(cy: Core) {
       })
       cy.remove(source)
     }
-    if (source.data('typingKind') === 'Builtin' && edge.data('label') === 'function' && target.data('type') === 'Call') {
+    if (source.data('type') === 'ImportDeclaration' && edge.data('label') === 'function' && target.data('type') === 'Call') {
       const sourceData = pick(source.data(), ['identifier', 'module', 'type'])
       const targetData = pick(target.data(), ['type', 'parent'])
 

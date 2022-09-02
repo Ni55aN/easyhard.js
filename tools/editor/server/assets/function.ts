@@ -1,4 +1,4 @@
-import { console } from 'builtins'
+import { console } from 'easyhard-browser-builtins'
 
 const j = 4
 const q = 7
