@@ -82,6 +82,13 @@ export async function layout(cy: Core, fit = false) {
     // ranker: 'tight-tree',
     // spacingFactor: 0.6,
     name: 'klay',
+    klay: {
+      nodePlacement: 'LINEAR_SEGMENTS',
+      layoutHierarchy: true,
+      direction: 'RIGHT',
+      fixedAlignment: 'LEFTDOWN',
+      linearSegmentsDeflectionDampening: 0.1
+    },
     fit
   } as any)
   const onStop = layoutInstance.promiseOn('layoutstop')
