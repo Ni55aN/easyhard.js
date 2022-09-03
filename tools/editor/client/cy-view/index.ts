@@ -2,7 +2,6 @@ import cytoscape, { Core, EdgeSingular, EventObjectNode, NodeSingular } from 'cy
 import dagre from 'cytoscape-dagre'
 import klay from 'cytoscape-klay'
 import _ from 'lodash'
-import { adjustEdgeCurve } from './utils/edges'
 
 cytoscape.use(dagre)
 cytoscape.use(klay)
@@ -71,13 +70,6 @@ export function createEditor(container: HTMLElement) {
 
   cy.on('position', 'node', e => {
     e.target.parent().connectedEdges().data('rnd', true) // force update edge styles
-  })
-
-  cy.on('layoutstop', () => {
-    cy.edges().forEach(edge => adjustEdgeCurve(edge))
-  })
-  cy.on('drag', (el: EventObjectNode) => {
-    el.target.connectedEdges().forEach(edge => adjustEdgeCurve(edge))
   })
 
   return cy
