@@ -1,7 +1,8 @@
-import cytoscape, { Core, EdgeSingular, EventObjectNode, NodeSingular } from 'cytoscape'
+import cytoscape, { Core, EdgeSingular, NodeSingular } from 'cytoscape'
 import dagre from 'cytoscape-dagre'
 import klay from 'cytoscape-klay'
 import _ from 'lodash'
+import { layoutELK } from './elk'
 
 cytoscape.use(dagre)
 cytoscape.use(klay)
@@ -76,24 +77,24 @@ export function createEditor(container: HTMLElement) {
 }
 
 export async function layout(cy: Core, fit = false) {
-  const layoutInstance = cy.makeLayout({
-    // name: 'dagre',
-    // rankDir: 'LR',
-    // ranker: 'tight-tree',
-    // spacingFactor: 0.6,
-    name: 'klay',
-    klay: {
-      nodePlacement: 'LINEAR_SEGMENTS',
-      layoutHierarchy: true,
-      direction: 'RIGHT',
-      fixedAlignment: 'LEFTDOWN',
-      linearSegmentsDeflectionDampening: 0.1
-    },
-    fit
-  } as any)
-  const onStop = layoutInstance.promiseOn('layoutstop')
+  await layoutELK(cy, fit)
+  // const layoutInstance = cy.makeLayout({
+  //   // name: 'dagre',
+  //   // rankDir: 'LR',
+  //   // ranker: 'tight-tree',
+  //   // spacingFactor: 0.6,
+  //   // klay: {
+  //   //   nodePlacement: 'LINEAR_SEGMENTS',
+  //   //   layoutHierarchy: true,
+  //   //   direction: 'RIGHT',
+  //   //   fixedAlignment: 'LEFTDOWN',
+  //   //   linearSegmentsDeflectionDampening: 0.1
+  //   // },
+  //   fit
+  // } as any)
+  // const onStop = layoutInstance.promiseOn('layoutstop')
 
-  layoutInstance.run()
-  await onStop
+  // layoutInstance.run()
+  // await onStop
 }
 

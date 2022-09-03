@@ -25,6 +25,7 @@
     "easyhard-common": "file:../../build/easyhard-common-0.4.1.tgz",
     "easyhard-server": "^0.7.0",
     "easyhard-styles": "file:../../build/easyhard-styles-0.4.0.tgz",
+    "elkjs": "^0.8.2",
     "eslint-plugin-easyhard-editor": "file:plugin",
     "express": "^4.18.1",
     "express-ws": "^5.0.2",
@@ -42,7 +43,8 @@
     "rete-connection-plugin": "0.9.0",
     "rete-context-menu-plugin": "^0.6.0",
     "rete-react-render-plugin": "0.3.0",
-    "rete-vue-render-plugin": "1.0.0-rc2"
+    "rete-vue-render-plugin": "1.0.0-rc2",
+    "web-worker": "^1.2.0"
   },
   "devDependencies": {
     "@types/cytoscape": "^3.19.7",
