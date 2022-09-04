@@ -58,19 +58,26 @@ function applyPositions(cy: Core, nodes?: ElkNode[], offset: { x: number, y: num
 const elk = new ELK()
 
 export async function layoutELK(cy: Core, fit: boolean) {
+  const children = getNodes(cy.nodes().orphans())
+  const edges = cy.edges().map(e => {
+    return { id: e.data('id'), sources: [e.source().data('id')], targets: [e.target().data('id')]}
+  })
   const layouted = await elk.layout({
     id: 'root',
     layoutOptions: {
-      'elk.algorithm': 'layered',
-
+      'algorithm': 'layered',
+      'elk.layered.layering.strategy': 'STRETCH_WIDTH',
+      'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'spacing.nodeNodeBetweenLayers': '5',
+      'spacing.edgeEdgeBetweenLayers': '5',
+      'spacing.edgeNodeBetweenLayers': '5',
+      'spacing.nodeNode': '15',
+      'spacing.edgeEdge': '15',
     },
-    children: getNodes(cy.nodes().orphans()),
-    edges: cy.edges().map(e => {
-      return { id: e.data('id'), sources: [e.source().data('id')], targets: [e.target().data('id')]}
-    })
+    children,
+    edges
   })
-  console.log(JSON.stringify(layouted.children))
-  console.log(JSON.stringify(layouted.edges))
 
   applyPositions(cy, layouted.children)
 
