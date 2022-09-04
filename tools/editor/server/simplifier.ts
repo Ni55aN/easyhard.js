@@ -115,8 +115,10 @@ export function simplify(cy: Core) {
 
               if (index === 0) {
                 targetIncomingEdge.data('label', `tag`)
+                targetIncomingEdge.removeData('type')
               } else if (index === 1) {
                 targetIncomingEdge.data('label', `props`)
+                targetIncomingEdge.removeData('type')
               } else {
                 createPort(cy, target, targetIncomingEdge)
               }
