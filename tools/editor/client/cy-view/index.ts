@@ -18,15 +18,14 @@ export function createEditor(container: HTMLElement) {
           'shape': 'round-rectangle',
           'label': 'data(label)',
           'text-halign': 'center',
-          'text-valign'(el: NodeSingular) {
-            return el.data('type') === 'FunctionDeclaration' ? 'top' : 'center'
-          },
+          'text-valign': 'center',
           'font-size': '11px',
           'text-wrap': 'wrap',
           'text-max-width': '60px',
           width(el: NodeSingular) {
             return `${Math.min(60, String(el.data('label')).length * 5.5 + 10)}px`
           },
+          'border-color': 'white',
           backgroundColor(el: NodeSingular) {
             const type = String(el.data('type'))
 
@@ -39,8 +38,18 @@ export function createEditor(container: HTMLElement) {
       {
         'selector': 'node:parent',
         'style': {
-          backgroundColor: '#ccc',
-          "border-color": 'white'
+          'text-valign': 'top',
+          'text-outline-color'(el: NodeSingular) {
+            return el.style('background-color')
+          },
+          "text-outline-width": 3
+        }
+      },
+      {
+        'selector': 'node[type="Argument"]',
+        'style': {
+          width: '25px',
+          height: '10px',
         }
       },
       {
@@ -53,7 +62,7 @@ export function createEditor(container: HTMLElement) {
           'text-background-opacity': 1,
           'text-background-color': '#ffffff',
           'target-arrow-shape': 'triangle',
-          'curve-style': 'unbundled-bezier',
+          'curve-style': 'bezier',
           'width'(el: EdgeSingular) {
             return el.data('label') ? 2 : 3
           },
@@ -62,8 +71,10 @@ export function createEditor(container: HTMLElement) {
             return node.isParent() ? 'outside-to-line' : `${node.outerWidth() / 2}px 0` // prevent incorrect curve for parent source
           },
           'target-endpoint'(el: EdgeSingular) {
-            return `-${el.connectedNodes()[1].outerWidth() / 2}px 0`
-          },
+            const node = el.connectedNodes()[1]
+
+            return `${-node.outerWidth() / 2}px ${node.isParent() ? -node.outerHeight() / 2 : 0}px`
+          }
         }
       }
     ]

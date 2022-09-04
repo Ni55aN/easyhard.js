@@ -1,13 +1,36 @@
 import { Core, NodeCollection } from 'cytoscape'
 import ELK, { ElkNode } from 'elkjs'
 
-function getNodes(nodes: NodeCollection): { id: string }[] {
+const argumentOffset = 30
+
+function getNodes(nodes: NodeCollection): ElkNode[] {
   return nodes.map(n => {
-    return {
+    const maxIndex = n.data('withPorts') ? Math.max(...n.children().map(n => n.data('index'))) : 0
+
+    return <ElkNode>{
       id: n.data('id'),
       width: n.width(),
-      height: n.height(),
-      children: getNodes(n.children())
+      height: n.height() + maxIndex * argumentOffset,
+      labels: [{ "text": n.data('label') }],
+      ...(n.data('withPorts') ? {
+        ports: n.children().map((port) => {
+          return {
+            id: port.data('id'),
+            width: port.width(),
+            height: port.height(),
+            labels: [{ "text": port.data('label') }],
+            properties: {
+              side: "WEST",
+              index: maxIndex - +port.data('index') // fix an order because they are clock-wised
+            }
+          }
+        }),
+        properties: {
+          "portConstraints": "FIXED_ORDER"
+        }
+      } : {
+        children:  getNodes(n.children())
+      })
     }
   })
 }
@@ -16,8 +39,18 @@ function applyPositions(cy: Core, nodes?: ElkNode[], offset: { x: number, y: num
   nodes && nodes.forEach(n => {
     if (!n.x || !n.y) throw new Error('no position')
     const position = { x: n.x + offset.x, y: n.y + offset.y }
+    const node = cy.getElementById(n.id)
 
-    cy.getElementById(n.id).position(position)
+    node.position(position)
+
+    if (node.data('withPorts')) {
+      node.children().forEach(child => {
+        child.position({
+          x: position.x,
+          y: position.y + child.data('index') * argumentOffset
+        })
+      })
+    }
     applyPositions(cy, n.children, position)
   })
 }

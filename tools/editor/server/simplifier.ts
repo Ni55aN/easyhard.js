@@ -2,6 +2,24 @@ import { Core, EdgeSingular, NodeSingular } from 'cytoscape'
 import { getUID } from 'easyhard-common'
 import { pick } from 'lodash'
 
+function createPort(cy: Core, target: NodeSingular, edge: EdgeSingular) {
+  const label = edge.data('label')
+  const index = +label.split(' ')[1]
+
+  const argNode = cy.add({ group: 'nodes', data: {
+    id: getUID(),
+    parent: target.data('id'),
+    type: 'Argument',
+    index
+  }})
+  cy.remove(edge)
+  cy.add({ group: 'edges', data: {
+    ...edge.data(),
+    type: undefined,
+    target: argNode.data('id')
+  }})
+  target.data('withPorts', true)
+}
 
 export function simplify(cy: Core) {
   cy.nodes()
@@ -70,10 +88,10 @@ export function simplify(cy: Core) {
         .forEach(edge => {
           const target = edge.target()
           const argument0 = target.incomers('edge')
-            .filter((edge: EdgeSingular) => edge.data('label') === 'argument 0' && edge.source().data('type') === 'Literal')
+            .filter((edge: EdgeSingular) => edge.data('type') === 'Argument' && edge.data('label') === 'argument 0' && edge.source().data('type') === 'Literal')
             .source()
           const argument1 = target.incomers('edge')
-            .filter((edge: EdgeSingular) => edge.data('label') === 'argument 1' && edge.source().data('type') === 'Object')
+            .filter((edge: EdgeSingular) => edge.data('type') === 'Argument' && edge.data('label') === 'argument 1' && edge.source().data('type') === 'Object')
             .source()
 
           target.data({
@@ -83,14 +101,14 @@ export function simplify(cy: Core) {
 
           argument1?.incomers('edge').forEach(argument1Edge => {
             cy.remove(argument1Edge)
-            cy.add({ group: 'edges', data: { ...argument1Edge.data(), target: target.data('id') }})
+            cy.add({ group: 'edges', data: { ...argument1Edge.data(), type: undefined, target: target.data('id') }})
           })
 
           argument0 && cy.remove(argument0)
           argument1 && cy.remove(argument1)
 
           target.incomers('edge')
-            .filter(targetIncomingEdge => targetIncomingEdge.data('label').startsWith('argument'))
+            .filter(targetIncomingEdge => targetIncomingEdge.data('type') === 'Argument')
             .forEach(targetIncomingEdge => {
               const label = targetIncomingEdge.data('label')
               const index = +label.split(' ')[1]
@@ -100,7 +118,7 @@ export function simplify(cy: Core) {
               } else if (index === 1) {
                 targetIncomingEdge.data('label', `props`)
               } else {
-                targetIncomingEdge.data('label', `child ${index - 2}`)
+                createPort(cy, target, targetIncomingEdge)
               }
             })
           cy.remove(source)
@@ -153,4 +171,13 @@ export function simplify(cy: Core) {
       cy.remove(source)
     }
   }
+
+  cy.nodes()
+    .forEach(target => {
+      target.incomers('edge')
+        .filter(edge => edge.data('type') === 'Argument')
+        .forEach(edge => {
+          createPort(cy, target, edge)
+        })
+    })
 }
