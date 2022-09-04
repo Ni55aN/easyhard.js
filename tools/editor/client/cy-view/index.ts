@@ -30,7 +30,12 @@ export function createEditor(container: HTMLElement) {
             const type = String(el.data('type'))
 
             if (['Literal', 'VariableDeclaration'].includes(type)) return '#ffcb3a'
-            if (['Type', 'StringType', 'NumberType', 'BooleanType', 'UnionType', 'IntersectionType'].includes(type)) return '#6d9572'
+            if (['Type', 'StringType', 'NumberType', 'BooleanType', 'UnionType', 'IntersectionType', 'ObjectType'].includes(type)) return '#6d9572'
+            if (['Snippet'].includes(type)) return '#97856e'
+            if (['RxJS'].includes(type)) return '#f5856e'
+            if (['EasyhardElement'].includes(type)) return '#afdb6a'
+            if (['FunctionDeclaration'].includes(type)) return '#ccc'
+            if (['Argument'].includes(type)) return '#aaa'
             return '#888'
           }
         }
