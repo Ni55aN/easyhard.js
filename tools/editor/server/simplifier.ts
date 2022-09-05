@@ -6,6 +6,9 @@ function createPort(cy: Core, target: NodeSingular, edge: EdgeSingular) {
   const label = edge.data('label')
   const index = +label.split(' ')[1]
 
+  if (edge.data('type') !== 'Argument') return
+  if (!Number.isFinite(index)) throw new Error('cannot extract index')
+
   const argNode = cy.add({ group: 'nodes', data: {
     id: getUID(),
     parent: target.data('id'),
@@ -65,12 +68,12 @@ export function simplify(cy: Core) {
             label: source.data('identifier') || source.data('label'),
             type: 'RxJS'
           })
-          target.incomers('edge').forEach(edge => {
-            if (edge.data('label') === 'argument 0') {
+          target.incomers('edge')
+            .filter(edge => edge.data('type') === 'Argument' && edge.data('label') === 'argument 0')
+            .forEach(edge => {
               edge.data('label', '')
-            }
-
-          })
+              edge.data('type', '')
+            })
           incomers.forEach(sourceIncomingEdge => {
             cy.add({ group: 'edges', data: { ...sourceIncomingEdge.data(), id: getUID(), target: target.data('id') }})
           })
