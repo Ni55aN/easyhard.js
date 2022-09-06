@@ -23,6 +23,10 @@ function createPort(cy: Core, target: NodeSingular, edge: EdgeSingular) {
   }})
 }
 
+function identifiersToLabel(identifiers?: string[]) {
+  return identifiers && identifiers[0] || ''
+}
+
 export function simplify(cy: Core) {
   cy.nodes()
     .filter(node => node.data('type') === 'ImportDeclaration' && node.data('typingKind') === 'OperatorFactory')
@@ -31,14 +35,14 @@ export function simplify(cy: Core) {
         .filter((edge: EdgeSingular) => edge.data('label') === 'function' && edge.target().data('type') === 'Call')
         .forEach(edge => {
           const target = edge.target()
-          const sourceData = pick(source.data(), ['identifier', 'module', 'type'])
+          const sourceData = pick(source.data(), ['identifiers', 'module', 'type'])
           const targetData = pick(target.data(), ['type', 'parent'])
 
           target.data({
             sourceData,
             targetData,
-            label: source.data('identifier'),
-            identifier: source.data('identifier'),
+            label: identifiersToLabel(source.data('identifiers')),
+            identifiers: source.data('identifiers'),
             type: 'RxJS'
           })
           cy.remove(source)
@@ -58,13 +62,13 @@ export function simplify(cy: Core) {
       outgoersCall
         .forEach(edge => {
           const target = edge.target()
-          const sourceData = pick(source.data(), ['identifier', 'module', 'type'])
+          const sourceData = pick(source.data(), ['identifiers', 'module', 'type'])
           const targetData = pick(target.data(), ['type', 'parent'])
 
           target.data({
             sourceData,
             targetData,
-            label: source.data('identifier') || source.data('label'),
+            label: identifiersToLabel(source.data('identifiers')) || source.data('label'),
             type: 'RxJS'
           })
           target.incomers('edge')
@@ -134,13 +138,13 @@ export function simplify(cy: Core) {
     const target = edge.target()
 
     if (source.data('type') === 'ImportDeclaration' && target.data('type') === 'Member') {
-      const sourceData = pick(source.data(), ['identifier', 'module', 'type'])
+      const sourceData = pick(source.data(), ['identifiers', 'module', 'type'])
       const targetData = pick(target.data(), ['type', 'parent'])
 
       target.data({
         sourceData,
         targetData,
-        label: [source.data('identifier'), target.data('property')].join(' '),
+        label: [identifiersToLabel(source.data('identifiers')), target.data('property')].join(' '),
         type: 'Snippet'
       })
       cy.remove(source)
@@ -163,13 +167,13 @@ export function simplify(cy: Core) {
       cy.remove(source)
     }
     if (source.data('type') === 'ImportDeclaration' && edge.data('label') === 'function' && target.data('type') === 'Call') {
-      const sourceData = pick(source.data(), ['identifier', 'module', 'type'])
+      const sourceData = pick(source.data(), ['identifiers', 'module', 'type'])
       const targetData = pick(target.data(), ['type', 'parent'])
 
       target.data({
         sourceData,
         targetData,
-        label: source.data('identifier'),
+        label: identifiersToLabel(source.data('identifiers')),
         type: 'Snippet'
       })
       cy.remove(source)

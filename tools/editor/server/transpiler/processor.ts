@@ -104,7 +104,7 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
 
     return graph.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
   } else if (ts.isTypeReferenceNode(statement) && ts.isIdentifier(statement.typeName)) {
-    const ident = await graph.findIdentifier(String(statement.typeName.escapedText), 'typeIdentifier', parent)
+    const ident = await graph.findIdentifier(String(statement.typeName.escapedText), 'typeIdentifiers', parent)
 
     if (!ident) throw new Error('cannot find type identifier')
     return ident
@@ -194,7 +194,7 @@ async function processExpression(expression: ts.Expression, context: Context): P
   } else if (isLiteral(expression)) {
     return processLiteral(expression, context)
   } else if (ts.isIdentifier(expression)) {
-    const node = await graph.findIdentifier(String(expression.escapedText), 'identifier', parent)
+    const node = await graph.findIdentifier(String(expression.escapedText), 'identifiers', parent)
 
     if (!node) throw new Error(`cannot find Identifier "${expression.escapedText}"`)
     return node
@@ -252,13 +252,14 @@ async function processBinary(expression: ts.BinaryExpression, context: Context):
 
 async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression, context: Context): Promise<{ id: string }> {
   const { graph, parent } = context
+  const identifier = expression.name?.escapedText
 
   const { id } = await graph.addNode({
     parent,
     type: 'FunctionDeclaration',
     label:  expression.name?.escapedText || 'function',
     ...context.checker.getTyping(expression),
-    identifier: expression.name?.escapedText || null
+    identifiers: identifier ? [identifier] : []
   })
   for (const statement of expression.parameters) {
     if (!ts.isIdentifier(statement.name)) throw new Error('FunctionDeclaration: cannot process ' + statement.kind)
@@ -272,7 +273,7 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
       label: 'parameter ' + index,
       ...context.checker.getTyping(statement),
       name,
-      identifier: name
+      identifiers: [name]
     })
 
     if (statement.type) {
@@ -326,8 +327,8 @@ async function processNode(node: Node, context: Context) {
         type: 'ImportDeclaration',
         label: 'import ' + local,
         ...context.checker.getTyping(binding.name),
-        identifier: local,
-        typeIdentifier: local,
+        identifiers: [local],
+        typeIdentifiers: [local],
         module,
         source
       })
@@ -356,12 +357,13 @@ async function processNode(node: Node, context: Context) {
         label: value,
         ...context.checker.getTyping(node.initializer),
         value,
-        identifier
+        identifiers: [identifier]
       })
     } else {
       const expNode = await processExpression(node.initializer, context)
+      const formerIdentifiers = (await graph.getData(expNode.id)).identifiers || []
 
-      await graph.patchData(expNode.id, { identifier })
+      await graph.patchData(expNode.id, { identifiers: [...formerIdentifiers, identifier] })
     }
   } else if (ts.isFunctionDeclaration(node)) {
     return processFunction(node, context)
@@ -386,7 +388,7 @@ async function processNode(node: Node, context: Context) {
       type: 'Type',
       label: 'type',
       ...context.checker.getTyping(node),
-      typeIdentifier: node.name.escapedText
+      typeIdentifiers: [node.name.escapedText]
     })
     const type = await processType(node.type, context)
 
