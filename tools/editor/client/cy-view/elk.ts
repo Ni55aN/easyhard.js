@@ -62,9 +62,7 @@ export async function layoutELK(cy: Core, fit: boolean) {
   const edges = cy.edges().map(e => {
     return { id: e.data('id'), sources: [e.source().data('id')], targets: [e.target().data('id')]}
   })
-  const layouted = await elk.layout({
-    id: 'root',
-    layoutOptions: {
+  const layoutOptions: LayoutOptions = {
       'algorithm': 'layered',
       'elk.layered.layering.strategy': 'STRETCH_WIDTH',
       'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
@@ -74,10 +72,15 @@ export async function layoutELK(cy: Core, fit: boolean) {
       'spacing.edgeNodeBetweenLayers': '5',
       'spacing.nodeNode': '15',
       'spacing.edgeEdge': '15',
-    },
+  }
+  const args: ElkNode = {
+    id: 'root',
+    layoutOptions,
     children,
     edges
-  })
+  }
+  console.log(JSON.stringify(args, null, ' '))
+  const layouted = await elk.layout(args)
 
   applyPositions(cy, layouted.children)
 
