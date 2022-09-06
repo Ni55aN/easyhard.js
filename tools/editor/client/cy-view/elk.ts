@@ -7,15 +7,14 @@ function getNodeArguments(node: NodeSingular) {
   return node.children().filter(n => n.data('type') === 'Argument')
 }
 
-function filterWithIndex(item: CollectionData) {
+function withIndex(item: CollectionData) {
   return Number.isFinite(item.data('index'))
 }
 
 function getNodes(nodes: NodeCollection): ElkNode[] {
   return nodes.map(n => {
-    const edgesWithIndexes = n.incomers('edge').union(
-      getNodeArguments(n).incomers('edge')
-    ).filter(filterWithIndex)
+    const edgesWithIndexes = n.incomers('edge').union(getNodeArguments(n).incomers('edge'))
+    if (!edgesWithIndexes.every(withIndex)) throw new Error('every edge should have index')
     const indexes = edgesWithIndexes.map(edge => edge.data('index'))
     const maxIndex = Math.max(0, ...indexes)
 
@@ -24,7 +23,8 @@ function getNodes(nodes: NodeCollection): ElkNode[] {
       width: n.width(),
       height: n.height() + maxIndex * argumentOffset,
       labels: [{ "text": n.data('label') }],
-      ports: edgesWithIndexes.map((edge: EdgeSingular) => {
+      ports: [
+        ...edgesWithIndexes.map((edge: EdgeSingular) => {
         return {
           id: ['port', edge.data('id'), edge.data('index')].join('_'),
           width: 10,
@@ -36,6 +36,16 @@ function getNodes(nodes: NodeCollection): ElkNode[] {
           }
         }
       }),
+        {
+          id: ['port', n.data('id'), 'out'].join('_'),
+          width: 10,
+          height: 10,
+          properties: {
+            side: "EAST",
+            index: 0
+          }
+        }
+      ],
       properties: {
         "portConstraints": "FIXED_ORDER"
       },
@@ -70,7 +80,7 @@ const elk = new ELK()
 export async function layoutELK(cy: Core, fit: boolean) {
   const children = getNodes(cy.nodes().orphans())
   const edges = cy.edges().map(e => {
-    const source = e.source().data('id')
+    const source = ['port', e.source().data('id'), 'out'].join('_')
     const index = e.data('index')
     const target = Number.isFinite(index) ? ['port', e.data('id'), index].join('_') : e.target().data('id')
 

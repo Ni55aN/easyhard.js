@@ -29,13 +29,13 @@ async function processCall(expression: ts.CallExpression, context: Context): Pro
     await Promise.all(expression.typeArguments.map(async (p, i) => {
       const typeNode = await processType(p, context)
 
-      await graph.addEdge(typeNode.id, id, { label: 'type ' + i })
+      await graph.addEdge(typeNode.id, id, { label: 'type ' + i, index: i - 5 })
     }))
   }
 
   const calleNode = await processExpression(expression.expression, context)
 
-  await graph.addEdge(calleNode.id, id, { label: 'function' })
+  await graph.addEdge(calleNode.id, id, { label: 'function', index: 0 })
 
   return { id }
 }
@@ -68,7 +68,7 @@ async function processObject(exp: ts.ObjectLiteralExpression, context: Context):
 
     const identNode = await processExpression(value, context)
 
-    await graph.addEdge(identNode.id, id, { label: key.escapedText })
+    await graph.addEdge(identNode.id, id, { label: key.escapedText, index: 0 })
   }
 
   return { id }
@@ -95,8 +95,9 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
 
     for (const type of statement.types) {
       const typeNode = await processType(type, context)
+      const index = statement.types.indexOf(type)
 
-      await graph.addEdge(typeNode.id, id, {})
+      await graph.addEdge(typeNode.id, id, { index: index - 10 })
     }
     return { id }
   } else if ([SyntaxKind.NumberKeyword, SyntaxKind.StringKeyword, SyntaxKind.BooleanKeyword, SyntaxKind.NullKeyword].includes(statement.kind)) {
@@ -120,9 +121,10 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
       if (!ts.isIdentifier(member.name)) throw new Error('should be an identifier')
       if (!member.type) throw new Error('type expected')
 
+      const index = statement.members.indexOf(member)
       const propertyNode = await processType(member.type, context)
 
-      await graph.addEdge(propertyNode.id, id, { label: member.name.escapedText })
+      await graph.addEdge(propertyNode.id, id, { label: member.name.escapedText, index })
     }
 
     return { id }
@@ -155,7 +157,7 @@ async function processMember(expression: ts.PropertyAccessExpression, context: C
 
     const identNode = await processExpression(object, context)
 
-    await graph.addEdge(identNode.id, id, { } )
+    await graph.addEdge(identNode.id, id, { index: 0 })
     return { id }
   } else {
     throw new Error('processMember: cannot process object ' + object.kind + ' and property ' + property.escapedText)
@@ -173,15 +175,15 @@ async function processConditional(expression: ts.ConditionalExpression, context:
 
   const testNode = await processExpression(expression.condition, context)
 
-  await graph.addEdge(testNode.id, id, {})
+  await graph.addEdge(testNode.id, id, { index: 0 })
 
   const consequentExp = await processExpression(expression.whenTrue, context)
 
-  await graph.addEdge(consequentExp.id, id, { label: 'then' })
+  await graph.addEdge(consequentExp.id, id, { label: 'then', index: 1 })
 
   const alternateExp = await processExpression(expression.whenFalse, context)
 
-  await graph.addEdge(alternateExp.id, id, { label: 'else' })
+  await graph.addEdge(alternateExp.id, id, { label: 'else', index: 2 })
 
   return { id }
 }
@@ -279,7 +281,7 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
     if (statement.type) {
       const typeAnnotationNode = await processType(statement.type, context)
 
-      await graph.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type' })
+      await graph.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type', index: 0 })
     }
   }
 
@@ -299,7 +301,7 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
 
     const expNode = await processExpression(expression.body, { ...context, parent: id })
 
-    await graph.addEdge(expNode.id, returnId, {})
+    await graph.addEdge(expNode.id, returnId, { index: 0 })
   }
 
   return { id }
@@ -378,7 +380,7 @@ async function processNode(node: Node, context: Context) {
     if (node.expression) {
       const expNode = await processExpression(node.expression, context)
 
-      await graph.addEdge(expNode.id, id, {})
+      await graph.addEdge(expNode.id, id, { index: 0 })
     }
   } else if (ts.isExpressionStatement(node)) {
     return processExpression(node.expression, context)
@@ -392,7 +394,7 @@ async function processNode(node: Node, context: Context) {
     })
     const type = await processType(node.type, context)
 
-    await graph.addEdge(type.id, id, {})
+    await graph.addEdge(type.id, id, { index: 0 })
   } else if (ts.isExportDeclaration(node)) {
   } else if (node.kind === SyntaxKind.EndOfFileToken) {
   } else {
