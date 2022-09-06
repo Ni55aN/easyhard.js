@@ -78,6 +78,7 @@ export async function layoutELK(cy: Core, fit: boolean) {
   })
   const layoutOptions: LayoutOptions = {
     'algorithm': 'layered',
+    "hierarchyHandling": "INCLUDE_CHILDREN",
     'elk.layered.layering.strategy': 'STRETCH_WIDTH',
     'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
     'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
