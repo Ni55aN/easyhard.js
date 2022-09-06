@@ -22,7 +22,7 @@ async function processCall(expression: ts.CallExpression, context: Context): Pro
   }))
 
   await Promise.all(args.map(async (arg, i) => {
-    await graph.addEdge(arg.id, id, { label: 'argument ' + i, type: 'Argument' })
+    await graph.addEdge(arg.id, id, { label: 'argument ' + i, index: i, type: 'Argument' })
   }))
 
   if (expression.typeArguments) {

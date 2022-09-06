@@ -3,10 +3,10 @@ import { getUID } from 'easyhard-common'
 import { pick } from 'lodash'
 
 function createPort(cy: Core, target: NodeSingular, edge: EdgeSingular) {
-  const label = edge.data('label')
-  const index = +label.split(' ')[1]
+  const index = edge.data('index')
 
   if (edge.data('type') !== 'Argument') return
+  if (edge.data('port')) return
   if (!Number.isFinite(index)) throw new Error('cannot extract index')
 
   const argNode = cy.add({ group: 'nodes', data: {
@@ -18,10 +18,9 @@ function createPort(cy: Core, target: NodeSingular, edge: EdgeSingular) {
   cy.remove(edge)
   cy.add({ group: 'edges', data: {
     ...edge.data(),
-    type: undefined,
+    port: true,
     target: argNode.data('id')
   }})
-  target.data('withPorts', true)
 }
 
 export function simplify(cy: Core) {
