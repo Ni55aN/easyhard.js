@@ -241,11 +241,11 @@ async function processBinary(expression: ts.BinaryExpression, context: Context):
 
   const identExp = await processExpression(left, context)
 
-  await graph.addEdge(identExp.id, id, { label: 'left' })
+  await graph.addEdge(identExp.id, id, { label: 'left', index: 0 })
 
   const rightExp = await processExpression(right, context)
 
-  await graph.addEdge(rightExp.id, id, { label: 'right' })
+  await graph.addEdge(rightExp.id, id, { label: 'right', index: 1 })
 
   return { id }
 }
