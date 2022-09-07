@@ -7,13 +7,18 @@ function getNodeArguments(node: NodeSingular) {
   return node.children().filter(n => n.data('type') === 'Argument')
 }
 
+function getPortId(node: CollectionData, index: number | 'out') {
+  return ['port', node.data('id'), index].join('_')
+}
+
 function withIndex(item: CollectionData) {
   return Number.isFinite(item.data('index'))
 }
 
 function getNodes(nodes: NodeCollection): ElkNode[] {
   return nodes.map(n => {
-    const edgesWithIndexes = n.incomers('edge').union(getNodeArguments(n).incomers('edge'))
+    const argumentNodes = getNodeArguments(n)
+    const edgesWithIndexes = n.incomers('edge').union(argumentNodes.incomers('edge'))
     if (!edgesWithIndexes.every(withIndex)) throw new Error('every edge should have index')
     const indexes = edgesWithIndexes.map(edge => edge.data('index'))
     const maxIndex = Math.max(0, ...indexes)
@@ -25,19 +30,19 @@ function getNodes(nodes: NodeCollection): ElkNode[] {
       labels: [{ "text": n.data('label') }],
       ports: [
         ...edgesWithIndexes.map((edge: EdgeSingular) => {
-        return {
-          id: ['port', edge.data('id'), edge.data('index')].join('_'),
-          width: 10,
-          height: 10,
-          labels: [{ "text": edge.data('label') }],
-          properties: {
-            side: "WEST",
-            index: maxIndex - +edge.data('index') // fix an order because they are clock-wised
+          return {
+            id: getPortId(edge, edge.data('index')),
+            width: 10,
+            height: 10,
+            labels: [{ "text": edge.data('label') }],
+            properties: {
+              side: "WEST",
+              index: maxIndex - +edge.data('index') // fix an order because they are clock-wised
+            }
           }
-        }
-      }),
+        }),
         {
-          id: ['port', n.data('id'), 'out'].join('_'),
+          id: getPortId(n, 'out'),
           width: 10,
           height: 10,
           properties: {
@@ -49,20 +54,23 @@ function getNodes(nodes: NodeCollection): ElkNode[] {
       properties: {
         "portConstraints": "FIXED_ORDER"
       },
-      children: getNodes(n.children().filter(n => n.data('type') !== 'Argument'))
+      children: getNodes(n.children().subtract(argumentNodes))
     }
   })
 }
 
 function applyPositions(cy: Core, nodes?: ElkNode[], offset: { x: number, y: number } = { x: 0, y: 0 }) {
-  nodes && nodes.forEach(n => {
-    if (!n.x || !n.y) throw new Error('no position')
+  if (!nodes) return
+
+  nodes.forEach(n => {
+    if (n.x === undefined || n.y === undefined) throw new Error('no position')
+
     const position = { x: n.x + offset.x, y: n.y + offset.y }
     const node = cy.getElementById(n.id)
 
     node.position(position)
 
-    const argumentNodes = node.children().filter(n => n.data('type') === 'Argument')
+    const argumentNodes = getNodeArguments(node)
     const minIndex = Math.min(...argumentNodes.map(n => n.data('index')))
 
     argumentNodes.forEach(child => {
@@ -80,16 +88,15 @@ const elk = new ELK()
 export async function layoutELK(cy: Core, fit: boolean) {
   const children = getNodes(cy.nodes().orphans())
   const edges = cy.edges().map(e => {
-    const source = ['port', e.source().data('id'), 'out'].join('_')
-    const index = e.data('index')
-    const target = Number.isFinite(index) ? ['port', e.data('id'), index].join('_') : e.target().data('id')
+    const source = getPortId(e.source(), 'out')
+    const target = getPortId(e, e.data('index'))
 
     return { id: e.data('id'), sources: [source], targets: [target]}
   })
   const layoutOptions: LayoutOptions = {
     'algorithm': 'layered',
     "hierarchyHandling": "INCLUDE_CHILDREN",
-    'elk.layered.layering.strategy': 'STRETCH_WIDTH',
+    'elk.layered.layering.strategy': 'MIN_WIDTH',
     'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
     'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
     'spacing.nodeNodeBetweenLayers': '5',
