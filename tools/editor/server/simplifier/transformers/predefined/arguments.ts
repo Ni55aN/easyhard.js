@@ -14,6 +14,21 @@ export class ArgumentsTransformer implements Transformer {
       })
   }
   backward(cy: Core): void {
+    cy.nodes()
+      .forEach(target => {
+        target.children()
+          .filter(node => node.data('type') === 'Argument')
+          .forEach(node => {
+            const edge = node.incomers('edge').first()
+            cy.remove(edge)
+            cy.add({ group: 'edges', data: {
+              ...edge.data(),
+              port: undefined,
+              target: target.data('id')
+            }})
+            cy.remove(node)
+          })
+      })
   }
 
   createPort(cy: Core, target: NodeSingular, edge: EdgeSingular) {
