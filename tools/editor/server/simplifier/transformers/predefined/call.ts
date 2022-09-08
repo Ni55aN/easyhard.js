@@ -1,4 +1,5 @@
 import { Core } from 'cytoscape';
+import { getUID } from 'easyhard-common';
 import { Transformer } from '../interface'
 
 export class CallTransformer implements Transformer {
@@ -24,7 +25,33 @@ export class CallTransformer implements Transformer {
       }
     }
   }
-  backward(cy: Core): void {
-  }
 
+  backward(cy: Core): void {
+    cy.nodes()
+      .filter(node => node.data('type') === 'Snippet' && node.data('snippetType') === 'call')
+      .forEach(node => {
+        const existing = cy.getElementById(node.data('sourceData').id)
+        const source = !existing.empty() ? existing : cy.add({
+          group: 'nodes',
+          data: node.data('sourceData')
+        })
+        cy.add({
+          group: 'edges',
+          data: {
+            id: getUID(),
+            source: source.id(),
+            target: node.id(),
+            label: 'function',
+            index: 0
+          }
+        })
+        const incomers = node.incomers('edge').filter(edge => !edge.data('label'))
+
+        node.data(node.data('targetData'))
+        incomers.forEach(edge => {
+          cy.remove(edge)
+          cy.add({ group: 'edges', data: { ...edge.data(), target: source.data('id') }})
+        })
+      })
+  }
 }
