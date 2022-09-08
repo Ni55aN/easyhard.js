@@ -9,7 +9,14 @@ import { Actions } from '../shared/bridge'
 import { clear, setProgram } from './neo4j-view'
 import { cytoscapeAdapter } from './cy-view/adapter'
 import { Transpiler } from './transpiler'
-import { simplify } from './simplifier'
+import { Simplifier } from './simplifier'
+import {
+  RxTransformer,
+  EasyhardTransformer,
+  CallTransformer,
+  ImportMemberTransformer,
+  ArgumentsTransformer
+} from './simplifier/transformers'
 
 const driver = neo4j.driver(
   'neo4j://localhost',
@@ -65,7 +72,15 @@ async function openFile({ path }: { path: string }) {
   await setProgram(driver, path, exportGraph(cy).elements)
   console.timeEnd('setProgram ' + path)
 
-  simplify(cy)
+  const simplifier = new Simplifier([
+    new RxTransformer,
+    new EasyhardTransformer,
+    new CallTransformer,
+    new ImportMemberTransformer,
+    new ArgumentsTransformer
+  ])
+
+  simplifier.forward(cy)
 
   return {
     data: exportGraph(cy).elements
