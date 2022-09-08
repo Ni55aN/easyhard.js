@@ -1,6 +1,7 @@
 import { Core } from 'cytoscape';
 import { Transformer } from '../interface'
 import { identifiersToLabel } from '../../utils'
+import { getUID } from 'easyhard-common';
 
 export class ImportMemberTransformer implements Transformer {
   forward(cy: Core): void {
@@ -21,6 +22,25 @@ export class ImportMemberTransformer implements Transformer {
     }
   }
   backward(cy: Core): void {
+    cy.nodes()
+      .filter(node => node.data('type') === 'Snippet' && node.data('snippetType') === 'member')
+      .forEach(node => {
+        const existing = cy.getElementById(node.data('sourceData').id)
+        const source = !existing.empty() ? existing : cy.add({
+          group: 'nodes',
+          data: node.data('sourceData')
+        })
+        cy.add({
+          group: 'edges',
+          data: {
+            id: getUID(),
+            source: source.id(),
+            target: node.id(),
+            index: 0
+          }
+        })
+        node.data(node.data('targetData'))
+      })
   }
 
 }
