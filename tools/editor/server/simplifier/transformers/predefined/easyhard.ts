@@ -29,7 +29,11 @@ export class EasyhardTransformer implements Transformer {
 
             argument1?.incomers('edge').forEach(argument1Edge => {
               cy.remove(argument1Edge)
-              cy.add({ group: 'edges', data: { ...argument1Edge.data(), type: undefined, target: target.data('id') }})
+              cy.add({ group: 'edges', data: {
+                ...argument1Edge.data(),
+                type: 'EhProps',
+                target: target.data('id')
+              }})
             })
 
             argument0 && cy.remove(argument0)
@@ -78,9 +82,19 @@ export class EasyhardTransformer implements Transformer {
 
         node.incomers('edge')
           .forEach((edge: EdgeSingular) => {
-            if (edge.data('type') !== 'Argument') {
+            if (edge.data('label') === 'tag') {
+              edge.data('label', 'argument 0')
+              edge.data('type', 'Argument')
+            } else if (edge.data('label') === 'props') {
+              edge.data('label', 'argument 1')
+              edge.data('type', 'Argument')
+            } else if (edge.data('type') === 'EhProps') {
               cy.remove(edge)
-              cy.add({ group: 'edges', data: { ...edge.data(), type: undefined, target: argument1.id }})
+              cy.add({ group: 'edges', data: {
+                ...edge.data(),
+                type: undefined,
+                target: argument1.id
+              }})
             }
           })
 
