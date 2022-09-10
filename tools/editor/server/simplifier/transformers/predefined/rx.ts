@@ -1,6 +1,5 @@
 import { Core, EdgeSingular, NodeSingular } from 'cytoscape'
 import { getUID } from 'easyhard-common'
-import { pick } from 'lodash'
 import { identifiersToLabel } from '../../utils'
 import { Transformer } from '../interface'
 
@@ -17,12 +16,10 @@ export class RxTransformer implements Transformer {
     outgoersCall
       .forEach(edge => {
         const target = edge.target()
-        const sourceData = pick(source.data(), ['identifiers', 'module', 'type'])
-        const targetData = pick(target.data(), ['type', 'parent'])
 
         target.data({
-          sourceData,
-          targetData,
+          sourceData: { ...source.data() },
+          targetData: { ...target.data() },
           label: identifiersToLabel(source.data('identifiers')) || source.data('label'),
           type: 'RxJS'
         })
@@ -30,7 +27,8 @@ export class RxTransformer implements Transformer {
           .filter((edge: EdgeSingular) => edge.data('type') === 'Argument' && edge.source().data('typingKind') === 'Observable')
           .forEach(edge => {
             edge.data('label', '')
-            edge.data('type', '')
+            edge.data('type', 'RxPipe')
+            edge.data('index', -1)
           })
         incomers.forEach(edge => {
           cy.add({ group: 'edges', data: { ...edge.data(), id: getUID(), target: target.data('id') }})
@@ -51,7 +49,46 @@ export class RxTransformer implements Transformer {
       this.forward(cy)
     }
   }
+
+  private recover(cy: Core, node: NodeSingular) {
+    const sourceData = node.data('sourceData')
+    const targetData = node.data('targetData')
+
+    node.data(targetData)
+
+    if (cy.getElementById(sourceData.id).empty()) cy.add({ group: 'nodes', data: sourceData })
+
+    if (sourceData.type === 'RxJS') {
+      node.incomers('edge')
+        .filter((edge: EdgeSingular) => edge.data('type') !== 'RxPipe')
+        .forEach(edge => {
+          cy.remove(edge)
+          cy.add({ group: 'edges', data: {
+            ...edge.data(),
+            target: sourceData.id
+          }})
+        })
+    }
+
+    cy.add({ group: 'edges', data: {
+      id: getUID(),
+      source: sourceData.id,
+      target: node.id(),
+      label: 'function',
+      index: 0
+    }})
+
+  }
+
   backward(cy: Core): void {
-    cy
+    const candidates = cy.nodes().filter(node => node.data('type') === 'RxJS')
+
+    candidates.forEach(node => {
+      this.recover(cy, node)
+    })
+
+    if (!candidates.empty()) {
+      this.backward(cy)
+    }
   }
 }
