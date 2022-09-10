@@ -40,7 +40,7 @@ export class RxTransformer implements Transformer {
 
   forward(cy: Core): void {
     const candidates = cy.nodes()
-      .filter(node => node.data('type') !== 'Call' && this.typingKinds.includes(node.data('typingKind')))
+      .filter(node => ['ImportDeclaration', 'RxJS'].includes(node.data('type')) && this.typingKinds.includes(node.data('typingKind')))
 
     candidates.forEach(source => {
       this.convert(cy, source)
