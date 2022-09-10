@@ -35,7 +35,7 @@ async function processCall(expression: ts.CallExpression, context: Context): Pro
 
   const calleNode = await processExpression(expression.expression, context)
 
-  await graph.addEdge(calleNode.id, id, { label: 'function', index: 0 })
+  await graph.addEdge(calleNode.id, id, { label: 'function', index: -1 })
 
   return { id }
 }

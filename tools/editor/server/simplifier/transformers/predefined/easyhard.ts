@@ -105,7 +105,7 @@ export class EasyhardTransformer implements Transformer {
             source: sourceData.id,
             target: node.id(),
             label: 'function',
-            index: 0
+            index: -1
           }
         })
 

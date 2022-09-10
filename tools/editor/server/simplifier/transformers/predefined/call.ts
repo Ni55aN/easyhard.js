@@ -42,7 +42,7 @@ export class CallTransformer implements Transformer {
             source: source.id(),
             target: node.id(),
             label: 'function',
-            index: 0
+            index: -1
           }
         })
         const incomers = node.incomers('edge').filter(edge => !edge.data('label'))
