@@ -1,10 +1,9 @@
 import ts, { ModuleKind } from '@tsd/typescript'
 import { join } from 'path'
 import { Graph } from './types'
-import { process } from './processor'
+import { astToGraph } from './astToGraph'
 import { TypeChecker } from './type-checker'
-
-export * from './processor'
+import { Core } from 'cytoscape'
 
 export class Transpiler {
   private program: ts.Program
@@ -29,7 +28,7 @@ export class Transpiler {
     return source
   }
 
-  process(graph: Graph) {
-    return process(this.getAST(), { checker: this.checker, graph })
+  async toGraph(graph: Graph) {
+    return astToGraph(this.getAST(), { checker: this.checker, graph })
   }
 }

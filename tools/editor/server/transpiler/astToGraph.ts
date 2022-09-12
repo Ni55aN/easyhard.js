@@ -1,6 +1,7 @@
-import { Graph, Scope } from './types'
+import { Graph, KeywordType, Scope } from './types'
 import ts, { Node, SyntaxKind } from 'typescript'
 import { TypeChecker } from './type-checker'
+import { tokenToString } from './tokens'
 
 type Context = {
   parent?: Scope
@@ -41,13 +42,27 @@ async function processCall(expression: ts.CallExpression, context: Context): Pro
 }
 
 function isLiteral(arg: ts.Expression): arg is ts.LiteralExpression {
-  return ts.isStringLiteral(arg) || ts.isNumericLiteral(arg)
+  return ts.isStringLiteral(arg)
+    || ts.isNumericLiteral(arg)
+    || arg.kind === ts.SyntaxKind.TrueKeyword
+    || arg.kind === ts.SyntaxKind.FalseKeyword
+    || arg.kind === ts.SyntaxKind.NullKeyword
+}
+
+function getLiteralValue(arg: ts.LiteralExpression) {
+  switch(arg.kind) {
+    case ts.SyntaxKind.TrueKeyword: return true
+    case ts.SyntaxKind.FalseKeyword: return false
+    case ts.SyntaxKind.NullKeyword: return null
+    default: return arg.getText()
+  }
 }
 
 async function processLiteral(arg: ts.LiteralExpression, context: Context) {
   const { graph, parent } = context
+  const value = getLiteralValue(arg)
 
-  return graph.addNode({ parent, type: 'Literal', label: arg.text })
+  return graph.addNode({ parent, type: 'Literal', label: String(value), value })
 }
 
 async function processObject(exp: ts.ObjectLiteralExpression, context: Context): Promise<{ id: string }> {
@@ -74,7 +89,7 @@ async function processObject(exp: ts.ObjectLiteralExpression, context: Context):
   return { id }
 }
 
-const typeKeywordMap: {[kind in SyntaxKind]?: string} = {
+const typeKeywordMap: {[kind in SyntaxKind]?: KeywordType} = {
   [SyntaxKind.NumberKeyword]: 'Number',
   [SyntaxKind.StringKeyword]: 'String',
   [SyntaxKind.BooleanKeyword]: 'Boolean',
@@ -88,7 +103,7 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
     const type = ts.isUnionTypeNode(statement) ? 'Union' : 'Intersection'
     const { id } = await graph.addNode({
       parent,
-      type: type + 'Type',
+      type: `${type}Type`,
       label: type.toLowerCase() + ' type',
       ...context.checker.getTyping(statement)
     })
@@ -101,9 +116,9 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
     }
     return { id }
   } else if ([SyntaxKind.NumberKeyword, SyntaxKind.StringKeyword, SyntaxKind.BooleanKeyword, SyntaxKind.NullKeyword].includes(statement.kind)) {
-    const type = typeKeywordMap[statement.kind] || '?'
+    const type = typeKeywordMap[statement.kind]
 
-    return graph.addNode({ parent, type: type + 'Type', label: type.toLowerCase() + ' type' })
+    return graph.addNode({ parent, type: type ? `${type}Type` : '?', label: (type || '?').toLowerCase() + ' type' })
   } else if (ts.isTypeReferenceNode(statement) && ts.isIdentifier(statement.typeName)) {
     const ident = await graph.findIdentifier(String(statement.typeName.escapedText), 'typeIdentifiers', parent)
 
@@ -216,23 +231,10 @@ async function processExpression(expression: ts.Expression, context: Context): P
   }
 }
 
-const operatorTokenMap: {[kind in SyntaxKind]?: string} = {
-  [SyntaxKind.PlusToken]: '+',
-  [SyntaxKind.MinusToken]: '-',
-  [SyntaxKind.AsteriskToken]: '*',
-  [SyntaxKind.SlashToken]: '/',
-  [SyntaxKind.GreaterThanEqualsToken]: '>=',
-  [SyntaxKind.GreaterThanToken]: '>',
-  [SyntaxKind.LessThanEqualsToken]: '<=',
-  [SyntaxKind.LessThanToken]: '<',
-  [SyntaxKind.EqualsEqualsToken]: '==',
-  [SyntaxKind.EqualsEqualsEqualsToken]: '==='
-}
-
 async function processBinary(expression: ts.BinaryExpression, context: Context): Promise<{ id: string }> {
   const { graph, parent } = context
   const { left, right } = expression
-  const operator = operatorTokenMap[expression.operatorToken.kind] || '?'
+  const operator = tokenToString(expression.operatorToken) || '?'
   const { id } = await graph.addNode({
     parent,
     type: 'BinaryOperator',
@@ -351,7 +353,8 @@ async function processNode(node: Node, context: Context) {
     if (!ts.isIdentifier(node.name)) throw new Error('variable declaration should have name of identifier kind')
     const identifier = node.name.escapedText
     if (ts.isLiteralExpression(node.initializer)) {
-      const value = node.initializer.text
+      const text = node.initializer.text
+      const value = ts.isNumericLiteral(node.initializer) ? +text : text
 
       await graph.addNode({
         parent,
@@ -402,7 +405,7 @@ async function processNode(node: Node, context: Context) {
   }
 }
 
-export async function process(node: Node, context: Context) {
+export async function astToGraph(node: Node, context: Context) {
   if (ts.isSourceFile(node)) {
     for (const statement of node.getChildren()) {
       await processNode(statement, context)
