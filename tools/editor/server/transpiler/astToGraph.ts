@@ -93,7 +93,7 @@ const typeKeywordMap: {[kind in SyntaxKind]?: KeywordType} = {
   [SyntaxKind.NumberKeyword]: 'Number',
   [SyntaxKind.StringKeyword]: 'String',
   [SyntaxKind.BooleanKeyword]: 'Boolean',
-  [SyntaxKind.NullKeyword]: 'Boolean'
+  [SyntaxKind.NullKeyword]: 'Null'
 }
 
 async function processType(statement: ts.TypeNode, context: Context): Promise<{ id: string }> {
