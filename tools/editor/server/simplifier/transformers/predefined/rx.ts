@@ -1,5 +1,6 @@
 import { Core, EdgeSingular, NodeSingular } from 'cytoscape'
 import { getUID } from 'easyhard-common'
+import { isEqual, omit } from 'lodash'
 import { identifiersToLabel } from '../../utils'
 import { Transformer } from '../interface'
 
@@ -53,6 +54,16 @@ export class RxTransformer implements Transformer {
     }
   }
 
+  private mergeEdge(cy: Core, data: Record<string, any>) {
+    const source = data.source
+    const target = data.target
+    const existing = cy.edges().filter(edge => edge.source().id() === source && edge.target().id() === target)
+
+    if (existing.some(edge => isEqual(omit(data, 'id'), omit(edge.data(), 'id')))) return
+
+    cy.add({ group: 'edges', data })
+  }
+
   private recover(cy: Core, node: NodeSingular) {
     const sourceData = node.data('sourceData')
     const targetData = node.data('targetData')
@@ -66,10 +77,10 @@ export class RxTransformer implements Transformer {
         .filter((edge: EdgeSingular) => edge.data('type') !== 'RxPipe')
         .forEach(edge => {
           cy.remove(edge)
-          cy.add({ group: 'edges', data: {
+          this.mergeEdge(cy, {
             ...edge.data(),
             target: sourceData.id
-          }})
+          })
         })
     }
 
