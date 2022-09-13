@@ -7,17 +7,13 @@ export function cytoscapeAdapter(cy: Core): Graph {
   }
 
   const findIdentifier: Graph['findIdentifier'] = async (name, prop, parent) => {
-    if (parent) {
-      const parentNode = cy.getElementById(parent)
-      const found = cy.nodes().filter(n => n.parent() === parentNode && n.data(prop) && n.data(prop).includes(name))
+    const parentNode = parent ? cy.getElementById(parent) : null
+    const found = (parentNode?.children() || cy.nodes().filter(n => n.isOrphan()))
+      .filter(n => n.data(prop) && n.data(prop).includes(name))
 
-      if (!found.empty()) return { id: found.first().data('id') }
-      return findIdentifier(name, prop, parentNode.parent().data('id'))
-    }
-
-    const found = cy.nodes().filter(n => n.data(prop) && n.data(prop).includes(name))
-
-    return found.empty() ? null : { id: found.first().data('id') }
+    if (found.nonempty()) return { id: found.first().data('id') }
+    if (parentNode) return findIdentifier(name, prop, parentNode.parent().first().id())
+    return null
   }
 
   return {
