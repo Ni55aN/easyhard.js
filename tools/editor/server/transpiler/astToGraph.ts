@@ -54,7 +54,7 @@ function getLiteralValue(arg: ts.LiteralExpression) {
     case ts.SyntaxKind.TrueKeyword: return true
     case ts.SyntaxKind.FalseKeyword: return false
     case ts.SyntaxKind.NullKeyword: return null
-    default: return arg.getText()
+    default: return arg.text
   }
 }
 
