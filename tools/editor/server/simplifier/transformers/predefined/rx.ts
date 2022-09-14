@@ -74,13 +74,20 @@ export class RxTransformer implements Transformer {
 
     if (sourceData.type === 'RxJS') {
       node.incomers('edge')
-        .filter((edge: EdgeSingular) => edge.data('type') !== 'RxPipe')
         .forEach(edge => {
           cy.remove(edge)
-          this.mergeEdge(cy, {
-            ...edge.data(),
-            target: sourceData.id
-          })
+          if (edge.data('type') === 'RxPipe') {
+            cy.add({ group: 'edges', data: {
+              ...edge.data(),
+              label: 'argument 0',
+              type: 'Argument'
+            }})
+          } else {
+            this.mergeEdge(cy, {
+              ...edge.data(),
+              target: sourceData.id
+            })
+          }
         })
     }
 
