@@ -117,6 +117,7 @@ export class EasyhardTransformer implements Transformer {
               source: argument0.id,
               target: node.id(),
               label: 'argument 0',
+              type: 'Argument',
               index: 0
             }
           })
@@ -129,6 +130,7 @@ export class EasyhardTransformer implements Transformer {
               source: argument1.id,
               target: node.id(),
               label: 'argument 1',
+              type: 'Argument',
               index: 1
             }
           })
