@@ -4,6 +4,7 @@ import { Graph } from './types'
 import { astToGraph } from './astToGraph'
 import { TypeChecker } from './type-checker'
 import { Core } from 'cytoscape'
+import { graphToAst } from './graphToAst'
 
 export class Transpiler {
   private program: ts.Program
@@ -30,5 +31,9 @@ export class Transpiler {
 
   async toGraph(graph: Graph) {
     return astToGraph(this.getAST(), { checker: this.checker, graph })
+  }
+
+  async fromGraph(graph: Core) {
+    graphToAst(graph)
   }
 }

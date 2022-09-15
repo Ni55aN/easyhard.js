@@ -1,7 +1,7 @@
-import { Observable, map, of, tap, pipe } from 'rxjs'
+import { Observable as Ob, map, of, tap, pipe } from 'rxjs'
 import { console, String, Number } from 'easyhard-browser-builtins'
 
-type N = number | string | Observable<any>
+type N = number | string | Ob<number>
 
 const subject1 = of<N>(35)
 const subject2 = of<N>('45')

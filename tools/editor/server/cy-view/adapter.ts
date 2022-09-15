@@ -1,7 +1,7 @@
 import { Core } from 'cytoscape'
-import { Graph } from '../transpiler/types'
+import { Graph, ReadonlyGraph } from '../transpiler/types'
 
-export function cytoscapeAdapter(cy: Core): Graph {
+export function cytoscapeWriter(cy: Core): Graph {
   function getUID(): string {
     return (Date.now()+Math.random()).toString(36).replace('.', '')
   }
@@ -39,6 +39,14 @@ export function cytoscapeAdapter(cy: Core): Graph {
       Object.keys(data).forEach(key => {
         cy.nodes().filter(n => n.data('id') === id).data(key, data[key])
       })
+    }
+  }
+}
+
+export function cytoscapeReader(cy: Core): ReadonlyGraph {
+  return {
+    async getData(id) {
+      return cy.getElementById(id).data()
     }
   }
 }
