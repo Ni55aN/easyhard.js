@@ -295,13 +295,14 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
       identifiers: [name]
     })
 
-
-
     if (!statement.type) throw new Error('parameter should have type')
 
-      const typeAnnotationNode = await processType(statement.type, context)
+    const typeAnnotationNode = await processType(statement.type, {
+      ...context,
+      parent: id
+    })
 
-      await graph.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type', index: 0 })
+    await graph.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type', index: 0 })
   }
 
   if (!expression.body) throw new Error('function should have a body')
