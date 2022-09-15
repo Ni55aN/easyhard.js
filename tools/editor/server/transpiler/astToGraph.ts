@@ -30,7 +30,7 @@ async function processCall(expression: ts.CallExpression, context: Context): Pro
     await Promise.all(expression.typeArguments.map(async (p, i) => {
       const typeNode = await processType(p, context)
 
-      await graph.addEdge(typeNode.id, id, { label: 'type ' + i, index: i - 5 })
+      await graph.addEdge(typeNode.id, id, { label: 'type ' + i, type: 'GenericType', index: i - 5 })
     }))
   }
 
@@ -121,8 +121,22 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
     return graph.addNode({ parent, type: type ? `${type}Type` : '?', label: (type || '?').toLowerCase() + ' type' })
   } else if (ts.isTypeReferenceNode(statement) && ts.isIdentifier(statement.typeName)) {
     const ident = await graph.findIdentifier(String(statement.typeName.escapedText), 'typeIdentifiers', parent)
-
     if (!ident) throw new Error('cannot find type identifier')
+
+    if (statement.typeArguments) {
+      const node = await graph.addNode({ parent, type: 'GenericCall', label: 'generic' })
+
+      await graph.addEdge(ident.id, node.id, { type: 'GenericType', index: -10 })
+
+      for (const arg of statement.typeArguments) {
+        const typeNode = await processType(arg, context)
+        const index = statement.typeArguments.indexOf(arg)
+
+        await graph.addEdge(typeNode.id, node.id, { label: `type ${index}`, type: 'TypeArgument', index: -index })
+      }
+
+      return node
+    }
     return ident
   } else if (ts.isTypeLiteralNode(statement)) {
     const { id } = await graph.addNode({
