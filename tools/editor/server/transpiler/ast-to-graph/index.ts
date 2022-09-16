@@ -1,7 +1,8 @@
-import { Graph, KeywordType, Scope } from './types'
+import { Graph, KeywordType, Scope } from '../types'
 import ts, { Node, SyntaxKind } from 'typescript'
-import { TypeChecker } from './type-checker'
-import { tokenToString } from './tokens'
+import { TypeChecker } from '../type-checker'
+import { tokenToString } from '../tokens'
+import { getLiteralValue, isLiteral } from './literal-utils'
 
 type Context = {
   parent?: Scope
@@ -41,29 +42,17 @@ async function processCall(expression: ts.CallExpression, context: Context): Pro
   return { id }
 }
 
-function isLiteral(arg: ts.Expression): arg is ts.LiteralExpression {
-  return ts.isStringLiteral(arg)
-    || ts.isNumericLiteral(arg)
-    || arg.kind === ts.SyntaxKind.TrueKeyword
-    || arg.kind === ts.SyntaxKind.FalseKeyword
-    || arg.kind === ts.SyntaxKind.NullKeyword
-}
-
-function getLiteralValue(arg: ts.LiteralExpression) {
-  switch(arg.kind) {
-    case ts.SyntaxKind.TrueKeyword: return true
-    case ts.SyntaxKind.FalseKeyword: return false
-    case ts.SyntaxKind.NullKeyword: return null
-    case ts.SyntaxKind.NumericLiteral: return +arg.text
-    default: return arg.text
-  }
-}
-
 async function processLiteral(arg: ts.LiteralExpression, context: Context) {
   const { graph, parent } = context
   const value = getLiteralValue(arg)
 
-  return graph.addNode({ parent, type: 'Literal', label: String(value), value })
+  return graph.addNode({
+    parent,
+    type: 'Literal',
+    label: String(value),
+    value,
+    ...context.checker.getTyping(arg)
+  })
 }
 
 async function processObject(exp: ts.ObjectLiteralExpression, context: Context): Promise<{ id: string }> {
@@ -119,13 +108,23 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
   } else if ([SyntaxKind.NumberKeyword, SyntaxKind.StringKeyword, SyntaxKind.BooleanKeyword, SyntaxKind.NullKeyword].includes(statement.kind)) {
     const type = typeKeywordMap[statement.kind]
 
-    return graph.addNode({ parent, type: type ? `${type}Type` : '?', label: (type || '?').toLowerCase() + ' type' })
+    return graph.addNode({
+      parent,
+      type: type ? `${type}Type` : '?',
+      label: (type || '?').toLowerCase() + ' type',
+      ...context.checker.getTyping(statement)
+    })
   } else if (ts.isTypeReferenceNode(statement) && ts.isIdentifier(statement.typeName)) {
     const ident = await graph.findIdentifier(String(statement.typeName.escapedText), 'typeIdentifiers', parent)
     if (!ident) throw new Error('cannot find type identifier')
 
     if (statement.typeArguments) {
-      const node = await graph.addNode({ parent, type: 'GenericCall', label: 'generic' })
+      const node = await graph.addNode({
+        parent,
+        type: 'GenericCall',
+        label: 'generic',
+        ...context.checker.getTyping(statement)
+      })
 
       await graph.addEdge(ident.id, node.id, { type: 'GenericType', index: -10 })
 
@@ -159,6 +158,7 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
 
     return { id }
   } else if (ts.isFunctionTypeNode(statement)) {
+    debugger
     return await graph.addNode({
       parent,
       type: 'FuncType',
@@ -182,7 +182,7 @@ async function processMember(expression: ts.PropertyAccessExpression, context: C
       type: 'Member',
       label: 'property ' + property.escapedText,
       ...context.checker.getTyping(expression),
-      property: property.escapedText
+      property: String(property.escapedText)
     })
 
     const identNode = await processExpression(object, context)
@@ -276,14 +276,14 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
   const { id } = await graph.addNode({
     parent,
     type: 'FunctionDeclaration',
-    label:  expression.name?.escapedText || 'function',
+    label: expression.name ? String(expression.name.escapedText) : 'function',
     ...context.checker.getTyping(expression),
     identifiers: identifier ? [identifier] : []
   })
   for (const statement of expression.parameters) {
     if (!ts.isIdentifier(statement.name)) throw new Error('FunctionDeclaration: cannot process ' + statement.kind)
 
-    const name = statement.name.escapedText
+    const name = String(statement.name.escapedText)
     const index = expression.parameters.indexOf(statement)
 
     const statementNope = await graph.addNode({
@@ -331,8 +331,8 @@ async function processNode(node: Node, context: Context) {
   const { graph, parent } = context
 
   if (node.kind === SyntaxKind.SyntaxList) {
-    for (const n of node.getChildren()) {
-      await processNode(n, context)
+    for (const child of node.getChildren()) {
+      await processNode(child, context)
     }
   } else if (ts.isImportDeclaration(node)) {
     const { moduleSpecifier, importClause } = node
@@ -342,8 +342,8 @@ async function processNode(node: Node, context: Context) {
     const module = moduleSpecifier.text
 
     for (const binding of importClause.namedBindings.elements) {
-      const local = binding.name.escapedText
-      const source = binding.propertyName?.escapedText
+      const local = String(binding.name.escapedText)
+      const source = binding.propertyName ? String(binding.propertyName.escapedText) : undefined
       await graph.addNode({
         parent,
         type: 'ImportDeclaration',
@@ -369,7 +369,7 @@ async function processNode(node: Node, context: Context) {
       return
     }
     if (!ts.isIdentifier(node.name)) throw new Error('variable declaration should have name of identifier kind')
-    const identifier = node.name.escapedText
+    const identifier = String(node.name.escapedText)
     if (ts.isLiteralExpression(node.initializer)) {
       const text = node.initializer.text
       const value = ts.isNumericLiteral(node.initializer) ? +text : text
@@ -377,7 +377,7 @@ async function processNode(node: Node, context: Context) {
       await graph.addNode({
         parent,
         type: 'VariableDeclaration',
-        label: value,
+        label: String(value),
         ...context.checker.getTyping(node.initializer),
         value,
         identifiers: [identifier]
@@ -411,7 +411,7 @@ async function processNode(node: Node, context: Context) {
       type: 'Type',
       label: 'type',
       ...context.checker.getTyping(node),
-      typeIdentifiers: [node.name.escapedText]
+      typeIdentifiers: [String(node.name.escapedText)]
     })
     const type = await processType(node.type, context)
 

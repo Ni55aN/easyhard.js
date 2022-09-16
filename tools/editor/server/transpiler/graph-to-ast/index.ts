@@ -1,73 +1,10 @@
 import { Core, EdgeCollection, EdgeSingular, NodeSingular } from 'cytoscape'
-import {
-  BinaryOperatorType, CallType, FunctionDeclarationType, ImportDeclarationType,
-  LiteralType, MemberType, NodeType, ParameterDeclarationType,
-  VariableDeclarationType, ReturnType, ObjectType, ConditionalType
-} from './types'
+import { NodeType, NodeData, Value, TypeNodeData } from '../types'
 import ts from 'typescript'
-import { stringToToken } from './tokens'
+import { stringToToken } from '../tokens'
+import { Context } from './context'
 
 const f = ts.factory
-
-type Value = string | number | boolean | null
-type NodeData = {
-  id: string
-  type: VariableDeclarationType
-  identifiers: string[]
-  value: Value
-} | {
-  id: string
-  type: CallType
-} | {
-  id: string
-  type: MemberType
-  property: string
-} | {
-  id: string
-  type: ObjectType
-} | {
-  id: string
-  type: LiteralType
-  value: string | number
-} | {
-  id: string
-  type: BinaryOperatorType
-  op: string
-} | {
-  id: string
-  type: ConditionalType
-} | {
-  id: string
-  type: FunctionDeclarationType
-  identifiers: string[]
-} | {
-  id: string
-  type: ReturnType
-} | {
-  id: string
-  type: ParameterDeclarationType
-  name: string
-  identifiers: string[]
-} | {
-  id: string
-  type: ImportDeclarationType
-  module: string
-  source?: string
-  identifiers: string[]
-}
-
-type NodeTypeData = {
-  id: string
-  type: 'NumberType' | 'StringType' | 'UnionType' | 'IntersectionType' | 'ObjectType' | 'GenericCall'
-} | {
-  id: string
-  type: 'ImportDeclaration'
-  identifiers: string[]
-} | {
-  id: string
-  type: 'Type'
-  typeIdentifiers: string[]
-}
 
 function getLiteral(value: Value) {
   switch (typeof value) {
@@ -102,7 +39,7 @@ function useExpression(node: NodeSingular, context: Context) {
 
   if (isRefNode) {
     ctx.addVariable(node.id(), name)
-    ctx.prepend(processNode(node, ctx))
+    ctx.prepend(processStatement(node, ctx))
     return f.createIdentifier(name)
   }
 
@@ -191,7 +128,7 @@ function processExpression(node: NodeSingular, context: Context): ts.Expression 
 }
 
 function processType(node: NodeSingular, context: Context): ts.TypeNode {
-  const data = node.data() as NodeTypeData
+  const data = node.data() as TypeNodeData
 
   if (data.type === 'NumberType') {
     return f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
@@ -283,10 +220,10 @@ function createVariable(name: string, initializer: ts.Expression) {
   const ident = f.createIdentifier(name)
   const dec = f.createVariableDeclaration(ident, undefined, undefined, initializer)
 
-  return f.createVariableDeclarationList([dec], ts.NodeFlags.Const)
+  return f.createVariableStatement(undefined, f.createVariableDeclarationList([dec], ts.NodeFlags.Const))
 }
 
-function processNode(node: NodeSingular, context: Context): ts.Node {
+function processStatement(node: NodeSingular, context: Context): ts.Statement {
   const data = node.data() as NodeData
 
   if (data.type === 'VariableDeclaration') {
@@ -315,10 +252,10 @@ function processNode(node: NodeSingular, context: Context): ts.Node {
   } else if (data.type === 'FunctionDeclaration') {
     const name = getVariableName(node)
     const parameterNodes = node.children().filter(n => (n.data('type') as NodeType) === 'ParameterDeclaration')
-    const funcLeaves = node.children().leaves()
+    const functionLeaves = node.children().leaves()
 
-    const statements: ts.Node[] = []
-    const funcContext = new Context(context, node.id(), st => {
+    const statements: ts.Statement[] = []
+    const functionContext = new Context(context, node.id(), st => {
       statements.push(st)
     })
     const parameters = parameterNodes.map((n: NodeSingular) => {
@@ -331,16 +268,16 @@ function processNode(node: NodeSingular, context: Context): ts.Node {
         undefined,
         f.createIdentifier(n.data('name')),
         undefined,
-        useType(type, funcContext),
+        useType(type, functionContext),
         undefined
       )
     })
 
-    funcLeaves.forEach((n: NodeSingular) => {
+    functionLeaves.forEach(leaf => {
       parameterNodes.forEach(p => {
-        funcContext.addVariable(p.id(), p.data('name'))
+        functionContext.addVariable(p.id(), p.data('name'))
       })
-      statements.push(processNode(n, funcContext))
+      statements.push(processStatement(leaf, functionContext))
     })
 
     return f.createFunctionDeclaration(
@@ -351,7 +288,7 @@ function processNode(node: NodeSingular, context: Context): ts.Node {
       undefined,
       parameters,
       undefined,
-      f.createBlock(statements as ts.Statement[], true) // TODO
+      f.createBlock(statements, true) // TODO
     )
 
   } else if (data.type === 'Return') {
@@ -359,75 +296,22 @@ function processNode(node: NodeSingular, context: Context): ts.Node {
 
     return f.createReturnStatement(useExpression(expNode, context))
   } else {
+    throw new Error('processStatement: unsupported type')
+  }
+}
+
+const statementTypes: NodeData['type'][] = ['VariableDeclaration', 'ImportDeclaration', 'FunctionDeclaration', 'Return']
+
+function processNode(node: NodeSingular, context: Context): ts.Node {
+  const type = node.data('type') as NodeData['type']
+
+  if (statementTypes.includes(type)) {
+    return processStatement(node, context)
+  } else {
     return useExpression(node, context)
   }
 }
 
-class Context {
-  variables = new Map<string, string>()
-  types = new Map<string, string>()
-
-  constructor(public parent: Context | undefined, private scope: string | undefined, public prepend: (n: ts.Node) => void) {}
-
-  private _getTop(current: Context): Context {
-    return current.parent ? this._getTop(current.parent) : current
-  }
-
-  _findVariable(context: Context, nodeId: string): null | string {
-    const found = context.variables.get(nodeId)
-
-    if (found) return found
-    return context.parent ? this._findVariable(context.parent, nodeId) : null
-  }
-
-  findVariable(nodeId: string) {
-    const v = this._findVariable(this, nodeId)
-
-    return v
-  }
-
-  _findType(context: Context, nodeId: string): null | string {
-    const found = context.types.get(nodeId)
-
-    if (found) return found
-    return context.parent ? this._findVariable(context.parent, nodeId) : null
-  }
-
-  findType(nodeId: string) {
-    const v = this._findType(this, nodeId)
-
-    return v
-  }
-
-  addVariable(nodeId: string, name: string) {
-    this.variables.set(nodeId, name)
-  }
-
-  addType(nodeId: string, name: string) {
-    this.types.set(nodeId, name)
-  }
-
-  getTop() {
-    return this._getTop(this)
-  }
-
-  isBelong(node: NodeSingular) {
-    return node.data('parent') === this.scope
-  }
-
-  static findBelongingContext(node: NodeSingular, context: Context): Context | null {
-    const parent = context.getParent()
-
-    if (context.isBelong(node)) return context
-    if (parent) return Context.findBelongingContext(node, parent)
-    return null
-  }
-
-
-  getParent() {
-    return this.parent
-  }
-}
 
 export async function graphToAst(graph: Core) {
   const rootLeaves = graph.elements().leaves().filter(n => !n.data('parent'))
@@ -439,6 +323,7 @@ export async function graphToAst(graph: Core) {
   const context = new Context(undefined, undefined, node => {
     console.log(printer.printNode(ts.EmitHint.Unspecified, node, sourceFile))
   })
+
   rootLeaves.forEach(n => {
     const node = processNode(n, context)
 
