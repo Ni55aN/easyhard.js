@@ -1,4 +1,4 @@
-import { Core, EdgeCollection, EdgeSingular, NodeSingular } from 'cytoscape'
+import { Core, EdgeCollection, EdgeSingular, NodeCollection, NodeSingular } from 'cytoscape'
 import { NodeType, NodeData, Value, TypeNodeData } from '../types'
 import ts from 'typescript'
 import { stringToToken } from '../tokens'
@@ -39,28 +39,31 @@ function useExpression(node: NodeSingular, context: Context) {
 
   if (isRefNode) {
     ctx.addVariable(node.id(), name)
-    ctx.prepend(processStatement(node, ctx))
+    useStatement(node, ctx, true)
     return f.createIdentifier(name)
   }
 
-  const expression = processExpression(node, ctx)
-
   if (node.outgoers('edge').size() > 1) { // create variable if expression used in multiple places
     ctx.addVariable(node.id(), name)
-    ctx.prepend(createVariable(name, expression))
+    if (!ctx.findStatement(node.id())) {
+      ctx.addStatement(node.id(), createVariable(name, processExpression(node, ctx)))
+    }
     return f.createIdentifier(name)
   }
 
   if ('identifiers' in data && data.identifiers[0]) { // create variable if it originally has identifier (to keep code in sync with original source code)
     ctx.addVariable(node.id(), data.identifiers[0])
-    ctx.prepend(createVariable(data.identifiers[0], expression))
+    if (!ctx.findStatement(node.id())) {
+      ctx.addStatement(node.id(), createVariable(data.identifiers[0], processExpression(node, ctx)))
+    }
     return f.createIdentifier(data.identifiers[0])
   }
-  return expression
+  return processExpression(node, ctx)
 }
 
 function processExpression(node: NodeSingular, context: Context): ts.Expression {
   const data = node.data() as NodeData
+  context.getTop().addProcessed(node)
 
   if (data.type === 'Literal') {
     return getLiteral(data.value)
@@ -130,6 +133,8 @@ function processExpression(node: NodeSingular, context: Context): ts.Expression 
 function processType(node: NodeSingular, context: Context): ts.TypeNode {
   const data = node.data() as TypeNodeData
 
+  context.getTop().addProcessed(node)
+
   if (data.type === 'NumberType') {
     return f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
   } else if (data.type === 'StringType') {
@@ -188,7 +193,7 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode {
       undefined,
       useType(type, context)
     )
-    context.prepend(statement)
+    context.addStatement(node.id(), statement)
     return f.createTypeReferenceNode(statement.name)
   } else {
     throw new Error('processType')
@@ -227,12 +232,14 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
   const data = node.data() as NodeData
 
   if (data.type === 'VariableDeclaration') {
+    context.getTop().addProcessed(node)
     const name = getVariableName(node)
     if (data.value === undefined) throw new Error('value should not be undefined')
     const init = getLiteral(data.value)
 
     return createVariable(name, init)
   } else if (data.type === 'ImportDeclaration') {
+    context.getTop().addProcessed(node)
     const { module } = data
     const name = getVariableName(node)
 
@@ -248,16 +255,12 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
       ),
       f.createStringLiteral(module)
     )
-
   } else if (data.type === 'FunctionDeclaration') {
+    context.getTop().addProcessed(node)
     const name = getVariableName(node)
     const parameterNodes = node.children().filter(n => (n.data('type') as NodeType) === 'ParameterDeclaration')
-    const functionLeaves = node.children().leaves()
 
-    const statements: ts.Statement[] = []
-    const functionContext = new Context(context, node.id(), st => {
-      statements.push(st)
-    })
+    const functionContext = new Context(context, node.id())
     const parameters = parameterNodes.map((n: NodeSingular) => {
       const type = n.incomers('edge[label="type"]').source()
       if (!type) throw new Error('type edge missing')
@@ -273,64 +276,82 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
       )
     })
 
-    functionLeaves.forEach(leaf => {
-      parameterNodes.forEach(p => {
-        functionContext.addVariable(p.id(), p.data('name'))
-      })
-      statements.push(processStatement(leaf, functionContext))
+    parameterNodes.forEach(p => {
+      functionContext.addVariable(p.id(), p.data('name'))
+    })
+    traverseNodes(node.children(), n => n.data('parent') === node.id(), functionContext, n => {
+      useStatement(n, functionContext)
     })
 
-    return f.createFunctionDeclaration(
+    return createVariable(name, f.createFunctionExpression(
       undefined,
       undefined,
-      undefined,
-      f.createIdentifier(name),
+      undefined,// f.createIdentifier(name),
       undefined,
       parameters,
       undefined,
-      f.createBlock(statements, true) // TODO
-    )
-
+      f.createBlock(functionContext.getStatements(), true)
+    ))
   } else if (data.type === 'Return') {
+    context.getTop().addProcessed(node)
     const expNode = node.incomers('edge').source()
 
     return f.createReturnStatement(useExpression(expNode, context))
   } else {
-    throw new Error('processStatement: unsupported type')
+    return f.createExpressionStatement(useExpression(node, context))
   }
 }
 
-const statementTypes: NodeData['type'][] = ['VariableDeclaration', 'ImportDeclaration', 'FunctionDeclaration', 'Return']
+function useStatement(node: NodeSingular, context: Context, prepend = false) {
+  if (context.getTop().processedNodes.includes(node.id())) return
+  if (context.findStatement(node.id())) return
+  const statement = processStatement(node, context)
 
-function processNode(node: NodeSingular, context: Context): ts.Node {
-  const type = node.data('type') as NodeData['type']
+  context.addStatement(node.id(), statement, prepend)
+}
 
-  if (statementTypes.includes(type)) {
-    return processStatement(node, context)
-  } else {
-    return useExpression(node, context)
+// get a leaf excluding edges with Call nodes which are more nested in its parents (avoid possible loops)
+function getUnaffectedLeaf(nodes: NodeCollection, filter: (node: NodeSingular) => boolean, context: Context) {
+  return nodes.filter(n => !context.getTop().processedNodes.includes(n.id())).filter(filter).filter((node: NodeSingular) => {
+    const parents = node.parents()
+    const outgoers = node.outgoers('node').filter(n => !context.getTop().processedNodes.includes(n.id())).filter(filter).filter((outgoer: NodeSingular) => {
+      const isCall = outgoer.data('type') === 'Call'
+      if (isCall && outgoer.parents().length > parents.length) return false
+      return true
+    })
+
+   return outgoers.length === 0
+  })[0]
+}
+
+function traverseNodes(nodes: NodeCollection, filter: (node: NodeSingular) => boolean, context: Context, match: (node: NodeSingular) => void) {
+  let rest: NodeSingular | undefined
+
+  while (rest = getUnaffectedLeaf(nodes, filter, context)) {
+    match(rest)
   }
 }
 
-
-export async function graphToAst(graph: Core) {
-  const rootLeaves = graph.elements().leaves().filter(n => !n.data('parent'))
-
+export function debug(statement: ts.Statement) {
   const sourceFile = ts.createSourceFile('file.ts', '', ts.ScriptTarget.ES2020)
   const printer = ts.createPrinter({
     newLine: ts.NewLineKind.LineFeed
   })
-  const context = new Context(undefined, undefined, node => {
-    console.log(printer.printNode(ts.EmitHint.Unspecified, node, sourceFile))
+  return printer.printNode(ts.EmitHint.Unspecified, statement, sourceFile)
+}
+
+export async function graphToAst(graph: Core): Promise<string> {
+  const sourceFile = ts.createSourceFile('file.ts', '', ts.ScriptTarget.ES2020)
+  const printer = ts.createPrinter({
+    newLine: ts.NewLineKind.LineFeed
+  })
+  const context = new Context(undefined, undefined)
+
+  traverseNodes(graph.nodes().orphans(), n => !n.data('parent'), context, n => {
+    useStatement(n, context)
   })
 
-  rootLeaves.forEach(n => {
-    const node = processNode(n, context)
-
-    if (node) {
-      console.log(printer.printNode(ts.EmitHint.Unspecified, node, sourceFile))
-    }
-  })
-
-  console.log(sourceFile.getText())
+  return context.getStatements().map(statement => {
+    return printer.printNode(ts.EmitHint.Unspecified, statement, sourceFile)
+  }).join('\n')
 }
