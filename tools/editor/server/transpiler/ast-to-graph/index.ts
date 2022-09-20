@@ -1,14 +1,9 @@
-import { Graph, KeywordType, Scope } from '../types'
+import { Graph, KeywordType } from '../types'
 import ts, { Node, SyntaxKind } from 'typescript'
-import { TypeChecker } from '../type-checker'
 import { tokenToString } from '../tokens'
 import { getLiteralValue, isLiteral } from './literal-utils'
-
-type Context = {
-  parent?: Scope
-  checker: TypeChecker
-  graph: Graph
-}
+import { Context } from './context'
+import { TypeChecker } from '../type-checker'
 
 async function processCall(expression: ts.CallExpression, context: Context): Promise<{ id: string }> {
   const { graph, parent } = context
@@ -271,15 +266,18 @@ async function processBinary(expression: ts.BinaryExpression, context: Context):
 
 async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression, context: Context): Promise<{ id: string }> {
   const { graph, parent } = context
-  const identifier = expression.name?.escapedText
+  const { name, body } = expression
+  const identifier = name?.escapedText
 
   const { id } = await graph.addNode({
     parent,
     type: 'FunctionDeclaration',
-    label: expression.name ? String(expression.name.escapedText) : 'function',
+    label: name ? String(name.escapedText) : 'function',
     ...context.checker.getTyping(expression),
     identifiers: identifier ? [identifier] : []
   })
+  const functionContext = context.getSubcontext(id)
+
   for (const statement of expression.parameters) {
     if (!ts.isIdentifier(statement.name)) throw new Error('FunctionDeclaration: cannot process ' + statement.kind)
 
@@ -297,20 +295,19 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
 
     if (!statement.type) throw new Error('parameter should have type')
 
-    const typeAnnotationNode = await processType(statement.type, {
-      ...context,
-      parent: id
-    })
+    const typeAnnotationNode = await processType(statement.type, functionContext)
 
     await graph.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type', index: 0 })
   }
 
-  if (!expression.body) throw new Error('function should have a body')
+  if (!body) throw new Error('function should have a body')
 
-  if (ts.isBlock(expression.body)) {
-    for (const statement of expression.body.statements) {
-      await processNode(statement, { ...context, parent: id })
+  context.addDeffered(async () => {
+    if (ts.isBlock(body)) {
+      for (const statement of body.statements) {
+        await processNode(statement, functionContext)
     }
+      await functionContext.flushDeffered()
   } else {
     const { id: returnId } = await graph.addNode({
       parent: id,
@@ -319,10 +316,12 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
       ...context.checker.getTyping(expression)
     })
 
-    const expNode = await processExpression(expression.body, { ...context, parent: id })
+      const expNode = await processExpression(body, functionContext)
 
     await graph.addEdge(expNode.id, returnId, { index: 0 })
+      await functionContext.flushDeffered()
   }
+  })
 
   return { id }
 }
@@ -423,11 +422,13 @@ async function processNode(node: Node, context: Context) {
   }
 }
 
-export async function astToGraph(node: Node, context: Context) {
+export async function astToGraph(node: Node, checker: TypeChecker, graph: Graph) {
   if (ts.isSourceFile(node)) {
+    const context = new Context(checker, graph)
     for (const statement of node.getChildren()) {
       await processNode(statement, context)
     }
+    await context.flushDeffered()
   } else {
     throw new Error('process: cannot process ' + node.kind)
   }
