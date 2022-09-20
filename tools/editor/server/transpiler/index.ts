@@ -1,10 +1,10 @@
 import ts, { ModuleKind } from '@tsd/typescript'
 import { join } from 'path'
 import { Graph } from './types'
-import { astToGraph } from './astToGraph'
+import { astToGraph } from './ast-to-graph'
 import { TypeChecker } from './type-checker'
 import { Core } from 'cytoscape'
-import { graphToAst } from './graphToAst'
+import { graphToAst } from './graph-to-ast'
 
 export class Transpiler {
   private program: ts.Program
@@ -30,10 +30,10 @@ export class Transpiler {
   }
 
   async toGraph(graph: Graph) {
-    return astToGraph(this.getAST(), { checker: this.checker, graph })
+    return astToGraph(this.getAST(), this.checker, graph)
   }
 
   async fromGraph(graph: Core) {
-    graphToAst(graph)
+    return graphToAst(graph)
   }
 }
