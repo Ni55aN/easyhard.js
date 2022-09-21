@@ -153,13 +153,17 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
 
     return { id }
   } else if (ts.isFunctionTypeNode(statement)) {
-    debugger
-    return await graph.addNode({
+    const { id } = await graph.addNode({
       parent,
       type: 'FuncType',
       label: 'func type',
       ...context.checker.getTyping(statement)
     })
+    const returnType = await processType(statement.type, context)
+
+    await graph.addEdge(returnType.id, id, { label: 'return', index: 0 })
+
+    return { id }
   } else {
     debugger
     throw new Error('cannot process processType: ' + statement.kind)

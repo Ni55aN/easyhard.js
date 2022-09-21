@@ -183,6 +183,14 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode {
     const ref = useType(source, context) as ts.TypeReferenceNode
 
     return f.createTypeReferenceNode(ref.typeName, typeArgs)
+  } else if (data.type === 'FuncType') {
+    const returnNode = node.incomers('edge[label="return"]').source()
+
+    return f.createFunctionTypeNode(
+      [],
+      [],
+      useType(returnNode, context)
+    )
   } else {
     throw new Error('processType')
   }
