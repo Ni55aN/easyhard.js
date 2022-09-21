@@ -233,6 +233,8 @@ async function processExpression(expression: ts.Expression, context: Context): P
     return processObject(expression, context)
   } else if (ts.isConditionalExpression(expression)) {
     return processConditional(expression, context)
+  } else if (ts.isFunctionExpression(expression)) {
+    return processFunction(expression, context)
   } else if (ts.isArrowFunction(expression)) {
     return processFunction(expression, context)
   } else {
