@@ -38,6 +38,9 @@ function useExpression(node: NodeSingular, context: Context) {
   const isRefNode = refTypes.includes(data.type)
 
   if (isRefNode) {
+    if (data.type === 'ImportDeclaration') {
+      ctx.addType(node.id(), name)
+    }
     ctx.addVariable(node.id(), name)
     useStatement(node, ctx, true)
     return f.createIdentifier(name)
@@ -63,7 +66,7 @@ function useExpression(node: NodeSingular, context: Context) {
 
 function processExpression(node: NodeSingular, context: Context): ts.Expression {
   const data = node.data() as NodeData
-  context.getTop().addProcessed(node)
+  context.getTop().addProcessed(node, 'expression')
 
   if (data.type === 'Literal') {
     return getLiteral(data.value)
@@ -133,7 +136,7 @@ function processExpression(node: NodeSingular, context: Context): ts.Expression 
 function processType(node: NodeSingular, context: Context): ts.TypeNode {
   const data = node.data() as TypeNodeData
 
-  context.getTop().addProcessed(node)
+  context.getTop().addProcessed(node, 'type')
 
   if (data.type === 'NumberType') {
     return f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
@@ -146,7 +149,7 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode {
     const types = incomers
       .map((edge: EdgeSingular) => edge.source())
       .map(n => {
-        return processType(n, context)
+        return useType(n, context)
       })
 
     return isUnion ? f.createUnionTypeNode(types) : f.createIntersectionTypeNode(types)
@@ -167,9 +170,6 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode {
     })
 
     return f.createTypeLiteralNode(propSignatures)
-  } else if (data.type === 'ImportDeclaration') {
-    useExpression(node, context) // force create import
-    return f.createTypeReferenceNode(data.identifiers[0])
   } else if (data.type === 'GenericCall') {
     const args = node.incomers('edge')
 
@@ -205,6 +205,7 @@ function getTypeName(node: NodeSingular) {
 
 function useType(node: NodeSingular, context: Context): ts.TypeNode {
   const name  = getTypeName(node)
+  const data = node.data() as TypeNodeData
   const ctx = Context.findBelongingContext(node, context)
 
   if (!ctx) throw new Error('cannot find context')
@@ -213,8 +214,28 @@ function useType(node: NodeSingular, context: Context): ts.TypeNode {
     return f.createTypeReferenceNode(name)
   }
 
+  if (data.type === 'ImportDeclaration') {
   ctx.addType(node.id(), name)
-  return processType(node, context)
+    useExpression(node, ctx) // force create import
+    return f.createTypeReferenceNode(name)
+  }
+
+  if (node.outgoers('edge').size() > 1) { // create variable if expression used in multiple places
+    ctx.addType(node.id(), name)
+    if (!ctx.findStatement(node.id())) {
+      ctx.addStatement(node.id(), createTypeAlias(name, processType(node, ctx)))
+    }
+    return f.createTypeReferenceNode(name)
+  }
+  if ('typeIdentifiers' in data && data.typeIdentifiers && data.typeIdentifiers[0]) { // create variable if it originally has identifier (to keep code in sync with original source code)
+    ctx.addType(node.id(), data.typeIdentifiers[0])
+    if (!ctx.findStatement(node.id())) {
+      ctx.addStatement(node.id(), createTypeAlias(data.typeIdentifiers[0], processType(node, ctx)))
+    }
+    return f.createTypeReferenceNode(data.typeIdentifiers[0])
+  }
+
+  return processType(node, ctx)
 }
 
 function createVariable(name: string, initializer: ts.Expression) {
@@ -225,17 +246,17 @@ function createVariable(name: string, initializer: ts.Expression) {
 }
 
 function processStatement(node: NodeSingular, context: Context): ts.Statement {
-  const data = node.data() as NodeData
+  const data = node.data() as NodeData | TypeNodeData
 
   if (data.type === 'VariableDeclaration') {
-    context.getTop().addProcessed(node)
+    context.getTop().addProcessed(node, 'statement')
     const name = getVariableName(node)
     if (data.value === undefined) throw new Error('value should not be undefined')
     const init = getLiteral(data.value)
 
     return createVariable(name, init)
   } else if (data.type === 'ImportDeclaration') {
-    context.getTop().addProcessed(node)
+    context.getTop().addProcessed(node, 'statement')
     const { module } = data
     const name = getVariableName(node)
 
@@ -252,12 +273,13 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
       f.createStringLiteral(module)
     )
   } else if (data.type === 'FunctionDeclaration') {
-    context.getTop().addProcessed(node)
+    context.getTop().addProcessed(node, 'statement')
     const name = getVariableName(node)
     const parameterNodes = node.children().filter(n => (n.data('type') as NodeType) === 'ParameterDeclaration')
 
     const functionContext = new Context(context, node.id())
     const parameters = parameterNodes.map((n: NodeSingular) => {
+      context.getTop().addProcessed(n, 'expression')
       const type = n.incomers('edge[label="type"]').source()
       if (!type) throw new Error('type edge missing')
 
@@ -289,17 +311,41 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
       f.createBlock(functionContext.getStatements(), true)
     ))
   } else if (data.type === 'Return') {
-    context.getTop().addProcessed(node)
+    context.getTop().addProcessed(node, 'statement')
     const expNode = node.incomers('edge').source()
 
     return f.createReturnStatement(useExpression(expNode, context))
+  } else if (isTypeNode(data)) {
+    return f.createTypeAliasDeclaration(
+      undefined,
+      undefined,
+      data.typeIdentifiers ? data.typeIdentifiers[0] : `type_${node.id()}`,
+      [],
+      processType(node, context)
+    )
   } else {
     return f.createExpressionStatement(useExpression(node, context))
   }
 }
 
+function createTypeAlias(name: string, type: ts.TypeNode) {
+  return f.createTypeAliasDeclaration(
+    undefined,
+    undefined,
+    name,
+    [],
+    type
+  )
+}
+
+function isTypeNode(data: NodeData | TypeNodeData): data is TypeNodeData {
+  const types = <TypeNodeData['type'][]>['FuncType', 'NumberType', 'StringType', 'BooleanType', 'GenericCall', 'IntersectionType', 'NullType', 'ObjectType', 'UnionType']
+
+  return types.includes(data.type as TypeNodeData['type'])
+}
+
 function useStatement(node: NodeSingular, context: Context, prepend = false) {
-  if (context.getTop().processedNodes.includes(node.id())) return
+  if (context.getTop().processedNodes.includes([node.id(), 'statement'].join('_'))) return
   if (context.findStatement(node.id())) return
   const statement = processStatement(node, context)
 

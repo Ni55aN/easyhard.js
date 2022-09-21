@@ -9,10 +9,13 @@ export class Context {
 
   constructor(public parent: Context | undefined, private scope: string | undefined) {}
 
-  addProcessed(node: NodeSingular) {
-    if (this.getTop().processedNodes.includes(node.id())) throw new Error('node ' + node.id() + ' already processed')
+  addProcessed(node: NodeSingular, type: 'statement' | 'expression' | 'type') {
+    const key = [node.id(), type].join('_')
+    if (this.getTop().processedNodes.includes(key)) {
+      throw new Error('node ' + key + ' already processed')
+    }
 
-    this.getTop().processedNodes.push(node.id())
+    this.getTop().processedNodes.push(key)
   }
 
   private _getTop(current: Context): Context {
