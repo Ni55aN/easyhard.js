@@ -298,18 +298,29 @@ function useStatement(node: NodeSingular, context: Context, prepend = false) {
   context.addStatement(node.id(), statement, prepend)
 }
 
+function isUnprocessed(context: Context) {
+  return (node: NodeSingular) => {
+    const id = node.id()
+    return !(context.getTop().processedNodes.includes([id, 'statement'].join('_'))
+      || context.getTop().processedNodes.includes([id, 'type'].join('_'))
+      || context.getTop().processedNodes.includes([id, 'expression'].join('_')))
+  }
+}
+
 // get a leaf excluding edges with Call nodes which are more nested in its parents (avoid possible loops)
 function getUnaffectedLeaf(nodes: NodeCollection, filter: (node: NodeSingular) => boolean, context: Context) {
-  return nodes.filter(n => !context.getTop().processedNodes.includes(n.id())).filter(filter).filter((node: NodeSingular) => {
+  const list = nodes.filter(isUnprocessed(context)).filter(filter).filter((node: NodeSingular) => {
     const parents = node.parents()
-    const outgoers = node.outgoers('node').filter(n => !context.getTop().processedNodes.includes(n.id())).filter(filter).filter((outgoer: NodeSingular) => {
+    const outgoers = node.outgoers('node').filter(isUnprocessed(context)).filter((outgoer: NodeSingular) => {
       const isCall = outgoer.data('type') === 'Call'
       if (isCall && outgoer.parents().length > parents.length) return false
       return true
     })
 
    return outgoers.length === 0
-  })[0]
+  })
+
+  return list[0]
 }
 
 function traverseNodes(nodes: NodeCollection, filter: (node: NodeSingular) => boolean, context: Context, match: (node: NodeSingular) => void) {
