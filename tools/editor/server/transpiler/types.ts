@@ -12,7 +12,6 @@ export type ReturnType = 'Return'
 export type ObjectType = 'Object'
 export type ObjectTypeType = 'ObjectType'
 export type ConditionalType = 'Conditional'
-export type TypeType = 'Type'
 export type GenericCallType = 'GenericCall'
 export type UnionType = 'UnionType'
 export type IntersectionType = 'IntersectionType'
@@ -22,7 +21,7 @@ export type KeywordTypeType = `${KeywordType}Type`
 export type NodeType = CallType | LiteralType | ObjectType | ObjectTypeType | FuncType
   | MemberType | ConditionalType | BinaryOperatorType | FunctionDeclarationType
   | ParameterDeclarationType | ReturnType | ImportDeclarationType | VariableDeclarationType
-  | TypeType | UnionType | IntersectionType | KeywordTypeType | GenericCallType
+  | UnionType | IntersectionType | KeywordTypeType | GenericCallType
 
 export type Value = string | number | boolean | null
 
@@ -95,15 +94,11 @@ export type NodeData = { id: string } & NodePayload
 
 type GeneralTypeNode = NodeCommon & {
   type: KeywordTypeType | IntersectionType | UnionType | ObjectTypeType | GenericCallType | FuncType | '?'
-}
-type TypeNode = {
-  type: TypeType
-  typeIdentifiers: string[]
+  typeIdentifiers?: string[]
 }
 
 export type TypeNodePayload = ImportDeclarationNode
   | GeneralTypeNode
-  | TypeNode
 
 export type TypeNodeData = { id: string } & TypeNodePayload
 

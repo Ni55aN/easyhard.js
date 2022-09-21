@@ -183,18 +183,6 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode {
     const ref = useType(source, context) as ts.TypeReferenceNode
 
     return f.createTypeReferenceNode(ref.typeName, typeArgs)
-  } else if (data.type === 'Type') {
-    const type = node.incomers('edge').source()
-
-    const statement = f.createTypeAliasDeclaration(
-      undefined,
-      undefined,
-      f.createIdentifier(data.typeIdentifiers[0]),
-      undefined,
-      useType(type, context)
-    )
-    context.addStatement(node.id(), statement)
-    return f.createTypeReferenceNode(statement.name)
   } else {
     throw new Error('processType')
   }

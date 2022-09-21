@@ -405,16 +405,11 @@ async function processNode(node: Node, context: Context) {
   } else if (ts.isExpressionStatement(node)) {
     return processExpression(node.expression, context)
   } else if (ts.isTypeAliasDeclaration(node)) {
-    const { id } = await graph.addNode({
-      parent,
-      type: 'Type',
-      label: 'type',
-      ...context.checker.getTyping(node),
-      typeIdentifiers: [String(node.name.escapedText)]
-    })
     const type = await processType(node.type, context)
+    const identifier = String(node.name.escapedText)
+    const formerIdentifiers = (await graph.getData(type.id)).typeIdentifiers || []
 
-    await graph.addEdge(type.id, id, { index: 0 })
+    graph.patchData(type.id, { typeIdentifiers: [...formerIdentifiers, identifier] })
   } else if (ts.isExportDeclaration(node)) {
   } else if (node.kind === SyntaxKind.EndOfFileToken) {
   } else {
