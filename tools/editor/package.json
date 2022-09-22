@@ -7,7 +7,8 @@
     "start:server": "nodemon ./server/index.ts",
     "build": "webpack",
     "build-deps": "DEST=tools/editor/node_modules npm run build:dev --prefix ../..",
-    "db": "docker run --publish=7474:7474 --publish=7687:7687  --env NEO4J_AUTH=neo4j/test --env NEO4JLABS_PLUGINS='[\"apoc\",\"graph-data-science\"]'--volume=$(pwd)/db-data:/data --volume=$(pwd)/plugins:/plugins neo4j"
+    "db": "docker run --publish=7474:7474 --publish=7687:7687  --env NEO4J_AUTH=neo4j/test --env NEO4JLABS_PLUGINS='[\"apoc\",\"graph-data-science\"]'--volume=$(pwd)/db-data:/data --volume=$(pwd)/plugins:/plugins neo4j",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -57,6 +58,7 @@
     "eslint-webpack-plugin": "^3.1.1",
     "html-webpack-plugin": "^5.5.0",
     "source-map-loader": "^3.0.0",
+    "ts-jest": "^29.0.1",
     "ts-loader": "^9.2.6",
     "tsutils": "^3.21.0",
     "typescript": "^4.4.4",
