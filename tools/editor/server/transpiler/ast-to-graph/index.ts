@@ -375,24 +375,10 @@ async function processNode(node: Node, context: Context) {
     }
     if (!ts.isIdentifier(node.name)) throw new Error('variable declaration should have name of identifier kind')
     const identifier = String(node.name.escapedText)
-    if (ts.isLiteralExpression(node.initializer)) {
-      const text = node.initializer.text
-      const value = ts.isNumericLiteral(node.initializer) ? +text : text
-
-      await graph.addNode({
-        parent,
-        type: 'VariableDeclaration',
-        label: String(value),
-        ...context.checker.getTyping(node.initializer),
-        value,
-        identifiers: [identifier]
-      })
-    } else {
       const expNode = await processExpression(node.initializer, context)
       const formerIdentifiers = (await graph.getData(expNode.id)).identifiers || []
 
       await graph.patchData(expNode.id, { identifiers: [...formerIdentifiers, identifier] })
-    }
   } else if (ts.isFunctionDeclaration(node)) {
     return processFunction(node, context)
   } else if (ts.isReturnStatement(node)) {

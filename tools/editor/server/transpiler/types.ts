@@ -4,7 +4,6 @@ export type CallType = 'Call'
 export type LiteralType = 'Literal'
 export type MemberType = 'Member'
 export type BinaryOperatorType = 'BinaryOperator'
-export type VariableDeclarationType = 'VariableDeclaration'
 export type ImportDeclarationType = 'ImportDeclaration'
 export type FunctionDeclarationType = 'FunctionDeclaration'
 export type ParameterDeclarationType = 'ParameterDeclaration'
@@ -20,7 +19,7 @@ export type KeywordTypeType = `${KeywordType}Type`
 
 export type NodeType = CallType | LiteralType | ObjectType | ObjectTypeType | FuncType
   | MemberType | ConditionalType | BinaryOperatorType | FunctionDeclarationType
-  | ParameterDeclarationType | ReturnType | ImportDeclarationType | VariableDeclarationType
+  | ParameterDeclarationType | ReturnType | ImportDeclarationType
   | UnionType | IntersectionType | KeywordTypeType | GenericCallType
 
 export type Value = string | number | boolean | null
@@ -30,13 +29,9 @@ type NodeCommon = {
   parent?: Scope
   typingKind: string | null
   typingText: string
+  identifiers?: string[]
 }
 
-type VariableDeclarationNode = NodeCommon & {
-  type: VariableDeclarationType
-  identifiers: string[]
-  value: Value
-}
 type CallNode = NodeCommon & {
   type: CallType
 }
@@ -78,8 +73,7 @@ type ImportDeclarationNode = NodeCommon & {
   identifiers: string[]
   typeIdentifiers: string[]
 }
-export type NodePayload = VariableDeclarationNode
-  | CallNode
+export type NodePayload = CallNode
   | MemberNode
   | ObjectNode
   | LiteralNode

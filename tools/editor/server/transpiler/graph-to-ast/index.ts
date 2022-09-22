@@ -14,7 +14,7 @@ function getLiteral(value: Value) {
   throw new Error('cannot process the value')
 }
 
-const refTypes = <NodeType[]>['ImportDeclaration', 'VariableDeclaration', 'FunctionDeclaration', 'ParameterDeclaration']
+const refTypes = <NodeType[]>['ImportDeclaration', 'FunctionDeclaration', 'ParameterDeclaration']
 const topOnlyTypes =  <NodeType[]>['ImportDeclaration']
 
 function getVariableName(node: NodeSingular) {
@@ -54,7 +54,7 @@ function useExpression(node: NodeSingular, context: Context) {
     return f.createIdentifier(name)
   }
 
-  if ('identifiers' in data && data.identifiers[0]) { // create variable if it originally has identifier (to keep code in sync with original source code)
+  if ('identifiers' in data && data.identifiers && data.identifiers[0]) { // create variable if it originally has identifier (to keep code in sync with original source code)
     ctx.addVariable(node.id(), data.identifiers[0])
     if (!ctx.findStatement(node.id())) {
       ctx.addStatement(node.id(), createVariable(data.identifiers[0], processExpression(node, ctx)))
@@ -248,7 +248,7 @@ function createVariable(name: string, initializer: ts.Expression) {
 function processStatement(node: NodeSingular, context: Context): ts.Statement {
   const data = node.data() as NodeData | TypeNodeData
 
-  if (data.type === 'VariableDeclaration') {
+  if (data.type === 'Literal') {
     context.getTop().addProcessed(node, 'statement')
     const name = getVariableName(node)
     if (data.value === undefined) throw new Error('value should not be undefined')
