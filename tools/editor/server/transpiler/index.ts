@@ -6,7 +6,7 @@ import { TypeChecker } from './type-checker'
 import { Core } from 'cytoscape'
 import { graphToAst } from './graph-to-ast'
 
-export class Transpiler {
+export class CodeTranspiler {
   private program: ts.Program
   private checker: TypeChecker
 
@@ -32,8 +32,18 @@ export class Transpiler {
   async toGraph(graph: Graph) {
     return astToGraph(this.getAST(), this.checker, graph)
   }
+}
 
-  async fromGraph(graph: Core) {
+export class GraphTranpiler {
+  async toSourceFile(graph: Core) {
     return graphToAst(graph)
+  }
+
+  print(sourceFile: ts.SourceFile) {
+    const printer = ts.createPrinter({
+      newLine: ts.NewLineKind.LineFeed
+    })
+
+    return printer.printFile(sourceFile)
   }
 }

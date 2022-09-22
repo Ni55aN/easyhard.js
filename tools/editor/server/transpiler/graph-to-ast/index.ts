@@ -385,26 +385,16 @@ function traverseNodes(nodes: NodeCollection, filter: (node: NodeSingular) => bo
   }
 }
 
-export function debug(statement: ts.Statement) {
+export async function graphToAst(graph: Core): Promise<ts.SourceFile> {
   const sourceFile = ts.createSourceFile('file.ts', '', ts.ScriptTarget.ES2020)
-  const printer = ts.createPrinter({
-    newLine: ts.NewLineKind.LineFeed
-  })
-  return printer.printNode(ts.EmitHint.Unspecified, statement, sourceFile)
-}
-
-export async function graphToAst(graph: Core): Promise<string> {
-  const sourceFile = ts.createSourceFile('file.ts', '', ts.ScriptTarget.ES2020)
-  const printer = ts.createPrinter({
-    newLine: ts.NewLineKind.LineFeed
-  })
   const context = new Context(undefined, undefined)
 
   traverseNodes(graph.nodes().orphans(), n => !n.data('parent'), context, n => {
     useStatement(n, context)
   })
 
-  return context.getStatements().map(statement => {
-    return printer.printNode(ts.EmitHint.Unspecified, statement, sourceFile)
-  }).join('\n')
+  return f.updateSourceFile(sourceFile, context.getStatements())
 }
+
+
+

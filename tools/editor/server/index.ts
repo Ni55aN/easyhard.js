@@ -7,8 +7,8 @@ import { catchError, mergeMap, OperatorFunction, pipe, throwError } from 'rxjs'
 import cytoscape, { Core, ElementDefinition } from 'cytoscape'
 import { Actions } from '../shared/bridge'
 import { clear, setProgram } from './neo4j-view'
-import { cytoscapeReader, cytoscapeWriter } from './cy-view/adapter'
-import { Transpiler } from './transpiler'
+import { cytoscapeWriter } from './cy-view/adapter'
+import { CodeTranspiler, GraphTranpiler } from './transpiler'
 import { Simplifier } from './simplifier'
 import {
   RxTransformer,
@@ -60,7 +60,7 @@ function exportGraph(cy: Core) {
 
 async function openFile({ path }: { path: string }) {
   const file = join(__dirname, path)
-  const transpiler = new Transpiler(file)
+  const transpiler = new CodeTranspiler(file)
 
   const cy = cytoscape()
   console.time('process ' + path)
@@ -82,7 +82,15 @@ async function openFile({ path }: { path: string }) {
 
   simplifier.forward(cy)
   simplifier.backward(cy)
-  await transpiler.fromGraph(cy)
+
+  ;(async () => {
+    console.time('fromGraph ' + path)
+    const transpiler = new GraphTranpiler()
+    const sourceFile = await transpiler.toSourceFile(cy)
+
+    console.log(transpiler.print(sourceFile))
+    console.timeEnd('fromGraph ' + path)
+  })()
 
   return {
     data: exportGraph(cy).elements
