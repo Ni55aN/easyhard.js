@@ -14,4 +14,18 @@ describe('code to graph', () => {
       ]
     })
   })
+
+  test('recursion', async () => {
+    const graph = await fixtureToGraph('recursion')
+
+    expectGraph(graph).match({
+      nodes: [
+        { id: 1, type: 'Call', parent: 2 },
+        { id: 2, type: 'FunctionDeclaration' }
+      ],
+      edges: [
+        { source: 2, target: 1, label: 'function' }
+      ]
+    })
+  })
 })
