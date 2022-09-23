@@ -28,4 +28,47 @@ describe('code to graph', () => {
       ]
     })
   })
+
+  test('cyclic', async () => {
+    const graph = await fixtureToGraph('cyclic')
+
+    console.log(JSON.stringify(graph.json()))
+
+    expectGraph(graph).match({
+      nodes: [
+        {
+          id: 1,
+          type: 'FunctionDeclaration',
+          identifiers: ['a']
+        },
+        {
+          id: 2,
+          type: 'FunctionDeclaration',
+          identifiers: ['b']
+        },
+        {
+          id: 3,
+          parent: 1,
+          type: 'Call'
+        },
+        {
+          id: 4,
+          parent: 2,
+          type: 'Call'
+        }
+      ],
+      edges: [
+        {
+          source: 2,
+          target: 3,
+          label: 'function',
+        },
+        {
+          source: 1,
+          target: 4,
+          label: 'function',
+        }
+      ]
+    })
+  })
 })
