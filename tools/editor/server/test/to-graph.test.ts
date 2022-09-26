@@ -86,6 +86,43 @@ describe('code to graph', () => {
     })
   })
 
+  test('export', async () => {
+    const graph = await fixtureToGraph('export')
+
+    expectGraph(graph).match({
+      nodes: [
+        { id: 1, type: 'Literal', value: 1 },
+        { id: 2, type: 'Export', name: 'a' },
+        { id: 3, type: 'ImportDeclaration', identifiers: ['Number'] },
+        { id: 4, type: 'Export', name: 'Number' }
+      ],
+      edges: [
+        { source: 1, target: 2 },
+        { source: 3, target: 4 },
+      ]
+    })
+  })
+
+  test('export using modifier', async () => {
+    const graph = await fixtureToGraph('export-modifier')
+
+    expectGraph(graph).match({
+      nodes: [
+        { id: 1, type: 'Literal', value: 1 },
+        { id: 2, type: 'Literal', value: 2 },
+        { id: 3, type: 'Export', name: 'a' },
+        { id: 4, type: 'Export', name: 'b' },
+        { id: 5, type: 'FunctionDeclaration' },
+        { id: 6, type: 'Export', name: 'c' }
+      ],
+      edges: [
+        { source: 1, target: 3 },
+        { source: 2, target: 4 },
+        { source: 5, target: 6 },
+      ]
+    })
+  })
+
   test('binary operator', async () => {
     const graph = await fixtureToGraph('binary-operator')
 
