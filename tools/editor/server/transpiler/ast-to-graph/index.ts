@@ -270,10 +270,10 @@ async function processBinary(expression: ts.BinaryExpression, context: Context):
   return { id }
 }
 
-async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression, context: Context): Promise<{ id: string }> {
+async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression, context: Context): Promise<{ id: string, identifier?: string }> {
   const { graph, parent } = context
   const { name, body } = expression
-  const identifier = name?.escapedText
+  const identifier = name ? String(name.escapedText) : undefined
 
   const { id } = await graph.addNode({
     parent,
@@ -329,49 +329,96 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
   }
   })
 
-  return { id }
+  return { id, identifier }
 }
 
-async function processNode(node: Node, context: Context) {
+function hasExportModifier(statement: ts.Statement) {
+  return statement.modifiers?.find(m => m.kind === SyntaxKind.ExportKeyword)
+}
+
+async function addExport(statements: { id: string, identifier?: string }[], context: Context) {
+  const { graph } = context
+  const list: { id: string }[] = []
+
+  for (const statement of statements) {
+    if (!statement.identifier) throw new Error('identifier is undefined')
+    const { id } = await graph.addNode({
+      type: 'Export',
+      label: `export ${statement.identifier}`,
+      typingKind: null,
+      name: statement.identifier,
+      typingText: ''
+    })
+    await graph.addEdge(statement.id, id, { index: 0 })
+    list.push({ id })
+  }
+
+  return list
+}
+
+async function addImport(name: ts.Identifier, source: string | undefined, module: string, context: Context) {
   const { graph, parent } = context
+  const local = String(name.escapedText)
 
-  if (node.kind === SyntaxKind.SyntaxList) {
-    for (const child of node.getChildren()) {
-      await processNode(child, context)
+  const ident = await graph.findIdentifier(local, 'identifiers', parent)
+
+  if (ident && (await graph.getData(ident.id)).type === 'ImportDeclaration') return {
+    id: ident.id,
+    identifier: local
     }
-  } else if (ts.isImportDeclaration(node)) {
-    const { moduleSpecifier, importClause } = node
 
-    if (!ts.isStringLiteral(moduleSpecifier)) throw new Error('imported module name should be literal')
-    if (!importClause?.namedBindings || !ts.isNamedImports(importClause.namedBindings)) throw new Error('import should have only named bindings')
-    const module = moduleSpecifier.text
-
-    for (const binding of importClause.namedBindings.elements) {
-      const local = String(binding.name.escapedText)
-      const source = binding.propertyName ? String(binding.propertyName.escapedText) : undefined
-      await graph.addNode({
+  const node = await graph.addNode({
         parent,
         type: 'ImportDeclaration',
         label: 'import ' + local,
-        ...context.checker.getTyping(binding.name),
+    ...context.checker.getTyping(name),
         identifiers: [local],
         typeIdentifiers: [local],
         module,
         source
       })
+
+  return {
+    id: node.id,
+    identifier: local
+  }
     }
-  } else if (node.kind === SyntaxKind.FirstStatement) {
-    for (const child of node.getChildren()) {
-      await processNode(child, context)
+
+async function processNode(node: Node, context: Context): Promise<{ id: string, identifier?: string }[]> {
+  const { graph, parent } = context
+
+  if (ts.isImportDeclaration(node)) {
+    const { moduleSpecifier, importClause } = node
+
+    if (!ts.isStringLiteral(moduleSpecifier)) throw new Error('imported module name should be literal')
+    if (!importClause?.namedBindings || !ts.isNamedImports(importClause.namedBindings)) throw new Error('import should have only named bindings')
+    const module = moduleSpecifier.text
+    const list: { id: string }[] = []
+
+    for (const binding of importClause.namedBindings.elements) {
+      const source = binding.propertyName ? String(binding.propertyName.escapedText) : undefined
+
+      list.push(await addImport(binding.name, source, module, context))
     }
+
+    return list
+  } else if (ts.isVariableStatement(node)) {
+    const statements = await processNode(node.declarationList, context)
+
+    if (hasExportModifier(node)) {
+      return [...statements, ...await addExport(statements, context)]
+    }
+    return statements
   } else if (ts.isVariableDeclarationList(node)) {
+    const statements: { id: string }[] = []
     for (const declaration of node.declarations) {
-      await processNode(declaration, context)
+      statements.push(...await processNode(declaration, context))
     }
+    return statements
   } else if (ts.isVariableDeclaration(node)) {
     if (!node.initializer) {
       console.info('Skipped VariableDeclaration without "initializer"')
-      return
+      return []
     }
     if (!ts.isIdentifier(node.name)) throw new Error('variable declaration should have name of identifier kind')
     const identifier = String(node.name.escapedText)
@@ -379,8 +426,15 @@ async function processNode(node: Node, context: Context) {
       const formerIdentifiers = (await graph.getData(expNode.id)).identifiers || []
 
       await graph.patchData(expNode.id, { identifiers: [...formerIdentifiers, identifier] })
+
+    return [{ id: expNode.id, identifier }]
   } else if (ts.isFunctionDeclaration(node)) {
-    return processFunction(node, context)
+    const statement = await processFunction(node, context)
+
+    if (hasExportModifier(node)) {
+      return [statement, ...await addExport([statement], context)]
+    }
+    return [statement]
   } else if (ts.isReturnStatement(node)) {
     const { id } = await graph.addNode({
       parent,
@@ -394,16 +448,52 @@ async function processNode(node: Node, context: Context) {
 
       await graph.addEdge(expNode.id, id, { index: 0 })
     }
+    return [{ id }]
   } else if (ts.isExpressionStatement(node)) {
-    return processExpression(node.expression, context)
+    return [await processExpression(node.expression, context)]
   } else if (ts.isTypeAliasDeclaration(node)) {
     const type = await processType(node.type, context)
     const identifier = String(node.name.escapedText)
     const formerIdentifiers = (await graph.getData(type.id)).typeIdentifiers || []
 
     graph.patchData(type.id, { typeIdentifiers: [...formerIdentifiers, identifier] })
+    return [{ id: type.id, identifier }]
   } else if (ts.isExportDeclaration(node)) {
+    const { moduleSpecifier, exportClause } = node
+    if (!exportClause || exportClause.kind !== SyntaxKind.NamedExports) throw new Error('exportClause')
+    const list: { id: string }[] = []
+
+    if (moduleSpecifier) {
+      if (!ts.isStringLiteral(moduleSpecifier)) throw new Error('imported module name should be literal')
+      const module = moduleSpecifier.text
+
+      for (const element of exportClause.elements) {
+        const source = element.propertyName ? String(element.propertyName.escapedText) : undefined
+
+        const importNode = await addImport(element.name, source, module, context)
+
+        list.push(...await addExport([importNode], context))
+      }
+    } else {
+      for (const element of exportClause.elements) {
+        const name = element.name.escapedText.toString()
+        const ident = await graph.findIdentifier(name, 'identifiers', parent)
+
+        if (!ident) throw new Error('exportClause identifier')
+
+        list.push(...await addExport([{ id: ident.id, identifier: name }], context))
+      }
+    }
+
+    return list
+  } else if ([SyntaxKind.SyntaxList, SyntaxKind.FirstStatement].includes(node.kind)) {
+    const list: { id: string, identifier?: string }[] = []
+    for (const child of node.getChildren()) {
+      list.push(...await processNode(child, context))
+    }
+    return list
   } else if (node.kind === SyntaxKind.EndOfFileToken) {
+    return []
   } else {
     throw new Error('processNode: cannot process ' + node.kind)
   }

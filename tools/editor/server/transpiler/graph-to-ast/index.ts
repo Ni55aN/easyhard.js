@@ -323,6 +323,18 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
       [],
       processType(node, context)
     )
+  } else if (data.type === 'Export') {
+    context.getTop().addProcessed(node, 'statement')
+    const source = node.incomers('edge').source()
+
+    useStatement(source, context)
+
+    return f.createExportDeclaration(
+      undefined,
+      undefined,
+      false,
+      f.createNamedExports([f.createExportSpecifier(false, undefined, data.name)])
+    )
   } else {
     return f.createExpressionStatement(useExpression(node, context))
   }

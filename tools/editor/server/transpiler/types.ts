@@ -5,6 +5,7 @@ export type LiteralType = 'Literal'
 export type MemberType = 'Member'
 export type BinaryOperatorType = 'BinaryOperator'
 export type ImportDeclarationType = 'ImportDeclaration'
+export type ExportType = 'Export'
 export type FunctionDeclarationType = 'FunctionDeclaration'
 export type ParameterDeclarationType = 'ParameterDeclaration'
 export type ReturnType = 'Return'
@@ -21,6 +22,7 @@ export type NodeType = CallType | LiteralType | ObjectType | ObjectTypeType | Fu
   | MemberType | ConditionalType | BinaryOperatorType | FunctionDeclarationType
   | ParameterDeclarationType | ReturnType | ImportDeclarationType
   | UnionType | IntersectionType | KeywordTypeType | GenericCallType
+  | ExportType
 
 export type Value = string | number | boolean | null
 
@@ -73,6 +75,11 @@ type ImportDeclarationNode = NodeCommon & {
   identifiers: string[]
   typeIdentifiers: string[]
 }
+type ExportNode = NodeCommon & {
+  type: ExportType
+  name: string
+}
+
 export type NodePayload = CallNode
   | MemberNode
   | ObjectNode
@@ -83,6 +90,7 @@ export type NodePayload = CallNode
   | ReturnNode
   | ParameterDeclarationNode
   | ImportDeclarationNode
+  | ExportNode
 
 export type NodeData = { id: string } & NodePayload
 
@@ -98,7 +106,7 @@ export type TypeNodeData = { id: string } & TypeNodePayload
 
 export type Graph = {
   addNode<T extends NodePayload | TypeNodePayload>(data: T): Promise<{ id: string }>
-  addEdge(source: string, target: string,  data: Record<string, any>): Promise<{ id: string }>
+  addEdge(source: string, target: string,  data: { index: number } & Record<string, any>): Promise<{ id: string }>
   findIdentifier(name: string, prop: 'identifiers' | 'typeIdentifiers', parent: Scope): Promise<null | { id: string }>
   getData(id: string): Promise<Record<string, any>>
   patchData(id: string, data: Record<string, any>): Promise<void>
