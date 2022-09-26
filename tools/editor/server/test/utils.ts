@@ -41,37 +41,37 @@ export function expectGraph(graph: Core) {
 
       nodeMatches.forEach(match => {
         if (match.matches.length === 0) throw new Error(`not found node for ${JSON.stringify(match.data)}`)
-        if (match.matches.length > 1) throw new Error(`found more than 1 node for ${JSON.stringify(match.data)}`)
+        // TODO not safe when found multiple matches
       })
       if (elements.nodes.length !== graph.nodes().length) throw new Error('number of nodes is not equal')
       if ((elements.edges?.length || 0) !== graph.edges().length) throw new Error('number of edges is not equal')
       nodeMatches.filter(match => match.parent).forEach(match => {
-        const node = match.matches[0]
+        const nodes = match.matches
+        const realParentIds = nodes.map(n => n.parent().data('id'))
         const parent = nodeMatches.find(n => n.id === match.parent)
 
         if (!parent) throw new Error(`parent node ${match.parent} does not exist`)
-        if (node.parent().data('id') !== parent.matches[0].data('id')) throw new Error(`${match.parent} is not parent for ${match.id}`)
+        if (_.intersection(realParentIds, parent.matches.map(n => n.data('id'))).length !== 1) throw new Error(`${match.parent} is not parent for ${match.id}`)
       })
 
       if (!elements.edges) return
 
       const edgesMatches = elements.edges.map(data => {
-        const realSource = nodeMatches.find(n => n.id === data.source)?.matches[0]
-        const realTarget = nodeMatches.find(n => n.id === data.target)?.matches[0]
+        const realSource = nodeMatches.find(n => n.id === data.source)?.matches
+        const realTarget = nodeMatches.find(n => n.id === data.target)?.matches
 
         if (!realSource) throw new Error(`cannot find source for ${JSON.stringify(data)}`)
         if (!realTarget) throw new Error(`cannot find target for ${JSON.stringify(data)}`)
 
-        const match = _.matches({ ...data, source: realSource.id(), target: realTarget.id() })
+        const match = realSource.map(source => realTarget.map(target => _.matches({ ...data, source: source.id(), target: target.id() }))).flat()
 
         return {
           data,
-          matches: graph.edges().filter(edge => match(edge.data()))
+          matches: graph.edges().filter(edge => match.some(m => m(edge.data())))
         }
       })
       edgesMatches.forEach(match => {
         if (match.matches.length === 0) throw new Error(`not found edge for ${JSON.stringify(match.data)}`)
-        if (match.matches.length > 1) throw new Error(`found more than 1 edge for ${JSON.stringify(match.data)}`)
       })
     },
     toHaveNode<T extends Record<string, unknown>>(data: T) {
