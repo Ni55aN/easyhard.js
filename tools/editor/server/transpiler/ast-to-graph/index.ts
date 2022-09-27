@@ -159,9 +159,18 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
       label: 'func type',
       ...context.checker.getTyping(statement)
     })
+
+    for (const parameter of statement.parameters) {
+      const index = statement.parameters.indexOf(parameter)
+
+      if (!parameter.type) throw new Error('parameter type')
+      const type = await processType(parameter.type, context)
+
+      await graph.addEdge(type.id, id, { label: 'parameter ' + index, type: 'ParameterType', index })
+    }
     const returnType = await processType(statement.type, context)
 
-    await graph.addEdge(returnType.id, id, { label: 'return', index: 0 })
+    await graph.addEdge(returnType.id, id, { label: 'return', type: 'ReturnType', index: 0 })
 
     return { id }
   } else {

@@ -184,11 +184,23 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode {
 
     return f.createTypeReferenceNode(ref.typeName, typeArgs)
   } else if (data.type === 'FuncType') {
-    const returnNode = node.incomers('edge[label="return"]').source()
+    const returnNode = node.incomers('edge[type="ReturnType"]').source()
+    const parameterNodes = node.incomers('edge[type="ParameterType"]')
+      .sort((a, b) => a.data('index') - b.data('index'))
+      .map((n: EdgeSingular) => n.source())
 
     return f.createFunctionTypeNode(
       [],
-      [],
+      parameterNodes.map(p => {
+        return f.createParameterDeclaration(
+          undefined,
+          undefined,
+          undefined,
+          p.id(),
+          undefined,
+          useType(p, context)
+        )
+      }),
       useType(returnNode, context)
     )
   } else {
