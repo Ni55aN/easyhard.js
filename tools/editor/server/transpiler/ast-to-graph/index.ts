@@ -1,5 +1,5 @@
 import { Graph, KeywordType } from '../types'
-import ts, { Node, SyntaxKind } from 'typescript'
+import ts, { Node, NodeArray, SyntaxKind, TypeParameterDeclaration } from 'typescript'
 import { tokenToString } from '../tokens'
 import { getLiteralValue, isLiteral } from './literal-utils'
 import { Context } from './context'
@@ -153,24 +153,9 @@ async function processType(statement: ts.TypeNode, context: Context): Promise<{ 
 
     return { id }
   } else if (ts.isFunctionTypeNode(statement)) {
-    const { id } = await graph.addNode({
-      parent,
-      type: 'FuncType',
-      label: 'func type',
-      ...context.checker.getTyping(statement)
-    })
+    const { id, scopeContext } = await createTypeScope('FuncType', statement.typeParameters, statement.type, context)
 
-    for (const parameter of statement.parameters) {
-      const index = statement.parameters.indexOf(parameter)
-
-      if (!parameter.type) throw new Error('parameter type')
-      const type = await processType(parameter.type, context)
-
-      await graph.addEdge(type.id, id, { label: 'parameter ' + index, type: 'ParameterType', index })
-    }
-    const returnType = await processType(statement.type, context)
-
-    await graph.addEdge(returnType.id, id, { label: 'return', type: 'ReturnType', index: 0 })
+    await processFunctionParameters(statement.parameters, scopeContext)
 
     return { id }
   } else {
@@ -293,27 +278,8 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
   })
   const functionContext = context.getSubcontext(id)
 
-  for (const statement of expression.parameters) {
-    if (!ts.isIdentifier(statement.name)) throw new Error('FunctionDeclaration: cannot process ' + statement.kind)
-
-    const name = String(statement.name.escapedText)
-    const index = expression.parameters.indexOf(statement)
-
-    const statementNope = await graph.addNode({
-      parent: id,
-      type: 'ParameterDeclaration',
-      label: 'parameter ' + index,
-      ...context.checker.getTyping(statement),
-      name,
-      identifiers: [name]
-    })
-
-    if (!statement.type) throw new Error('parameter should have type')
-
-    const typeAnnotationNode = await processType(statement.type, functionContext)
-
-    await graph.addEdge(typeAnnotationNode.id, statementNope.id, { label: 'type', index: 0 })
-  }
+  await processTypeParameters(expression.typeParameters, functionContext)
+  await processFunctionParameters(expression.parameters, functionContext)
 
   if (!body) throw new Error('function should have a body')
 
@@ -321,21 +287,21 @@ async function processFunction(expression: ts.FunctionDeclaration | ts.ArrowFunc
     if (ts.isBlock(body)) {
       for (const statement of body.statements) {
         await processNode(statement, functionContext)
-    }
+      }
       await functionContext.flushDeffered()
-  } else {
-    const { id: returnId } = await graph.addNode({
-      parent: id,
-      type: 'Return',
-      label: 'return',
-      ...context.checker.getTyping(expression)
-    })
+    } else {
+      const { id: returnId } = await graph.addNode({
+        parent: id,
+        type: 'Return',
+        label: 'return',
+        ...context.checker.getTyping(expression)
+      })
 
       const expNode = await processExpression(body, functionContext)
 
-    await graph.addEdge(expNode.id, returnId, { index: 0 })
+      await graph.addEdge(expNode.id, returnId, { index: 0 })
       await functionContext.flushDeffered()
-  }
+    }
   })
 
   return { id, identifier }
@@ -374,24 +340,98 @@ async function addImport(name: ts.Identifier, source: string | undefined, module
   if (ident && (await graph.getData(ident.id)).type === 'ImportDeclaration') return {
     id: ident.id,
     identifier: local
-    }
+  }
 
   const node = await graph.addNode({
-        parent,
-        type: 'ImportDeclaration',
-        label: 'import ' + local,
+    parent,
+    type: 'ImportDeclaration',
+    label: 'import ' + local,
     ...context.checker.getTyping(name),
-        identifiers: [local],
-        typeIdentifiers: [local],
-        module,
-        source
-      })
+    identifiers: [local],
+    typeIdentifiers: [local],
+    module,
+    source
+  })
 
   return {
     id: node.id,
     identifier: local
   }
-    }
+}
+
+async function processFunctionParameters(parameters: NodeArray<ts.ParameterDeclaration>, context: Context) {
+  const { graph, parent } = context
+
+  for (const parameter of parameters) {
+    const index = parameters.indexOf(parameter)
+
+    if (!ts.isIdentifier(parameter.name)) throw new Error('FunctionDeclaration: cannot process ' + parameter.kind)
+    const name = String(parameter.name.escapedText)
+
+    const parameterNode = await graph.addNode({
+      parent,
+      type: 'ParameterDeclaration',
+      label: 'parameter ' + index,
+      index,
+      ...context.checker.getTyping(parameter),
+      name,
+      identifiers: [name]
+    })
+
+    if (!parameter.type) throw new Error('parameter should have type')
+
+    const typeAnnotationNode = await processType(parameter.type, context)
+
+    await graph.addEdge(typeAnnotationNode.id, parameterNode.id, { label: 'type', index })
+  }
+}
+
+async function processTypeParameters(typeParameters: NodeArray<TypeParameterDeclaration> | undefined, context: Context) {
+  const { graph, parent } = context
+  if (!typeParameters) return
+
+  for (const typeParameter of typeParameters) {
+    const index = typeParameters.indexOf(typeParameter)
+    const name = String(typeParameter.name.escapedText)
+
+    await graph.addNode({
+      parent,
+      type: 'GenericParameter',
+      label: 'generic parameter ' + index,
+      index,
+      name,
+      typeIdentifiers: [name],
+      ...context.checker.getTyping(typeParameter)
+    })
+  }
+}
+
+async function createTypeScope(nodeType: 'TypeScope' | 'FuncType', typeParameters: NodeArray<TypeParameterDeclaration> | undefined, type: ts.TypeNode, context: Context) {
+  const { graph, parent } = context
+  const typeScopeNode = await graph.addNode({
+    parent,
+    type: nodeType,
+    label: nodeType === 'TypeScope' ? 'scope type' : 'function type',
+    typeIdentifiers: [],
+    typingKind: null,
+    typingText: ''
+  })
+  const returnNode = await graph.addNode({
+    parent: typeScopeNode.id,
+    type: 'ReturnType',
+    label: 'return type',
+    typingKind: null,
+    typingText: ''
+  })
+  const scopeContext = context.getSubcontext(typeScopeNode.id)
+
+  await processTypeParameters(typeParameters, scopeContext)
+
+  const { id } = await processType(type, scopeContext)
+  await graph.addEdge(id, returnNode.id, { index: 0 })
+
+  return { id: typeScopeNode.id, scopeContext }
+}
 
 async function processNode(node: Node, context: Context): Promise<{ id: string, identifier?: string }[]> {
   const { graph, parent } = context
@@ -431,10 +471,10 @@ async function processNode(node: Node, context: Context): Promise<{ id: string, 
     }
     if (!ts.isIdentifier(node.name)) throw new Error('variable declaration should have name of identifier kind')
     const identifier = String(node.name.escapedText)
-      const expNode = await processExpression(node.initializer, context)
-      const formerIdentifiers = (await graph.getData(expNode.id)).identifiers || []
+    const expNode = await processExpression(node.initializer, context)
+    const formerIdentifiers = (await graph.getData(expNode.id)).identifiers || []
 
-      await graph.patchData(expNode.id, { identifiers: [...formerIdentifiers, identifier] })
+    await graph.patchData(expNode.id, { identifiers: [...formerIdentifiers, identifier] })
 
     return [{ id: expNode.id, identifier }]
   } else if (ts.isFunctionDeclaration(node)) {
@@ -461,12 +501,21 @@ async function processNode(node: Node, context: Context): Promise<{ id: string, 
   } else if (ts.isExpressionStatement(node)) {
     return [await processExpression(node.expression, context)]
   } else if (ts.isTypeAliasDeclaration(node)) {
-    const type = await processType(node.type, context)
-    const identifier = String(node.name.escapedText)
-    const formerIdentifiers = (await graph.getData(type.id)).typeIdentifiers || []
+    if (node.typeParameters) {
+      const typeScope = await createTypeScope('TypeScope', node.typeParameters, node.type, context)
+      const name = String(node.name.escapedText)
 
-    graph.patchData(type.id, { typeIdentifiers: [...formerIdentifiers, identifier] })
-    return [{ id: type.id, identifier }]
+      await graph.patchData(typeScope.id, { typeIdentifiers: [name] })
+      return [typeScope]
+    } else {
+      const type = await processType(node.type, context)
+      const identifier = String(node.name.escapedText)
+      const formerIdentifiers = (await graph.getData(type.id)).typeIdentifiers || []
+
+      await graph.patchData(type.id, { typeIdentifiers: [...formerIdentifiers, identifier] })
+
+      return [{ id: type.id, identifier }]
+    }
   } else if (ts.isExportDeclaration(node)) {
     const { moduleSpecifier, exportClause } = node
     if (!exportClause || exportClause.kind !== SyntaxKind.NamedExports) throw new Error('exportClause')

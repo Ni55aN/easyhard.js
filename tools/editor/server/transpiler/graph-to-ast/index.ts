@@ -133,7 +133,7 @@ function processExpression(node: NodeSingular, context: Context): ts.Expression 
   }
 }
 
-function processType(node: NodeSingular, context: Context): ts.TypeNode {
+function processType(node: NodeSingular, context: Context): ts.TypeNode | ts.TypeAliasDeclaration {
   const data = node.data() as TypeNodeData
 
   context.getTop().addProcessed(node, 'type')
@@ -186,27 +186,56 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode {
 
     return f.createTypeReferenceNode(ref.typeName, typeArgs)
   } else if (data.type === 'FuncType') {
-    const returnNode = node.incomers('edge[type="ReturnType"]').source()
-    const parameterNodes = node.incomers('edge[type="ParameterType"]')
-      .sort((a, b) => a.data('index') - b.data('index'))
-      .map((n: EdgeSingular) => n.source())
+    const { typeParameters, returnType, scopeContext } = processTypeScope(node, context)
+    const parameters = processFunctionParameters(node, scopeContext)
 
     return f.createFunctionTypeNode(
-      [],
-      parameterNodes.map(p => {
-        return f.createParameterDeclaration(
+      typeParameters,
+      parameters,
+      returnType
+    )
+  }  else if (data.type === 'TypeScope') {
+    const { typeParameters, returnType } = processTypeScope(node, context)
+    const name = data.typeIdentifiers && data.typeIdentifiers[0] || 'unknown'
+
+    return f.createTypeAliasDeclaration(
           undefined,
           undefined,
-          undefined,
-          p.id(),
-          undefined,
-          useType(p, context)
-        )
-      }),
-      useType(returnNode, context)
+      name,
+      typeParameters,
+      returnType
     )
   } else {
     throw new Error('processType')
+  }
+}
+
+function processTypeParameters(node: NodeSingular, context: Context) {
+  const genericParameterNodes = node.children().filter(n => (n.data('type') as NodeType) === 'GenericParameter')
+    .sort((a, b) => a.data('index') - b.data('index')) as NodeCollection
+
+  return genericParameterNodes.map(p => {
+    const name = p.data('name')
+    context.getTop().addProcessed(p, 'statement')
+    context.addType(p.id(), name)
+    return f.createTypeParameterDeclaration(
+      undefined,
+      name
+    )
+  })
+}
+
+function processTypeScope(node: NodeSingular, context: Context) {
+  const returnNode = node.children().filter(n => (n.data('type') as NodeType) === 'ReturnType')[0] as NodeSingular | undefined
+  const scopeContext = new Context(context, node.id())
+  if (!returnNode) throw new Error('returnNode')
+
+  scopeContext.getTop().addProcessed(returnNode, 'statement')
+
+  return {
+    typeParameters: processTypeParameters(node, scopeContext),
+    returnType: useType(returnNode.incomers('edge').source(), scopeContext),
+    scopeContext
   }
 }
 
@@ -249,7 +278,11 @@ function useType(node: NodeSingular, context: Context): ts.TypeNode {
     return f.createTypeReferenceNode(data.typeIdentifiers[0])
   }
 
-  return processType(node, ctx)
+  const type = processType(node, ctx)
+
+  if (ts.isTypeAliasDeclaration(type)) throw new Error('isTypeAliasDeclaration')
+
+  return type
 }
 
 function createVariable(name: string, initializer: ts.Expression) {
@@ -289,28 +322,10 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
   } else if (data.type === 'FunctionDeclaration') {
     context.getTop().addProcessed(node, 'statement')
     const name = getVariableName(node)
-    const parameterNodes = node.children().filter(n => (n.data('type') as NodeType) === 'ParameterDeclaration')
-
     const functionContext = new Context(context, node.id())
-    const parameters = parameterNodes.map((n: NodeSingular) => {
-      context.getTop().addProcessed(n, 'expression')
-      const type = n.incomers('edge[label="type"]').source()
-      if (!type) throw new Error('type edge missing')
+    const typeParameters = processTypeParameters(node, functionContext)
+    const parameters = processFunctionParameters(node, functionContext)
 
-      return f.createParameterDeclaration(
-        undefined,
-        undefined,
-        undefined,
-        f.createIdentifier(n.data('name')),
-        undefined,
-        useType(type, functionContext),
-        undefined
-      )
-    })
-
-    parameterNodes.forEach(p => {
-      functionContext.addVariable(p.id(), p.data('name'))
-    })
     traverseNodes(node.children(), n => n.data('parent') === node.id(), functionContext, n => {
       useStatement(n, functionContext)
     })
@@ -319,7 +334,7 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
       undefined,
       undefined,
       undefined,// f.createIdentifier(name),
-      undefined,
+      typeParameters,
       parameters,
       undefined,
       f.createBlock(functionContext.getStatements(), true)
@@ -330,11 +345,8 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
 
     return f.createReturnStatement(useExpression(expNode, context))
   } else if (isTypeNode(data)) {
-    return f.createTypeAliasDeclaration(
-      undefined,
-      undefined,
+    return createTypeAlias(
       data.typeIdentifiers ? data.typeIdentifiers[0] : `type_${node.id()}`,
-      [],
       processType(node, context)
     )
   } else if (data.type === 'Export') {
@@ -354,7 +366,34 @@ function processStatement(node: NodeSingular, context: Context): ts.Statement {
   }
 }
 
-function createTypeAlias(name: string, type: ts.TypeNode) {
+function processFunctionParameters(node: NodeSingular, context: Context) {
+  const parameterNodes = node.children().filter(n => (n.data('type') as NodeType) === 'ParameterDeclaration')
+
+  const parameters = parameterNodes.map((n: NodeSingular) => {
+    context.getTop().addProcessed(n, 'expression')
+    const type = n.incomers('edge[label="type"]').source()
+    if (!type) throw new Error('type edge missing')
+
+    return f.createParameterDeclaration(
+      undefined,
+      undefined,
+      undefined,
+      f.createIdentifier(n.data('name')),
+      undefined,
+      useType(type, context),
+      undefined
+    )
+  })
+
+  parameterNodes.forEach(p => {
+    context.addVariable(p.id(), p.data('name'))
+  })
+
+  return parameters
+}
+
+function createTypeAlias(name: string, type: ts.TypeNode | ts.TypeAliasDeclaration) {
+  if (ts.isTypeAliasDeclaration(type)) return type
   return f.createTypeAliasDeclaration(
     undefined,
     undefined,
@@ -365,7 +404,7 @@ function createTypeAlias(name: string, type: ts.TypeNode) {
 }
 
 function isTypeNode(data: NodeData | TypeNodeData): data is TypeNodeData {
-  const types = <TypeNodeData['type'][]>['FuncType', 'NumberType', 'StringType', 'BooleanType', 'GenericCall', 'IntersectionType', 'NullType', 'ObjectType', 'UnionType']
+  const types = <TypeNodeData['type'][]>['FuncType', 'TypeScope', 'NumberType', 'StringType', 'BooleanType', 'GenericCall', 'IntersectionType', 'NullType', 'ObjectType', 'UnionType']
 
   return types.includes(data.type as TypeNodeData['type'])
 }

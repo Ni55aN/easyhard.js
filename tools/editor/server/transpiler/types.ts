@@ -12,6 +12,9 @@ export type ReturnType = 'Return'
 export type ObjectType = 'Object'
 export type ObjectTypeType = 'ObjectType'
 export type ConditionalType = 'Conditional'
+export type GenericParameterType = 'GenericParameter'
+export type TypeScopeType = 'TypeScope'
+export type ReturnTypeType = 'ReturnType'
 export type GenericCallType = 'GenericCall'
 export type UnionType = 'UnionType'
 export type IntersectionType = 'IntersectionType'
@@ -22,7 +25,7 @@ export type NodeType = CallType | LiteralType | ObjectType | ObjectTypeType | Fu
   | MemberType | ConditionalType | BinaryOperatorType | FunctionDeclarationType
   | ParameterDeclarationType | ReturnType | ImportDeclarationType
   | UnionType | IntersectionType | KeywordTypeType | GenericCallType
-  | ExportType
+  | ExportType | GenericParameterType | TypeScopeType | ReturnTypeType
 
 export type Value = string | number | boolean | null
 
@@ -66,6 +69,7 @@ type ReturnNode = NodeCommon & {
 type ParameterDeclarationNode = NodeCommon & {
   type: ParameterDeclarationType
   name: string
+  index: number
   identifiers: string[]
 }
 type ImportDeclarationNode = NodeCommon & {
@@ -99,8 +103,26 @@ type GeneralTypeNode = NodeCommon & {
   typeIdentifiers?: string[]
 }
 
+type GenericParameterNode = NodeCommon & {
+  type: GenericParameterType
+  name: string
+  index: number
+  typeIdentifiers?: string[]
+}
+type TypeScopeNode = NodeCommon & {
+  type: TypeScopeType
+  typeIdentifiers?: string[]
+}
+type ReturnTypeTypeNode = NodeCommon & {
+  type: ReturnTypeType
+  typeIdentifiers?: string[]
+}
+
 export type TypeNodePayload = ImportDeclarationNode
   | GeneralTypeNode
+  | GenericParameterNode
+  | TypeScopeNode
+  | ReturnTypeTypeNode
 
 export type TypeNodeData = { id: string } & TypeNodePayload
 
