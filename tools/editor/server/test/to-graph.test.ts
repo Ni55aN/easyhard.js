@@ -209,4 +209,43 @@ describe('code to graph', () => {
       ]
     })
   })
+
+  test('type', async () => {
+    const graph = await fixtureToGraph('type')
+
+    expectGraph(graph).match({
+      nodes: [
+        { id: 1, type: 'UnionType', typeIdentifiers: ['T1'] },
+        { id: 2, type: 'NumberType' },
+        { id: 3, type: 'StringType' },
+        { id: 4, type: 'IntersectionType', typeIdentifiers: ['T2'] },
+        { id: 5, type: 'NumberType' },
+        { id: 6, type: 'StringType' },
+      ],
+      edges: [
+        { source: 2, target: 1 },
+        { source: 3, target: 1 },
+        { source: 5, target: 4 },
+        { source: 6, target: 4 }
+      ]
+    })
+  })
+
+  test('type function', async () => {
+    const graph = await fixtureToGraph('type-function')
+
+    expectGraph(graph).match({
+      nodes: [
+        { id: 1, type: 'FuncType', typeIdentifiers: ['T'] },
+        { id: 2, type: 'StringType' },
+        { id: 3, type: 'BooleanType' },
+        { id: 4, type: 'NumberType' },
+      ],
+      edges: [
+        { source: 2, target: 1 },
+        { source: 3, target: 1 },
+        { source: 3, target: 1 },
+      ]
+    })
+  })
 })
