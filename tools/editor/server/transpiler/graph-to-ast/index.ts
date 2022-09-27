@@ -142,7 +142,9 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode {
     return f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
   } else if (data.type === 'StringType') {
     return f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
-  } else if (['UnionType', 'IntersectionType'].includes(data.type)) {
+  } else if (data.type === 'BooleanType') {
+    return f.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
+  }  else if (['UnionType', 'IntersectionType'].includes(data.type)) {
     const isUnion = data.type === 'UnionType'
     const incomers = node.incomers('edge')
 
