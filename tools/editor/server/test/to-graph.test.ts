@@ -237,14 +237,75 @@ describe('code to graph', () => {
     expectGraph(graph).match({
       nodes: [
         { id: 1, type: 'FuncType', typeIdentifiers: ['T'] },
-        { id: 2, type: 'StringType' },
-        { id: 3, type: 'BooleanType' },
-        { id: 4, type: 'NumberType' },
+        { id: 5, type: 'ReturnType', parent: 1 },
+        { id: 6, type: 'ParameterDeclaration', parent: 1, identifiers: ['a'] },
+        { id: 2, type: 'StringType', parent: 1 },
+        { id: 7, type: 'ParameterDeclaration', parent: 1, identifiers: ['b'] },
+        { id: 3, type: 'BooleanType', parent: 1 },
+        { id: 4, type: 'NumberType', parent: 1 },
       ],
       edges: [
-        { source: 2, target: 1 },
-        { source: 3, target: 1 },
-        { source: 3, target: 1 },
+        { source: 4, target: 5 },
+        { source: 2, target: 6 },
+        { source: 3, target: 7 },
+      ]
+    })
+  })
+
+  test('generic type', async () => {
+    const graph = await fixtureToGraph('generic-type')
+
+    expectGraph(graph).match({
+      nodes: [
+        { id: 1, type: 'TypeScope', typeIdentifiers: ['T'] },
+        { id: 2, type: 'ReturnType', parent: 1 },
+        { id: 3, type: 'GenericParameter', parent: 1, typeIdentifiers: ['M'] },
+        { id: 4, type: 'UnionType', parent: 1 },
+        { id: 5, type: 'NumberType', parent: 1 },
+      ],
+      edges: [
+        { source: 3, target: 4 },
+        { source: 5, target: 4 },
+        { source: 4, target: 2 },
+      ]
+    })
+  })
+
+  test('generic function', async () => {
+    const graph = await fixtureToGraph('generic-function')
+
+    expectGraph(graph).match({
+      nodes: [
+        { id: 1, type: 'FunctionDeclaration', identifiers: ['a'] },
+        { id: 2, type: 'GenericParameter', parent: 1, typeIdentifiers: ['M'] },
+        { id: 3, type: 'ParameterDeclaration', parent: 1, identifiers: ['a'] },
+        { id: 4, type: 'Return', parent: 1 },
+        { id: 5, type: 'Literal', parent: 1, value: 1 },
+      ],
+      edges: [
+        { source: 2, target: 3 },
+        { source: 5, target: 4 },
+      ]
+    })
+  })
+
+  test('generic type function', async () => {
+    const graph = await fixtureToGraph('generic-type-function')
+
+    expectGraph(graph).match({
+      nodes: [
+        { id: 1, type: 'FuncType', typeIdentifiers: ['T'] },
+        { id: 2, type: 'ReturnType', parent: 1 },
+        { id: 3, type: 'GenericParameter', parent: 1, typeIdentifiers: ['M'] },
+        { id: 4, type: 'UnionType', parent: 1 },
+        { id: 5, type: 'NumberType', parent: 1 },
+        { id: 6, type: 'ParameterDeclaration', parent: 1, identifiers: ['a'] },
+      ],
+      edges: [
+        { source: 3, target: 4 },
+        { source: 5, target: 4 },
+        { source: 4, target: 2 },
+        { source: 3, target: 6 },
       ]
     })
   })
