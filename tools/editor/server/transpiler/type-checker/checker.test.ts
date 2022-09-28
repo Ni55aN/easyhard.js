@@ -3,6 +3,10 @@ import { join } from 'path'
 import fs from 'fs'
 import ts, { CompilerOptions, ModuleKind } from '@tsd/typescript'
 import { TypeChecker } from '.'
+import { EasyhardTransformer, RxTransformer } from '../../simplifier/transformers'
+
+const rxSimplifier = new RxTransformer
+const ehSimplifier = new EasyhardTransformer
 
 function createProgramWithSourceFile(sourceText: string) {
   const options: CompilerOptions = {
@@ -19,7 +23,7 @@ function createProgramWithSourceFile(sourceText: string) {
   }
 
   const program = ts.createProgram({
-    rootNames: [filePath, TypeChecker.patternsPath],
+    rootNames: [filePath, rxSimplifier.typingKindHelper.file, ehSimplifier.typingKindHelper.file],
     host,
     options
   })
@@ -37,7 +41,7 @@ function findVariable(sourceFile: ts.SourceFile, name: string) {
     .getChildren()[0].getChildren()
     .filter(n => ts.isVariableStatement(n)) as ts.VariableStatement[]
   const declarations = statements.map(n => n.declarationList.declarations).flat()
-  const variable = declarations .find(declaration => ts.isIdentifier(declaration.name) && declaration.name.text === name)
+  const variable = declarations.find(declaration => ts.isIdentifier(declaration.name) && declaration.name.text === name)
 
   if (!variable) throw new Error('cannot find variable ' + name)
 
@@ -47,14 +51,25 @@ function findVariable(sourceFile: ts.SourceFile, name: string) {
 describe('type checker', () => {
   test('basic', async () => {
     const { program, sourceFile } = createProgramWithSourceFile(`
-      import { Observable as Ob, OperatorFunction } from 'rxjs'
+      import { of } from 'rxjs'
+      import { map } from 'rxjs/operators'
+      import { h } from 'easyhard'
 
-      const op: OperatorFunction<any, any>
+      const ob = of()
+      const op = map()
+      const createEl = h
+      const el = h('div', {})
     `)
-    const checker = new TypeChecker(program)
+    const checker = new TypeChecker(program, [rxSimplifier.typingKindHelper, ehSimplifier.typingKindHelper])
 
-    const node = findVariable(sourceFile, 'op')
+    const ob = findVariable(sourceFile, 'ob')
+    const op = findVariable(sourceFile, 'op')
+    const createEl = findVariable(sourceFile, 'createEl')
+    const el = findVariable(sourceFile, 'el')
 
-    expect(checker.findPattern(node)).toBe('Operator')
+    expect(checker.findPattern(ob)).toBe('RxJS:Observable')
+    expect(checker.findPattern(op)).toBe('RxJS:Operator')
+    expect(checker.findPattern(createEl)).toBe('Easyhard:EasyhardH')
+    expect(checker.findPattern(el)).toBe('Easyhard:HtmlElement')
   })
 })

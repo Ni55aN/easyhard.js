@@ -1,8 +1,16 @@
 import { Core, EdgeSingular } from 'cytoscape'
 import { getUID } from 'easyhard-common'
-import { Transformer } from '../interface'
+import { resolve } from 'path'
+import { TypingKindHelper } from '../../../../transpiler/type-checker/typing-kind'
+import { Transformer } from '../../interface'
 
 export class EasyhardTransformer implements Transformer {
+  typingKindHelper: TypingKindHelper = {
+    name: 'Easyhard',
+    file: resolve(__dirname, 'typing-kinds.ts'),
+    types: ['EasyhardH', 'HtmlElement']
+  }
+
   forward(cy: Core): void {
     cy.nodes()
       .filter(node => node.data('type') === 'ImportDeclaration' && node.data('typingKind') === 'EasyhardH')

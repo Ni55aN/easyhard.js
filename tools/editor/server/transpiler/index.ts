@@ -1,25 +1,25 @@
 import ts, { ModuleKind } from '@tsd/typescript'
-import { join } from 'path'
 import { Graph } from './types'
 import { astToGraph } from './ast-to-graph'
 import { TypeChecker } from './type-checker'
 import { Core } from 'cytoscape'
 import { graphToAst } from './graph-to-ast'
+import { TypingKindHelper } from './type-checker/typing-kind'
 
 export class CodeTranspiler {
   private program: ts.Program
   private checker: TypeChecker
 
-  constructor(private filepath: string) {
+  constructor(private filepath: string, typingKindHelpers?: TypingKindHelper[]) {
     this.program = ts.createProgram({
-      rootNames: [filepath, TypeChecker.patternsPath, join(__dirname, '../foo.d.ts')],
+      rootNames: [filepath, ...(typingKindHelpers?.map(n => n.file) || [])],
       options: {
         module: ModuleKind.CommonJS,
         esModuleInterop: true,
         strict: true
       }
     })
-    this.checker = new TypeChecker(this.program)
+    this.checker = new TypeChecker(this.program, typingKindHelpers)
   }
 
   getAST() {

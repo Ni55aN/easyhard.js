@@ -1,30 +1,27 @@
-import { join } from 'path'
 import ts, { TypeFlags } from '@tsd/typescript'
+import { TypingKindHelper } from './typing-kind'
 
-type Pattern = 'Operator' | 'Observable' | 'OperatorFactory' | 'ObservableFactory' | 'EasyhardH' | 'HtmlElement'
-type PatternsSet = {
-  [key in Pattern]: ts.TypeAliasDeclaration
-}
+type Pattern = string
 
 export class TypeChecker {
-  static patternsPath =  join(__dirname, 'patterns.ts')
   checker: ts.TypeChecker
-  patterns: PatternsSet
+  patterns: {
+    [key in string]: ts.TypeAliasDeclaration
+  }
 
-  constructor(program: ts.Program) {
+  constructor(program: ts.Program, typingKindHelpers?: TypingKindHelper[]) {
     this.checker = program.getTypeChecker()
 
-    const patternsSource = program.getSourceFile(TypeChecker.patternsPath)
-    if (!patternsSource) throw new Error('cannot find parrents file')
+    this.patterns = typingKindHelpers?.reduce((acc, { name, file, types }) => {
+      const patternsSource = program.getSourceFile(file)
 
-    this.patterns = {
-      Operator: this.getTypeDeclarationNode('Operator', patternsSource),
-      Observable: this.getTypeDeclarationNode('Observable', patternsSource),
-      OperatorFactory: this.getTypeDeclarationNode('OperatorFactory', patternsSource),
-      ObservableFactory: this.getTypeDeclarationNode('ObservableFactory', patternsSource),
-      EasyhardH: this.getTypeDeclarationNode('EasyhardH', patternsSource),
-      HtmlElement: this.getTypeDeclarationNode('HtmlElement', patternsSource),
-    }
+      if (!patternsSource) throw new Error('cannot find parrents file')
+
+      return {
+        ...acc,
+        ...Object.fromEntries(types.map(type => [`${name}:${type}`, this.getTypeDeclarationNode(type, patternsSource)]))
+      }
+    }, {}) || {}
   }
 
   private getTypeDeclarationNode(name: Pattern, source: ts.SourceFile) {
@@ -52,7 +49,7 @@ export class TypeChecker {
     return !isAny && this.isTypeAssignableTo(sourceType, targetType)
   }
 
-  getParameters(a: ts.Type) {
+  private getParameters(a: ts.Type) {
     const declarations = a.getSymbol()?.getDeclarations()
     if (!declarations || !declarations[0]) {
       return null
@@ -72,7 +69,7 @@ export class TypeChecker {
     }
   }
 
-  getReturnType(a: ts.Type) {
+  private getReturnType(a: ts.Type) {
     const declarations = a.getSymbol()?.getDeclarations()
     if (!declarations || !declarations[0]) {
       return null
@@ -118,7 +115,7 @@ export class TypeChecker {
     return null
   }
 
-  getTyping(node: ts.Node) {
+  public getTyping(node: ts.Node) {
     return {
       typingKind: this.findPattern(node),
       typingText: this.checker.typeToString(this.checker.getTypeAtLocation(node))

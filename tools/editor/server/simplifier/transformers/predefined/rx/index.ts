@@ -1,10 +1,17 @@
 import { Core, EdgeSingular, NodeSingular } from 'cytoscape'
 import { getUID } from 'easyhard-common'
+import { resolve } from 'path'
 import { isEqual, omit } from 'lodash'
-import { identifiersToLabel } from '../../utils'
-import { Transformer } from '../interface'
+import { TypingKindHelper } from '../../../../transpiler/type-checker/typing-kind'
+import { identifiersToLabel } from '../../../utils'
+import { Transformer } from '../../interface'
 
 export class RxTransformer implements Transformer {
+  typingKindHelper: TypingKindHelper = {
+    name: 'RxJS',
+    file: resolve(__dirname, 'typing-kinds.ts'),
+    types: ['Operator', 'Observable', 'OperatorFactory', 'ObservableFactory']
+  }
   typingKinds = ['OperatorFactory', 'Operator', 'ObservableFactory']
 
   private convert(cy: Core, source: NodeSingular) {

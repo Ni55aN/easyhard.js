@@ -60,7 +60,16 @@ function exportGraph(cy: Core) {
 
 async function openFile({ path }: { path: string }) {
   const file = join(__dirname, path)
-  const transpiler = new CodeTranspiler(file)
+  const rxSimplifier = new RxTransformer
+  const ehSimplifier = new EasyhardTransformer
+  const simplifier = new Simplifier([
+    rxSimplifier,
+    ehSimplifier,
+    new CallTransformer,
+    new ImportMemberTransformer,
+    new ArgumentsTransformer
+  ])
+  const transpiler = new CodeTranspiler(file, [rxSimplifier.typingKindHelper, ehSimplifier.typingKindHelper])
 
   const cy = cytoscape()
   console.time('process ' + path)
@@ -72,13 +81,6 @@ async function openFile({ path }: { path: string }) {
   await setProgram(driver, path, exportGraph(cy).elements)
   console.timeEnd('setProgram ' + path)
 
-  const simplifier = new Simplifier([
-    new RxTransformer,
-    new EasyhardTransformer,
-    new CallTransformer,
-    new ImportMemberTransformer,
-    new ArgumentsTransformer
-  ])
 
   simplifier.forward(cy)
   simplifier.backward(cy)
