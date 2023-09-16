@@ -6,3 +6,6 @@ export const console = globalThis.console
   export const String = globalThis.StringConstructor
   export const document = globalThis.document
 
+  export function as(v) {
+    return v
+  }

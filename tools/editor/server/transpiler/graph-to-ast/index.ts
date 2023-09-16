@@ -199,8 +199,8 @@ function processType(node: NodeSingular, context: Context): ts.TypeNode | ts.Typ
     const name = data.typeIdentifiers && data.typeIdentifiers[0] || 'unknown'
 
     return f.createTypeAliasDeclaration(
-          undefined,
-          undefined,
+      undefined,
+      undefined,
       name,
       typeParameters,
       returnType
@@ -258,7 +258,7 @@ function useType(node: NodeSingular, context: Context): ts.TypeNode {
   }
 
   if (data.type === 'ImportDeclaration') {
-  ctx.addType(node.id(), name)
+    ctx.addType(node.id(), name)
     useExpression(node, ctx) // force create import
     return f.createTypeReferenceNode(name)
   }
@@ -444,9 +444,11 @@ function getUnaffectedLeaf(nodes: NodeCollection, filter: (node: NodeSingular) =
 
 function traverseNodes(nodes: NodeCollection, filter: (node: NodeSingular) => boolean, context: Context, match: (node: NodeSingular) => void) {
   let rest: NodeSingular | undefined
+  let limit = 1000
 
   while (rest = getUnaffectedLeaf(nodes, filter, context)) {
     match(rest)
+    if (limit-- < 0) throw new Error('too much iterations')
   }
 }
 

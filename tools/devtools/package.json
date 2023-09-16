@@ -29,13 +29,18 @@
     "manifest.json"
   ],
   "dependencies": {
+    "@pgrabovets/json-view": "^2.7.1",
     "@types/cytoscape": "^3.19.4",
     "cytoscape": "^3.21.1",
     "cytoscape-canvas": "^3.0.1",
     "cytoscape-cxtmenu": "^3.4.0",
     "cytoscape-dagre": "^2.4.0",
+    "cytoscape-elk": "^2.0.2",
+    "cytoscape-euler": "^1.2.2",
     "cytoscape-expand-collapse": "^4.1.0",
+    "cytoscape-klay": "^3.1.4",
     "cytoscape-popper": "^2.0.0",
+    "cytoscape-spread": "^3.0.0",
     "density-clustering": "^1.3.0",
     "easyhard": "^0.8.1",
     "easyhard-bridge": "^0.3.0",
@@ -49,6 +54,7 @@
     "nanoid": "^3.3.4",
     "rxjs": "^7.5.5",
     "split.js": "^1.6.5",
-    "tippy.js": "^6.3.7"
+    "tippy.js": "^6.3.7",
+    "web-worker": "^1.2.0"
   }
 }

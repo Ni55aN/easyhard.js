@@ -32,7 +32,7 @@ void async function () {
     map(path => ({ path })),
     client.pipe('openFile'),
     catchError((e: Error) => {
-      alert(e.toString())
+      // alert(e.toString())
       return EMPTY
     })
   ).subscribe(async cyData => {
@@ -41,4 +41,9 @@ void async function () {
     console.log(editor.nodes().map(n => n.data()))
     await layout(editor)
   })
+
+  ;(window as any).load = (data: any) => {
+    editor.json(data)
+    layout(editor)
+  }
 }()

@@ -7,7 +7,7 @@ import { ObservableActions } from '../../shared'
 const client = easyhardClient<ObservableActions>()
 
 function App() {
-  const response = $({ value: interval(1000).pipe(map(v => v * 2)) })
+  const response = $({ value: interval(5000).pipe(map(v => v * 2)) })
 
   const el = h('div', {},
     h('div', {}, response.pipe(client.pipe('passObservable'), map(data => data.value)))

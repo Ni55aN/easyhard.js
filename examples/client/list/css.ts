@@ -1,10 +1,10 @@
-import { h } from 'easyhard'
+import { $, h } from 'easyhard'
 import { css, injectStyles, StyleDeclaration, unit } from 'easyhard-styles'
 import { Observable, timer } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, take } from 'rxjs/operators'
 
 const colorTransitionStyle = (props: { color: Observable<string> }): StyleDeclaration => ({
-  color: props.color,
+  color: props.color.pipe(take(6)),
   transition: 'color 1s',
   '@import': 'url("https://fonts.googleapis.com/css?family=Ubuntu:500,400,300")'
 })
@@ -14,7 +14,7 @@ const staticCss = css({
   background: 'grey',
   fontSize: 50,
   ':hover': {
-    borderColor: timer(0, 500).pipe(map(t => t%2?'red':'blue')),
+    borderColor: timer(0, 500).pipe(map(t => t%2?'red':'blue'), take(6)),
     borderStyle: 'solid',
     borderWidth: unit('px')(4),
     ':focus': {
@@ -23,9 +23,9 @@ const staticCss = css({
   },
   '@media': {
     query: {
-      minWidth: timer(0, 500).pipe(map(v => unit('px')(v+500)))
+      minWidth: timer(0, 500).pipe(map(v => unit('px')(v+500)), take(6))
     },
-    color: 'green'
+    color: $('green')
   }
 })
 

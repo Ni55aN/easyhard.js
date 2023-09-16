@@ -1,10 +1,10 @@
-import { interval, Observable } from 'rxjs'
+import { timer, Observable } from 'rxjs'
 import { map, mergeMap, take } from 'rxjs/operators'
 import { PassObservable } from '../../shared'
 
 export function getInterval(): Observable<{ count: number }> {
-  return interval(1000).pipe(
-    take(10),
+  return timer(0, 55000).pipe(
+    take(100),
     map(count => ({ count }))
   )
 }

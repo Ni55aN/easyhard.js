@@ -1,4 +1,22 @@
+import 'easyhard-debug/node.cjs'
+// import { map, merge, mergeMap, tap, timer } from 'rxjs'
 
+// // const t = timer(0, 3000).pipe(
+// //   map(v => v),
+// //   mergeMap(async v => Promise.resolve(v)),
+// //   tap(() => 1)
+// // ).subscribe(console.log)
+
+// const a = timer(0, 3000)
+// const b = timer(0, 5000)
+// const c = timer(0, 7000)
+
+// const t = merge(a, b, c).pipe(
+//   map(v => v),
+//   tap(() => 1)
+// ).subscribe()
+
+// console.log('t:', t)
 (global as { __debugScope?: string }).__debugScope = 'server'
 import express from 'express'
 import expressWs from 'express-ws'

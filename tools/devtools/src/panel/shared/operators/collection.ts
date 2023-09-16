@@ -1,5 +1,6 @@
 
 import { $$Return, InsertReturn, RemoveReturn } from 'easyhard-common/structures/collection'
+import { getCollectionItemId } from 'easyhard-common'
 import { OperatorFunction, pipe } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
 
@@ -24,5 +25,29 @@ export function collectionRemove<T>(): OperatorFunction<$$Return<T>, T> {
       }
       throw new Error('insert property bot found')
     }),
+  )
+}
+
+export function collectionSnaphot<T>(transform: (list: T[], item: T) => T): OperatorFunction<$$Return<T>, $$Return<T>> {
+  const list: T[] = []
+
+  return pipe(
+    map(item => {
+      if ('insert' in item) {
+        const transformedItem = transform(list, item.item)
+
+        list.push(transformedItem)
+        return { ...item, item: transformedItem }
+      }
+      if ('remove' in item) {
+        const id = getCollectionItemId(item)
+        const i = typeof item === 'object' && 'id' in item ? list.findIndex(el => getCollectionItemId(el) === id) : list.indexOf(item.item)
+
+        if ( i >= 0) {
+          list.splice(i, 1)
+        }
+      }
+      return item
+    })
   )
 }

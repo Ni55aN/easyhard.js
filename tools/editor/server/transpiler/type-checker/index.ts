@@ -78,13 +78,14 @@ export class TypeChecker {
     const methodDeclaration = declarations[0]
 
     try {
-      const signature = this.checker.getSignatureFromDeclaration(methodDeclaration as any);
+      const signature = this.checker.getResolvedSignature(methodDeclaration as any);
       if (!signature) {
         return null
       }
 
       return signature.getReturnType()
     } catch (e) {
+      console.error(e)
         return null
     }
   }

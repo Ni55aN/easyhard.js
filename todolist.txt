@@ -1,0 +1,20 @@
+
+// TODO
+// 1. + Add parent types (pipe, argument, other)
+// 2. + Curve edges
+// 3. Arrange a DOM element as a hierarchy with order
+// 4. + $for
+// 5. + Dynamic updates (insert, update, remove)
+// 6. + Add node tooltip
+// 7. Fix tabs example
+// 8. + Display emitted values on the graph
+// 9. + Fix content-devtools connection lost
+// 10. + Visualize observables ~~using https://swirly.dev~~
+// 11. Observable $for comparator
+// 12. + Inspector
+// 13. + Optimize CI check versions & publish
+// 14. + Fix marbles line sorting
+// 15. + Focus marbles
+// 16. + High order operators: group operators sequence and represend them as a node by default
+// 17. + Dont show "Easyhard.js' tab in devtools if __easyhardDebug isnt specified
+// 18. Show server-side observables in devtools

@@ -11,3 +11,7 @@ export * from './utils'
 export * from './hooks'
 export * from './fragment'
 export * as debug from './devtools'
+
+const n: string = 345
+
+console.log(n)

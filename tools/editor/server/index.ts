@@ -1,7 +1,7 @@
 import { join } from 'path'
 import express from 'express'
 import expressWs from 'express-ws'
-import neo4j from 'neo4j-driver'
+// import neo4j from 'neo4j-driver'
 import { easyhardServer } from 'easyhard-server'
 import { catchError, mergeMap, OperatorFunction, pipe, throwError } from 'rxjs'
 import cytoscape, { Core, ElementDefinition } from 'cytoscape'
@@ -18,10 +18,10 @@ import {
   ArgumentsTransformer
 } from './simplifier/transformers'
 
-const driver = neo4j.driver(
-  'neo4j://localhost',
-  neo4j.auth.basic('neo4j', 'test') // TODO envs
-)
+// const driver = neo4j.driver(
+//   'neo4j://localhost',
+//   neo4j.auth.basic('neo4j', 'test') // TODO envs
+// )
 
 const server = easyhardServer<Actions>({
   openFile: debugError(mergeMap(openFile))
@@ -76,22 +76,26 @@ async function openFile({ path }: { path: string }) {
   await transpiler.toGraph(cytoscapeWriter(cy))
   console.timeEnd('process ' + path)
 
-  await clear(driver, path)
-  console.time('setProgram ' + path)
-  await setProgram(driver, path, exportGraph(cy).elements)
-  console.timeEnd('setProgram ' + path)
+  // await clear(driver, path)
+  // console.time('setProgram ' + path)
+  // await setProgram(driver, path, exportGraph(cy).elements)
+  // console.timeEnd('setProgram ' + path)
 
 
   simplifier.forward(cy)
   simplifier.backward(cy)
 
   ;(async () => {
-    console.time('fromGraph ' + path)
-    const transpiler = new GraphTranpiler()
-    const sourceFile = await transpiler.toSourceFile(cy)
+    try {
+      console.time('fromGraph ' + path)
+      const transpiler = new GraphTranpiler()
+      const sourceFile = await transpiler.toSourceFile(cy)
 
-    console.log(transpiler.print(sourceFile))
-    console.timeEnd('fromGraph ' + path)
+      console.log(transpiler.print(sourceFile))
+      console.timeEnd('fromGraph ' + path)
+    } catch (e) {
+      console.error('fromGraph error:', e)
+    }
   })()
 
   return {

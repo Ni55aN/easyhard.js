@@ -15,8 +15,8 @@ export default easyhardServer<BasicActions>({
     return array
   }),
   getDataWithParams: mergeMap((payload) => {
-    return interval(500).pipe(
-      take(14),
+    return interval(5000).pipe(
+      take(1),
       map(count => ({ count: String(count) + '|' + String(payload.num) }))
     )
   }),

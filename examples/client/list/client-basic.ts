@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { $, $for, h, onMount } from 'easyhard'
 import { easyhardClient } from 'easyhard-client'
-import { of } from 'rxjs'
-import { catchError, ignoreElements, map, take } from 'rxjs/operators'
+import { interval, of, timer } from 'rxjs'
+import { catchError, ignoreElements, map, take, tap } from 'rxjs/operators'
 import { BasicActions } from '../../shared'
 
 const client = easyhardClient<BasicActions>()
@@ -27,10 +28,11 @@ function App() {
   )
 
   const el = h('div', {},
-    h('div', {}, count1),
+    // num,
+    h('p', {}, count1),
     h('div', {}, count2),
     h('div', {}, count3.pipe(catchError(() => Promise.resolve(null)))),
-    of({ value: 123 }).pipe(client.pipe('emptyResponse')),
+    $({ value: 123 }).pipe(client.pipe('emptyResponse')),
     of({ value: 456 }).pipe(client.pipe('emptyResponse2')),
     h('div', { style: 'color: red' },
       error.pipe(

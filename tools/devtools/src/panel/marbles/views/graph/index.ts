@@ -43,6 +43,10 @@ export function Graph(props: Props) {
           selector: 'node[label]',
           css: {
             'content': 'data(label)',
+            // 'content'(el: NodeSingular) {
+            //   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+            //   return el.data('label') + '|' +  el.data('subscriberId') + '\n>' + el.data('sourceSubscriberIds')
+            // },
             'text-valign': 'center',
             'text-halign': 'center',
             'background-color': theme['background'],
@@ -55,7 +59,7 @@ export function Graph(props: Props) {
             'width': 50,
             'height': 50,
             'text-max-width': '50',
-            'text-wrap': 'ellipsis'
+            'text-wrap': 'wrap'// 'ellipsis'
           }
         },
         {
@@ -110,6 +114,7 @@ export function Graph(props: Props) {
           group: 'nodes',
           data: { id: currentId, subscriberId, sourceSubscriberIds, time: currentTime, parent: id, label: '...', emissionValueFetched: false },
           position: { x: (currentTime - now) / 100, y: 0 }
+          // position: { x: (currentTime - now) / 100 * scale.getCoefficient(cy.zoom(), 1), y: 0 }
         })
         return { currentId, item }
       }),
@@ -150,7 +155,7 @@ export function Graph(props: Props) {
     })
     cy.on('mouseout', e => {
       if(e.target === cy) mouseIsOver = false
-      })
+    })
 
     const activeParent = new Subject<cytoscape.NodeSingular | null>()
 

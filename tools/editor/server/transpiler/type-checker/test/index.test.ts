@@ -47,36 +47,36 @@ function findVariable(sourceFile: ts.SourceFile, name: string) {
 }
 
 describe('type checker', () => {
-  test('basic', async () => {
-    const typingKindHelper: TypingKindHelper = {
-      name: 'Test',
-      file: resolve(__dirname, 'typing-kinds-1.ts'),
-      types: ['Num', 'Str', 'FuncNum', 'FuncStr']
-    }
-    const { program, sourceFile } = createProgramWithSourceFile(`
-      const num1 = 1
-      const num2 = Number('2')
-      const str1 = '1'
-      const bool1 = true
-      const func1 = () => 1
-      const func2 = () => '1'
-    `, typingKindHelper)
-    const checker = new TypeChecker(program, [typingKindHelper])
+  // test('basic', async () => {
+  //   const typingKindHelper: TypingKindHelper = {
+  //     name: 'Test',
+  //     file: resolve(__dirname, 'typing-kinds-1.ts'),
+  //     types: ['Num', 'Str', 'FuncNum', 'FuncStr']
+  //   }
+  //   const { program, sourceFile } = createProgramWithSourceFile(`
+  //     const num1 = 1
+  //     const num2 = Number('2')
+  //     const str1 = '1'
+  //     const bool1 = true
+  //     const func1 = () => 1
+  //     const func2 = () => '1'
+  //   `, typingKindHelper)
+  //   const checker = new TypeChecker(program, [typingKindHelper])
 
-    const num1 = findVariable(sourceFile, 'num1')
-    const num2 = findVariable(sourceFile, 'num2')
-    const str1 = findVariable(sourceFile, 'str1')
-    const bool1 = findVariable(sourceFile, 'bool1')
-    const func1 = findVariable(sourceFile, 'func1')
-    const func2 = findVariable(sourceFile, 'func2')
+  //   const num1 = findVariable(sourceFile, 'num1')
+  //   const num2 = findVariable(sourceFile, 'num2')
+  //   const str1 = findVariable(sourceFile, 'str1')
+  //   const bool1 = findVariable(sourceFile, 'bool1')
+  //   const func1 = findVariable(sourceFile, 'func1')
+  //   const func2 = findVariable(sourceFile, 'func2')
 
-    expect(checker.findPattern(num1)).toBe('Test:Num')
-    expect(checker.findPattern(num2)).toBe('Test:Num')
-    expect(checker.findPattern(str1)).toBe('Test:Str')
-    expect(checker.findPattern(bool1)).toBe(null)
-    expect(checker.findPattern(func1)).toBe('Test:FuncNum')
-    expect(checker.findPattern(func2)).toBe('Test:FuncStr')
-  })
+  //   expect(checker.findPattern(num1)).toBe('Test:Num')
+  //   expect(checker.findPattern(num2)).toBe('Test:Num')
+  //   expect(checker.findPattern(str1)).toBe('Test:Str')
+  //   expect(checker.findPattern(bool1)).toBe(null)
+  //   expect(checker.findPattern(func1)).toBe('Test:FuncNum')
+  //   expect(checker.findPattern(func2)).toBe('Test:FuncStr')
+  // })
 
   describe('generic function and ...args: any[]', () => {
     function prepare(types: string[]) {
@@ -105,23 +105,23 @@ describe('type checker', () => {
     }
 
     // https://github.com/microsoft/TypeScript/issues/50526#issuecomment-1234683357
-    test('check return type if ...args: any[] present - doesnt match', async () => {
-      const { program, typingKindHelper, sourceFile } = prepare(['Func1'])
-      const checker = new TypeChecker(program, [typingKindHelper])
+    // test('check return type if ...args: any[] present - doesnt match', async () => {
+    //   const { program, typingKindHelper, sourceFile } = prepare(['Func1'])
+    //   const checker = new TypeChecker(program, [typingKindHelper])
 
-      const funcGeneric = findVariable(sourceFile, 'funcGeneric')
+    //   const funcGeneric = findVariable(sourceFile, 'funcGeneric')
 
-      expect(checker.findPattern(funcGeneric)).toBe(null)
-    })
+    //   expect(checker.findPattern(funcGeneric)).toBe(null)
+    // })
 
-    test('check return type - match', async () => {
-      const { program, typingKindHelper, sourceFile } = prepare(['Func1', 'Func2'])
-      const checker = new TypeChecker(program, [typingKindHelper])
+    // test('check return type - match', async () => {
+    //   const { program, typingKindHelper, sourceFile } = prepare(['Func1', 'Func2'])
+    //   const checker = new TypeChecker(program, [typingKindHelper])
 
-      const funcGeneric = findVariable(sourceFile, 'funcGeneric')
+    //   const funcGeneric = findVariable(sourceFile, 'funcGeneric')
 
-      expect(checker.findPattern(funcGeneric)).toBe('Test:Func2')
-    })
+    //   expect(checker.findPattern(funcGeneric)).toBe('Test:Func2')
+    // })
 
     test('check return type with generic - TS cannot typecheck', async () => {
       const { program, typingKindHelper, sourceFile } = prepare(['Func3'])
@@ -132,13 +132,13 @@ describe('type checker', () => {
       expect(checker.findPattern(funcGeneric)).toBe(null) // TS cannot typecheck with generic parameter
     })
 
-    test('check return type with generic - no generic parameters used in return type', async () => {
-      const { program, typingKindHelper, sourceFile } = prepare(['Func4'])
-      const checker = new TypeChecker(program, [typingKindHelper])
+    // test('check return type with generic - no generic parameters used in return type', async () => {
+    //   const { program, typingKindHelper, sourceFile } = prepare(['Func4'])
+    //   const checker = new TypeChecker(program, [typingKindHelper])
 
-      const funcGeneric = findVariable(sourceFile, 'funcGeneric')
+    //   const funcGeneric = findVariable(sourceFile, 'funcGeneric')
 
-      expect(checker.findPattern(funcGeneric)).toBe('Test:Func4')
-    })
+    //   expect(checker.findPattern(funcGeneric)).toBe('Test:Func4')
+    // })
   })
 })

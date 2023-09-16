@@ -102,8 +102,8 @@ export async function layoutELK(cy: Core, fit: boolean) {
     'spacing.nodeNodeBetweenLayers': '5',
     'spacing.edgeEdgeBetweenLayers': '5',
     'spacing.edgeNodeBetweenLayers': '5',
-    'spacing.nodeNode': '15',
-    'spacing.edgeEdge': '15',
+    'spacing.nodeNode': '25',
+    'spacing.edgeEdge': '25',
   }
   const args: ElkNode = {
     id: 'root',

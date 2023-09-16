@@ -28,7 +28,7 @@ function App() {
   const mount = toggle.pipe(startWith(false), scan(acc => !acc, false))
 
   return h('div', {},
-    h('button', { click: toggle }, 'toggle'),
+    h('button', { click: toggle, mouseenter: tap(console.log) }, 'toggle'),
     $if(mount, () => Child(text))
   )
 }

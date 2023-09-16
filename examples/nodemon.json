@@ -1,5 +1,5 @@
 {
   "ignoreRoot": [".git"],
   "ext": "ts,js",
-  "exec": "ts-node --project tsconfig.server.json -r tsconfig-paths/register -r module-alias/register ./server/index.ts"
+  "exec": "NODE_OPTIONS=--inspect ts-node --project tsconfig.server.json -r tsconfig-paths/register -r module-alias/register ./server/index.ts"
 }

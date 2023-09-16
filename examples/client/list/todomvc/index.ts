@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { $, $for, $if, h } from 'easyhard'
 import { $$Return, collectionLength, filterCollection, forEachCollection } from 'easyhard-common'
 import { combineLatest, Observable, pipe, Subject } from 'rxjs'

@@ -221,7 +221,9 @@ async function processExpression(expression: ts.Expression, context: Context): P
   } else if (ts.isIdentifier(expression)) {
     const node = await graph.findIdentifier(String(expression.escapedText), 'identifiers', parent)
 
-    if (!node) throw new Error(`cannot find Identifier "${expression.escapedText}"`)
+    if (!node) {
+      throw new Error(`cannot find Identifier "${expression.escapedText}"`)
+    }
     return node
   } else if (ts.isBinaryExpression(expression)) {
     return processBinary(expression, context)
@@ -235,8 +237,7 @@ async function processExpression(expression: ts.Expression, context: Context): P
     return processFunction(expression, context)
   } else if (ts.isArrowFunction(expression)) {
     return processFunction(expression, context)
-  } else {
-    debugger
+  }  else {
     throw new Error('processExpression for kind ' + expression.kind)
   }
 }

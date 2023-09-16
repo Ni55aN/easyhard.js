@@ -7,3 +7,4 @@
   export const array: <T>(item: T) => Array<T>
   export const document: Document
 
+  export function as<T>(v: any): T

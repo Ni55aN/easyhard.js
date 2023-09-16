@@ -3,6 +3,10 @@
     "server/**/*.ts",
     "client/**/*.ts"
   ],
+  "exclude": [
+    "server/assets/*",
+    "server/test/fixtures/*"
+  ],
   "compilerOptions": {
     "outDir": "./dist/",
     "module": "es6",
